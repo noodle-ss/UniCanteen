@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniCanteen · Customer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      display: block;
+      min-height: auto;
+    }
+    .main-content {
+      margin-left: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-content">
+    <section id="customer" class="page-section">
+      <div class="wrapper">
+        <nav class="customer-nav">
+          <div class="logo">UniCanteen <span>DLSU</span></div>
+          <div class="customer-nav-links">
+            <a href="#">Menu</a>
+            <a href="#">Track</a>
+            <a href="#">Reviews</a>
+            <a href="#">Sign In</a>
+            <a href="#" class="btn-outline"><i class="fas fa-bag-shopping"></i> Order Now</a>
+          </div>
+        </nav>
+      </div>
+      
+      <div class="hero-customer">
+        <div class="wrapper">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+            <div>
+              <h1>Fresh from the canteen,<br>skip the line</h1>
+              <div style="display: flex; gap: 24px; margin-top: 20px;">
+                <span style="color: #3b7455; display: flex; align-items: center; gap: 8px;"><i class="fas fa-circle-check" style="color: #007a3e;"></i> 15+ food stalls</span>
+                <span style="color: #3b7455; display: flex; align-items: center; gap: 8px;"><i class="fas fa-clock" style="color: #007a3e;"></i> Real-time stock</span>
+                <span style="color: #3b7455; display: flex; align-items: center; gap: 8px;"><i class="fas fa-star" style="color: #007a3e;"></i> 4.6 avg rating</span>
+              </div>
+            </div>
+            <div class="hero-image">
+              <img src="https://placehold.co/280x140/ebf9f1/007a3e?text=UniCanteen+App" style="border-radius: 38px; border: 2px solid #b8e0cc; width: 280px; height: 140px; object-fit: cover; box-shadow: 0 10px 25px rgba(0,80,20,0.1);" alt="UniCanteen">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wrapper">
+        <!-- Quick Stats Bar -->
+        <div style="background: white; border-radius: 60px; padding: 16px 28px; margin: -30px 0 30px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-soft); box-shadow: 0 8px 20px rgba(0,70,30,0.04);">
+          <div><span style="font-weight: 700; color: #007a3e;">24</span> <span style="color: #3b7455;">stalls open</span></div>
+          <div class="divider" style="width: 1px; height: 30px; background: #d0eadb;"></div>
+          <div><span style="font-weight: 700; color: #007a3e;">68</span> <span style="color: #3b7455;">items available</span></div>
+          <div class="divider" style="width: 1px; height: 30px; background: #d0eadb;"></div>
+          <div><span style="font-weight: 700; color: #007a3e;">142</span> <span style="color: #3b7455;">orders today</span></div>
+          <div class="divider" style="width: 1px; height: 30px; background: #d0eadb;"></div>
+          <div><i class="fas fa-clock" style="color: #f5b342;"></i> <span style="color: #3b7455;">Peak: 12-1PM</span></div>
+        </div>
+
+        <!-- Today's Stalls section -->
+        <div class="section-header">
+          <i class="fas fa-store"></i>
+          <h2>Today's Stalls</h2>
+          <span style="margin-left: auto; background: #e3f4ea; padding: 6px 16px; border-radius: 40px; font-size: 0.95rem; color: #007a3e; font-weight: 500; display: flex; align-items: center; gap: 6px; border: 1px solid #cae3d6;">
+            <i class="fas fa-filter" style="font-size: 0.8rem;"></i> Filter by: All Stalls
+          </span>
+        </div>
+        
+        <div class="stall-grid">
+          <!-- Bloemen Hall -->
+          <div class="stall-card">
+            <div class="stall-header">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="stall-name">Bloemen Hall</span>
+                <span style="background: #e3f4ea; padding: 4px 10px; border-radius: 40px; font-size: 0.7rem; font-weight: 600; color: #007a3e;">Open</span>
+              </div>
+              <span class="rating"><i class="fas fa-star"></i> 4.8 <span style="color: #8faa9a; font-weight: 400; margin-left: 4px;">(32)</span></span>
+            </div>
+            <div class="menu-grid">
+              <div class="menu-row">
+                <span class="item-name">Chicken Bowl</span>
+                <span class="price-tag">₱95</span>
+                <span class="avail-tag"><i class="fas fa-check-circle"></i> Available</span>
+              </div>
+              <div class="menu-row">
+                <span class="item-name">Iced Latte</span>
+                <span class="price-tag">₱60</span>
+                <span class="avail-tag"><i class="fas fa-check-circle"></i> Available</span>
+              </div>
+              <div class="menu-row">
+                <span class="item-name">Garlic Fries</span>
+                <span class="price-tag">₱45</span>
+                <span class="avail-tag not-available"><i class="fas fa-times-circle"></i> Sold Out</span>
+              </div>
+              <div class="menu-row">
+                <span class="item-name">Breakfast Meal</span>
+                <span class="price-tag">₱120</span>
+                <span class="avail-tag"><i class="fas fa-check-circle"></i> Available</span>
+              </div>
+            </div>
+            <div class="availability-summary">
+              <span><i class="fas fa-utensils"></i> 3 items available</span>
+              <span class="available-count">3/4 available</span>
+            </div>
+          </div>
+          
+          <!-- Agno Eatery -->
+          <div class="stall-card">
+            <div class="stall-header">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="stall-name">Agno Eatery</span>
+                <span style="background: #e3f4ea; padding: 4px 10px; border-radius: 40px; font-size: 0.7rem; font-weight: 600; color: #007a3e;">Open</span>
+              </div>
+              <span class="rating"><i class="fas fa-star"></i> 4.5 <span style="color: #8faa9a; font-weight: 400; margin-left: 4px;">(24)</span></span>
+            </div>
+            <div class="menu-grid">
+              <div class="menu-row">
+                <span class="item-name">Beef Tapa</span>
+                <span class="price-tag">₱99</span>
+                <span class="avail-tag"><i class="fas fa-check-circle"></i> Available</span>
+              </div>
+              <div class="menu-row">
+                <span class="item-name">Garlic Rice</span>
+                <span class="price-tag">₱20</span>
+                <span class="avail-tag"><i class="fas fa-check-circle"></i> Available</span>
+              </div>
+              <div class="menu-row">
+                <span class="item-name">Lumpiang Shanghai</span>
+                <span class="price-tag">₱55</span>
+                <span class="avail-tag not-available"><i class="fas fa-times-circle"></i> Sold Out</span>
+              </div>
+              <div class="menu-row">
+                <span class="item-name">Bangus Sisig</span>
+                <span class="price-tag">₱89</span>
+                <span class="avail-tag"><i class="fas fa-check-circle"></i> Available</span>
+              </div>
+            </div>
+            <div class="availability-summary">
+              <span><i class="fas fa-utensils"></i> 3 items available</span>
+              <span class="available-count">3/4 available</span>
+            </div>
+          </div>
+          
+          <!-- Kitchen SJ -->
+          <div class="stall-card">
+            <div class="stall-header">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="stall-name">Kitchen SJ</span>
+                <span style="background: #e3f4ea; padding: 4px 10px; border-radius: 40px; font-size: 0.7rem; font-weight: 600; color: #007a3e;">Open</span>
+              </div>
+              <span class="rating"><i class="fas fa-star"></i> 4.9 <span style="color: #8faa9a; font-weight: 400; margin-left: 4px;">(41)</span></span>
+            </div>
+            <div class="menu-grid">
+              <div class="menu-row">
+                <span class="item-name">Lasagna</span>
+                <span class="price-tag">₱125</span>
+                <span class="avail-tag not-available"><i class="fas fa-times-circle"></i> Sold Out</span>
+              </div>
+              <div class="menu-row">
+                <span class="item-name">Garlic Bread</span>
+                <span class="price-tag">₱30</span>
+                <span class="avail-tag"><i class="fas fa-check-circle"></i> Available</span>
+              </div>
+              <div class="menu-row">
+                <span class="item-name">Pesto Pasta</span>
+                <span class="price-tag">₱110</span>
+                <span class="avail-tag not-available"><i class="fas fa-times-circle"></i> Sold Out</span>
+              </div>
+              <div class="menu-row">
+                <span class="item-name">Tiramisu</span>
+                <span class="price-tag">₱85</span>
+                <span class="avail-tag"><i class="fas fa-check-circle"></i> Available</span>
+              </div>
+            </div>
+            <div class="availability-summary">
+              <span><i class="fas fa-utensils"></i> 2 items available</span>
+              <span class="available-count">2/4 available</span>
+            </div>
+          </div>
+          
+          <!-- St. La Salle Deli -->
+          <div class="stall-card">
+            <div class="stall-header">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="stall-name">St. La Salle Deli</span>
+                <span style="background: #e3f4ea; padding: 4px 10px; border-radius: 40px; font-size: 0.7rem; font-weight: 600; color: #007a3e;">Open</span>
+              </div>
+              <span class="rating"><i class="fas fa-star"></i> 4.6 <span style="color: #8faa9a; font-weight: 400; margin-left: 4px;">(19)</span></span>
+            </div>
+            <div class="menu-grid">
+              <div class="menu-row">
+                <span class="item-name">Club Sandwich</span>
+                <span class="price-tag">₱75</span>
+                <span class="avail-tag"><i class="fas fa-check-circle"></i> Available</span>
+              </div>
+              <div class="menu-row">
+                <span class="item-name">Fruit Shake</span>
+                <span class="price-tag">₱55</span>
+                <span class="avail-tag"><i class="fas fa-check-circle"></i> Available</span>
+              </div>
+              <div class="menu-row">
+                <span class="item-name">Caesar Salad</span>
+                <span class="price-tag">₱85</span>
+                <span class="avail-tag not-available"><i class="fas fa-times-circle"></i> Sold Out</span>
+              </div>
+              <div class="menu-row">
+                <span class="item-name">Iced Tea</span>
+                <span class="price-tag">₱40</span>
+                <span class="avail-tag"><i class="fas fa-check-circle"></i> Available</span>
+              </div>
+            </div>
+            <div class="availability-summary">
+              <span><i class="fas fa-utensils"></i> 3 items available</span>
+              <span class="available-count">3/4 available</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order tracking card -->
+        <div class="track-card">
+          <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+            <div style="background: #e3f4ea; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+              <i class="fas fa-clipboard-list" style="font-size: 1.8rem; color: #007a3e;"></i>
+            </div>
+            <div>
+              <h3 style="margin: 0; font-size: 1.5rem;">Your Order #2417</h3>
+              <p style="color: #3b7455; margin-top: 5px;">Estimated pick-up: 12:15 PM</p>
+            </div>
+            <span style="margin-left: auto; background: #daf1e2; padding: 10px 25px; border-radius: 40px; font-size: 1rem; font-weight: 600; color: #007a3e; display: flex; align-items: center; gap: 8px;">
+              <span class="status-dot" style="width: 10px; height: 10px; background: #007a3e; border-radius: 50%; display: inline-block;"></span>
+              Preparing
+            </span>
+          </div>
+          
+          <div style="background: #f9fffc; border-radius: 24px; padding: 20px;">
+            <p style="font-weight: 600; margin-bottom: 16px; color: #1a4d31; display: flex; justify-content: space-between;">
+              <span><i class="fas fa-receipt" style="color: #007a3e;"></i> Items (3)</span>
+              <span style="color: #007a3e;">Total: ₱185</span>
+            </p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="order-item" style="background: white; border-radius: 16px; padding: 12px 16px; border: 1px solid #e0f0e8;">
+                <span class="order-item-name"><span style="font-weight: 700;">1x</span> Chicken Bowl <span style="color: #5f8b74;">(Bloemen)</span></span>
+                <span class="order-price">₱95</span>
+                <span class="avail-tag order-avail" style="width: auto; background: #daf1e2;">Confirmed</span>
+              </div>
+              <div class="order-item" style="background: white; border-radius: 16px; padding: 12px 16px; border: 1px solid #e0f0e8;">
+                <span class="order-item-name"><span style="font-weight: 700;">1x</span> Iced Latte <span style="color: #5f8b74;">(Bloemen)</span></span>
+                <span class="order-price">₱60</span>
+                <span class="avail-tag order-avail" style="width: auto; background: #daf1e2;">Confirmed</span>
+              </div>
+              <div class="order-item" style="background: white; border-radius: 16px; padding: 12px 16px; border: 1px solid #e0f0e8;">
+                <span class="order-item-name"><span style="font-weight: 700;">1x</span> Garlic Bread <span style="color: #5f8b74;">(Kitchen SJ)</span></span>
+                <span class="order-price">₱30</span>
+                <span class="avail-tag order-avail" style="width: auto; background: #daf1e2;">Confirmed</span>
+              </div>
+            </div>
+
+            <!-- Progress tracker -->
+            <div style="display: flex; justify-content: space-between; margin-top: 30px; padding: 0 10px;">
+              <div style="text-align: center;">
+                <div style="width: 40px; height: 40px; background: #007a3e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; margin-bottom: 8px;"><i class="fas fa-check"></i></div>
+                <span style="font-size: 0.8rem; font-weight: 500;">Order Placed</span>
+              </div>
+              <div style="text-align: center;">
+                <div style="width: 40px; height: 40px; background: #007a3e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; margin-bottom: 8px;"><i class="fas fa-fire"></i></div>
+                <span style="font-size: 0.8rem; font-weight: 500;">Preparing</span>
+              </div>
+              <div style="text-align: center;">
+                <div style="width: 40px; height: 40px; background: #e0f0e8; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #8faa9a; margin-bottom: 8px;"><i class="fas fa-bag-shopping"></i></div>
+                <span style="font-size: 0.8rem; font-weight: 500;">Ready</span>
+              </div>
+              <div style="text-align: center;">
+                <div style="width: 40px; height: 40px; background: #e0f0e8; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #8faa9a; margin-bottom: 8px;"><i class="fas fa-circle-check"></i></div>
+                <span style="font-size: 0.8rem; font-weight: 500;">Pick Up</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Ratings section -->
+        <div class="section-header">
+          <i class="fas fa-star"></i>
+          <h2>Recent Ratings & Reviews</h2>
+          <span style="margin-left: auto; color: #007a3e; font-weight: 500;">See all <i class="fas fa-arrow-right"></i></span>
+        </div>
+        
+        <div class="reviews-grid">
+          <!-- review 1 – Agno Eatery -->
+          <div class="review-card">
+            <div class="reviewer-avatar">
+              <i class="fas fa-user-circle" style="font-size: 2.5rem; color: #007a3e;"></i>
+              <div>
+                <span class="name">Charles B.</span>
+                <div style="font-size: 0.7rem; color: #5f8b74;">2 hours ago</div>
+              </div>
+            </div>
+            <div class="stall-badge">
+              <i class="fas fa-store-alt"></i> Agno Eatery
+            </div>
+            <div class="stars-container">
+              <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i> 4.5
+            </div>
+            <div class="review-text">
+              <i class="fas fa-quote-left"></i> Tapa was superb, will come back! Serving size is generous.
+            </div>
+          </div>
+          <!-- review 2 – Kitchen SJ -->
+          <div class="review-card">
+            <div class="reviewer-avatar">
+              <i class="fas fa-user-circle" style="font-size: 2.5rem; color: #007a3e;"></i>
+              <div>
+                <span class="name">Terrence M.</span>
+                <div style="font-size: 0.7rem; color: #5f8b74;">3 hours ago</div>
+              </div>
+            </div>
+            <div class="stall-badge">
+              <i class="fas fa-store-alt"></i> Kitchen SJ
+            </div>
+            <div class="stars-container">
+              <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i> 5.0
+            </div>
+            <div class="review-text">
+              <i class="fas fa-quote-left"></i> Siomai sold out, but the garlic bread is amazing. Will try again.
+            </div>
+          </div>
+          <!-- review 3 – St. La Salle Deli -->
+          <div class="review-card">
+            <div class="reviewer-avatar">
+              <i class="fas fa-user-circle" style="font-size: 2.5rem; color: #007a3e;"></i>
+              <div>
+                <span class="name">Mikaela L.</span>
+                <div style="font-size: 0.7rem; color: #5f8b74;">5 hours ago</div>
+              </div>
+            </div>
+            <div class="stall-badge">
+              <i class="fas fa-store-alt"></i> St. La Salle Deli
+            </div>
+            <div class="stars-container">
+              <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i> 5.0
+            </div>
+            <div class="review-text">
+              <i class="fas fa-quote-left"></i> Club sandwich is huge! Staff friendly. Best deli on campus.
+            </div>
+          </div>
+          <!-- review 4 – Bloemen Hall -->
+          <div class="review-card">
+            <div class="reviewer-avatar">
+              <i class="fas fa-user-circle" style="font-size: 2.5rem; color: #007a3e;"></i>
+              <div>
+                <span class="name">Joaquin M.</span>
+                <div style="font-size: 0.7rem; color: #5f8b74;">Yesterday</div>
+              </div>
+            </div>
+            <div class="stall-badge">
+              <i class="fas fa-store-alt"></i> Bloemen Hall
+            </div>
+            <div class="stars-container">
+              <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i> 4.5
+            </div>
+            <div class="review-text">
+              <i class="fas fa-quote-left"></i> Iced latte was perfect, even at 4pm. Quick service too.
+            </div>
+          </div>
+        </div>
+
+        <!-- rating summary -->
+        <div class="rating-summary" style="justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 20px;">
+            <i class="fas fa-star" style="color: #eab308; font-size: 2.5rem;"></i> 
+            <div>
+              <span style="font-size:2.2rem; font-weight:700;">4.6</span> / 5 
+              <span style="color: #3b7455;">· 86 total reviews</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 20px;">
+            <div style="text-align: center;"><span style="font-weight:700;">5★</span> <span style="color:#3b7455;">(54)</span></div>
+            <div style="text-align: center;"><span style="font-weight:700;">4★</span> <span style="color:#3b7455;">(22)</span></div>
+            <div style="text-align: center;"><span style="font-weight:700;">3★</span> <span style="color:#3b7455;">(8)</span></div>
+            <div style="text-align: center;"><span style="font-weight:700;">2★</span> <span style="color:#3b7455;">(2)</span></div>
+          </div>
+        </div>
+
+        <!-- Quick Order CTA -->
+        <div style="background: linear-gradient(135deg, #007a3e, #1e7547); border-radius: 40px; padding: 40px; margin: 40px 0; color: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+          <div>
+            <h3 style="font-size: 1.8rem; margin-bottom: 10px; color: white;">Hungry? Order ahead</h3>
+            <p style="opacity: 0.9;">Skip the line and pick up when it's ready</p>
+          </div>
+          <button style="background: white; color: #007a3e; border: none; padding: 16px 40px; border-radius: 60px; font-weight: 700; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-bag-shopping"></i> Order Now
+          </button>
+        </div>
+      </div>
+      <footer class="footer-note">
+        <i class="fas fa-mobile-alt"></i> UniCanteen Customer · Real‑time availability · 15+ stalls · Cashless payment
+      </footer>
+    </section>
+  </div>
+</body>
+</html>
