@@ -1,63 +1,233 @@
--- Encrypt password
--- Roles:
--- U: User
--- V: Vendor
--- A: Administrator
+CREATE DATABASE IF NOT EXISTS unicanteen;
+USE unicanteen;
+
+DROP TABLE IF EXISTS Item_Categories;
+DROP TABLE IF EXISTS Categories;
+DROP TABLE IF EXISTS Order_ItemLine;
+DROP TABLE IF EXISTS Ratings;
+DROP TABLE IF EXISTS Orders;
+DROP TABLE IF EXISTS Sessions;
+DROP TABLE IF EXISTS UserLogs;
+DROP TABLE IF EXISTS Items;
+DROP TABLE IF EXISTS Restaurants;
+DROP TABLE IF EXISTS Users;
+
+-- ==================== USERS TABLE ====================
 CREATE TABLE Users (
-ID INT PRIMARY KEY AUTO_INCREMENT,
-email VARCHAR(60) UNIQUE NOT NULL,
-password VARCHAR(255) NOT NULL,  
-role ENUM('U', 'V', 'A') NOT NULL
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    email VARCHAR(60) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    role ENUM('U', 'V', 'A') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    is_banned BOOLEAN DEFAULT FALSE,
+    last_login TIMESTAMP NULL,
+    login_attempts INT DEFAULT 0,
+    locked_until TIMESTAMP NULL
 );
 
+-- ==================== SESSIONS TABLE ====================
+-- Fixed: expires_at is NOT NULL and must be provided
+CREATE TABLE Sessions (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    session_token VARCHAR(255) UNIQUE NOT NULL,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES Users(ID) ON DELETE CASCADE
+);
+
+-- ==================== USER LOGS TABLE ====================
+CREATE TABLE UserLogs (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    action VARCHAR(50) NOT NULL,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(ID) ON DELETE SET NULL
+);
+
+-- ==================== RESTAURANTS TABLE ====================
 CREATE TABLE Restaurants (
-ID INT PRIMARY KEY AUTO_INCREMENT,
-name VARCHAR(60) NOT NULL,
-address VARCHAR(100),
-owner_ID INT,
-FOREIGN KEY (owner_ID) REFERENCES Users(ID)
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(60) NOT NULL,
+    address VARCHAR(100),
+    description TEXT,
+    logo_url VARCHAR(255),
+    owner_ID INT,
+    is_open BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_ID) REFERENCES Users(ID)
 );
 
+-- ==================== ITEMS TABLE ====================
 CREATE TABLE Items (
-ID INT PRIMARY KEY AUTO_INCREMENT,
-name VARCHAR(60) NOT NULL,
-description TEXT,
-price DECIMAL(10, 2) NOT NULL,
-isAvailable BOOLEAN DEFAULT TRUE,
-restaurant_ID INT,
-FOREIGN KEY (restaurant_ID) REFERENCES Restaurants(ID)
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(60) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    image_url VARCHAR(255),
+    isAvailable BOOLEAN DEFAULT TRUE,
+    restaurant_ID INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (restaurant_ID) REFERENCES Restaurants(ID) ON DELETE CASCADE
 );
--- status:
--- P: Pending
--- PR: Preparing
--- R: Ready
--- C: Completed
+
+-- ==================== CATEGORIES TABLE ====================
+CREATE TABLE Categories (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(50) NOT NULL,
+    description TEXT
+);
+
+-- ==================== ITEM_CATEGORIES TABLE ====================
+CREATE TABLE Item_Categories (
+    item_ID INT,
+    category_ID INT,
+    PRIMARY KEY (item_ID, category_ID),
+    FOREIGN KEY (item_ID) REFERENCES Items(ID) ON DELETE CASCADE,
+    FOREIGN KEY (category_ID) REFERENCES Categories(ID) ON DELETE CASCADE
+);
+
+-- ==================== ORDERS TABLE ====================
 CREATE TABLE Orders (
-ID INT PRIMARY KEY AUTO_INCREMENT,
-customer_ID INT,
-restaurant_ID INT,
-total_amount DECIMAL(10, 2) NOT NULL,
-status ENUM('P', 'PR', 'R', 'C') DEFAULT 'P',
-queue_number INT,
-order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-FOREIGN KEY (customer_ID) REFERENCES Users(ID),
-FOREIGN KEY (restaurant_ID) REFERENCES Restaurants(ID)
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    customer_ID INT,
+    restaurant_ID INT,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    status ENUM('P', 'PR', 'R', 'C') DEFAULT 'P',
+    queue_number INT,
+    payment_method ENUM('cash', 'gcash', 'card') DEFAULT 'cash',
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    pickup_time TIME,
+    FOREIGN KEY (customer_ID) REFERENCES Users(ID),
+    FOREIGN KEY (restaurant_ID) REFERENCES Restaurants(ID)
 );
 
+-- ==================== ORDER_ITEMLINE TABLE ====================
 CREATE TABLE Order_ItemLine (
-ID INT PRIMARY KEY AUTO_INCREMENT,
-order_ID INT,
-item_ID INT,
-quantity INT NOT NULL,
-FOREIGN KEY (order_ID) REFERENCES Orders(ID),
-FOREIGN KEY (item_ID) REFERENCES Items(ID)
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    order_ID INT,
+    item_ID INT,
+    quantity INT NOT NULL,
+    price_at_time DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (order_ID) REFERENCES Orders(ID) ON DELETE CASCADE,
+    FOREIGN KEY (item_ID) REFERENCES Items(ID)
 );
 
+-- ==================== RATINGS TABLE ====================
 CREATE TABLE Ratings (
-ID INT PRIMARY KEY AUTO_INCREMENT,
-restaurant_ID INT,
-rating DECIMAL(3, 2) CHECK (rating BETWEEN 1.0 AND 5.0),
-review VARCHAR(255),
-timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-FOREIGN KEY (restaurant_ID) REFERENCES Restaurants(ID)
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    restaurant_ID INT,
+    order_ID INT UNIQUE,
+    rating DECIMAL(3, 2) CHECK (rating BETWEEN 1.0 AND 5.0),
+    review TEXT,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (restaurant_ID) REFERENCES Restaurants(ID) ON DELETE CASCADE,
+    FOREIGN KEY (order_ID) REFERENCES Orders(ID) ON DELETE CASCADE
 );
+
+-- ==================== INSERT SAMPLE DATA ====================
+
+-- Insert categories
+INSERT INTO Categories (name, description) VALUES
+('Meals', 'Main course meals'),
+('Beverages', 'Drinks and refreshments'),
+('Snacks', 'Light snacks and sides'),
+('Desserts', 'Sweet treats');
+
+-- Insert sample users with placeholder passwords
+-- IMPORTANT: These passwords need to be hashed in PHP
+INSERT INTO Users (email, password, full_name, role, is_active, login_attempts) VALUES
+('customer1@dlsu.edu', '$2y$10$YourHashHere1234567890ABCDEFGHIJKLMNOPQRSTU', 'Juan Dela Cruz', 'U', TRUE, 0),
+('customer2@dlsu.edu', '$2y$10$YourHashHere1234567890ABCDEFGHIJKLMNOPQRSTU', 'Maria Santos', 'U', TRUE, 0),
+('vendor1@dlsu.edu', '$2y$10$YourHashHere1234567890ABCDEFGHIJKLMNOPQRSTU', 'Bloemen Hall Manager', 'V', TRUE, 0),
+('vendor2@dlsu.edu', '$2y$10$YourHashHere1234567890ABCDEFGHIJKLMNOPQRSTU', 'Agno Eatery Owner', 'V', TRUE, 0),
+('admin@dlsu.edu', '$2y$10$YourHashHere1234567890ABCDEFGHIJKLMNOPQRSTU', 'System Administrator', 'A', TRUE, 0);
+
+-- Insert restaurants
+INSERT INTO Restaurants (name, address, description, owner_ID, is_open) VALUES
+('Bloemen Hall', 'Bloemen Hall, DLSU', 'Fresh meals and coffee', 3, TRUE),
+('Agno Eatery', 'Agno Food Court, DLSU', 'Traditional Filipino favorites', 4, TRUE),
+('Kitchen SJ', 'St. La Salle Building, DLSU', 'Italian and pasta dishes', 3, TRUE),
+('St. La Salle Deli', 'St. La Salle Hall, DLSU', 'Sandwiches and salads', 4, TRUE);
+
+-- Insert items for Bloemen Hall (restaurant_ID = 1)
+INSERT INTO Items (name, description, price, isAvailable, restaurant_ID) VALUES
+('Chicken Bowl', 'Grilled chicken with rice and vegetables', 95.00, TRUE, 1),
+('Iced Latte', 'Espresso with milk and ice', 60.00, TRUE, 1),
+('Garlic Fries', 'French fries with garlic and parsley', 45.00, TRUE, 1),
+('Breakfast Meal', 'Eggs, rice, and choice of meat', 120.00, TRUE, 1);
+SELECT * FROM Items WHERE restaurant_ID = 1;
+-- Insert items for Agno Eatery (restaurant_ID = 2)
+INSERT INTO Items (name, description, price, isAvailable, restaurant_ID) VALUES
+('Beef Tapa', 'Marinated beef with garlic rice and egg', 99.00, TRUE, 2),
+('Garlic Rice', 'Fried rice with garlic', 20.00, TRUE, 2),
+('Lumpiang Shanghai', 'Fried spring rolls with pork', 55.00, FALSE, 2),
+('Bangus Sisig', 'Milkfish sisig', 89.00, TRUE, 2);
+
+-- Insert items for Kitchen SJ (restaurant_ID = 3)
+INSERT INTO Items (name, description, price, isAvailable, restaurant_ID) VALUES
+('Lasagna', 'Classic meat lasagna', 125.00, FALSE, 3),
+('Garlic Bread', 'Toasted bread with garlic butter', 30.00, TRUE, 3),
+('Pesto Pasta', 'Pasta with basil pesto sauce', 110.00, FALSE, 3),
+('Tiramisu', 'Italian coffee dessert', 85.00, TRUE, 3);
+
+-- Insert items for St. La Salle Deli (restaurant_ID = 4)
+INSERT INTO Items (name, description, price, isAvailable, restaurant_ID) VALUES
+('Club Sandwich', 'Triple-layer sandwich with fries', 75.00, TRUE, 4),
+('Fruit Shake', 'Fresh fruit shake', 55.00, TRUE, 4),
+('Caesar Salad', 'Romaine lettuce with Caesar dressing', 85.00, FALSE, 4),
+('Iced Tea', 'Fresh brewed iced tea', 40.00, TRUE, 4);
+
+-- Insert sample orders
+INSERT INTO Orders (customer_ID, restaurant_ID, total_amount, status, queue_number, payment_method, order_date) VALUES
+(1, 1, 185.00, 'PR', 2417, 'gcash', NOW() - INTERVAL 1 HOUR),
+(2, 2, 119.00, 'R', 2418, 'cash', NOW() - INTERVAL 2 HOUR),
+(1, 3, 115.00, 'C', 2419, 'card', NOW() - INTERVAL 3 HOUR);
+
+-- Insert order items
+INSERT INTO Order_ItemLine (order_ID, item_ID, quantity, price_at_time) VALUES
+(1, 1, 1, 95.00),
+(1, 2, 1, 60.00),
+(1, 10, 1, 30.00),
+(2, 5, 1, 99.00),
+(2, 6, 1, 20.00),
+(3, 10, 1, 30.00),
+(3, 12, 1, 85.00);
+
+-- Insert sample ratings
+INSERT INTO Ratings (restaurant_ID, order_ID, rating, review, timestamp) VALUES
+(2, 2, 4.5, 'Tapa was superb, will come back! Serving size is generous.', NOW() - INTERVAL 2 HOUR),
+(3, 3, 5.0, 'Garlic bread is amazing. Will try again.', NOW() - INTERVAL 3 HOUR),
+(4, NULL, 5.0, 'Club sandwich is huge! Staff friendly. Best deli on campus.', NOW() - INTERVAL 5 HOUR),
+(1, NULL, 4.5, 'Iced latte was perfect, even at 4pm. Quick service too.', NOW() - INTERVAL 1 DAY);
+
+-- Insert item categories
+INSERT INTO Item_Categories (item_ID, category_ID) VALUES
+(1, 1), (2, 2), (3, 3), (4, 1),
+(5, 1), (6, 3), (7, 3), (8, 1),
+(9, 1), (10, 3), (11, 1), (12, 4),
+(13, 1), (14, 2), (15, 1), (16, 2);
+
+-- Create indexes for better performance
+CREATE INDEX idx_users_email ON Users(email);
+CREATE INDEX idx_users_role ON Users(role);
+CREATE INDEX idx_restaurants_owner ON Restaurants(owner_ID);
+CREATE INDEX idx_restaurants_is_open ON Restaurants(is_open);
+CREATE INDEX idx_items_restaurant ON Items(restaurant_ID);
+CREATE INDEX idx_items_available ON Items(isAvailable);
+CREATE INDEX idx_orders_customer ON Orders(customer_ID);
+CREATE INDEX idx_orders_restaurant ON Orders(restaurant_ID);
+CREATE INDEX idx_orders_status ON Orders(status);
+CREATE INDEX idx_orders_date ON Orders(order_date);
+CREATE INDEX idx_ratings_restaurant ON Ratings(restaurant_ID);
+CREATE INDEX idx_order_itemline_order ON Order_ItemLine(order_ID);
+CREATE INDEX idx_sessions_token ON Sessions(session_token);
+CREATE INDEX idx_sessions_expires ON Sessions(expires_at);
+CREATE INDEX idx_user_logs_user_id ON UserLogs(user_id);
+CREATE INDEX idx_user_logs_timestamp ON UserLogs(timestamp);
