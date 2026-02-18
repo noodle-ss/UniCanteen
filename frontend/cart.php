@@ -323,7 +323,7 @@ foreach ($_SESSION['cart'] as $item) {
                     <i class="fas fa-shopping-cart" style="font-size: 4rem; color: #cae3d6; margin-bottom: 20px;"></i>
                     <h3 style="margin-bottom: 15px; color: #1e3a2f;">Your cart is empty</h3>
                     <p style="color: #3b7455; margin-bottom: 25px;">Looks like you haven't added any items yet.</p>
-                    <a href="customer.php#menu" class="btn-primary" style="display: inline-block;">
+                    <a href="index.php" class="btn-primary" style="display: inline-block;">
                         <i class="fas fa-utensils"></i> Browse Stalls
                     </a>
                 </div>
