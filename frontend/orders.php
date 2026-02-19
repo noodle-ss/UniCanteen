@@ -75,13 +75,12 @@ $orders = $stmt->get_result();
     <div class="customer-nav-links">
         <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
         <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
-        <a href="<?php echo url('frontend/reviews.php'); ?>">Reviews</a>
-        <a href="<?php echo url('frontend/profile.php'); ?>"><?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
-        <a href="<?php echo url('frontend/logout.php'); ?>" class="btn-outline">Logout</a>
-        <a href="<?php echo url('frontend/cart.php'); ?>" class="btn-primary"><i class="fas fa-bag-shopping"></i> Cart</a>
+        <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
+        <a href="<?php echo url('index.php?page=profile'); ?>"><?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
+        <a href="<?php echo url('index.php?page=logout'); ?>" class="btn-outline">Logout</a>
+        <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-primary"><i class="fas fa-bag-shopping"></i> Cart</a>
     </div>
 </nav>
-
             <div class="orders-container">
                 <h1 style="font-size: 2.5rem; color: #0f4a2f; margin-bottom: 30px;">My Orders</h1>
                 
@@ -117,7 +116,7 @@ $orders = $stmt->get_result();
                         <i class="fas fa-clipboard-list" style="font-size: 4rem; color: #cae3d6; margin-bottom: 20px;"></i>
                         <h3 style="margin-bottom: 15px;">No orders yet</h3>
                         <p style="color: #3b7455; margin-bottom: 25px;">Start ordering from your favorite campus stalls!</p>
-                        <a href="customer.php#menu" class="btn-primary" style="display: inline-block;">
+                        <a href="<?php echo url('index.php?page=customer'); ?>#menu" class="btn-primary" style="display: inline-block;">
                             <i class="fas fa-utensils"></i> Browse Stalls
                         </a>
                     </div>

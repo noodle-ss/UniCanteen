@@ -133,15 +133,15 @@ if (isset($_GET['add_to_cart'])) {
     <div class="customer-nav-links">
         <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
         <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
-        <a href="<?php echo url('frontend/reviews.php'); ?>">Reviews</a>
+        <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
         <?php if(isset($_SESSION['user_id'])): ?>
-            <a href="<?php echo url('frontend/profile.php'); ?>"><?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
-            <a href="<?php echo url('frontend/logout.php'); ?>" class="btn-outline">Logout</a>
+            <a href="<?php echo url('index.php?page=profile'); ?>"><?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
+            <a href="<?php echo url('index.php?page=logout'); ?>" class="btn-outline">Logout</a>
         <?php else: ?>
-            <a href="<?php echo url('frontend/login.php'); ?>">Sign In</a>
-            <a href="<?php echo url('frontend/register.php'); ?>" class="btn-outline">Register</a>
+            <a href="<?php echo url('index.php?page=login'); ?>">Sign In</a>
+            <a href="<?php echo url('index.php?page=register'); ?>" class="btn-outline">Register</a>
         <?php endif; ?>
-        <a href="<?php echo url('frontend/cart.php'); ?>" class="btn-primary"><i class="fas fa-bag-shopping"></i> Cart</a>
+        <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-primary"><i class="fas fa-bag-shopping"></i> Cart</a>
     </div>
 </nav>
             

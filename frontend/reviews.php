@@ -294,24 +294,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
         <section class="reviews-header">
             <div class="wrapper">
                 <nav class="customer-nav">
-                    <a href="index.php?page=customer" class="logo">UniCanteen <span>DLSU</span></a>
-                    <div class="customer-nav-links">
-                        <a href="index.php?page=customer#menu">Menu</a>
-                        <a href="index.php?page=customer#track">Track</a>
-                        <a href="index.php?page=reviews">Reviews</a>
-                        <?php if(isset($_SESSION['user_id'])): ?>
-                            <a href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'])[0]); ?></a>
-                            <a href="logout.php" class="btn-outline">Logout</a>
-                        <?php else: ?>
-                            <a href="index.php?page=login">Sign In</a>
-                            <a href="index.php?page=register" class="btn-outline">Register</a>
-                        <?php endif; ?>
-                        <a href="index.php?page=cart" class="btn-primary">
-                            <i class="fas fa-bag-shopping"></i> Cart
-                        </a>
-                    </div>
-                </nav>
-
+    <a href="index.php?page=customer" class="logo">UniCanteen <span>DLSU</span></a>
+    <div class="customer-nav-links">
+        <a href="index.php?page=customer#menu">Menu</a>
+        <a href="index.php?page=customer#track">Track</a>
+        <a href="index.php?page=reviews">Reviews</a>
+        <?php if(isset($_SESSION['user_id'])): ?>
+            <a href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'])[0]); ?></a>
+            <a href="index.php?page=logout" class="btn-outline">Logout</a>
+        <?php else: ?>
+            <a href="index.php?page=login">Sign In</a>
+            <a href="index.php?page=register" class="btn-outline">Register</a>
+        <?php endif; ?>
+        <a href="index.php?page=cart" class="btn-primary">
+            <i class="fas fa-bag-shopping"></i> Cart
+        </a>
+    </div>
+</nav>
                 <div class="rating-big">
                     <div class="rating-circle">
                         <span class="number"><?php echo number_format($stats['avg_rating'], 1); ?></span>

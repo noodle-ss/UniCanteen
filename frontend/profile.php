@@ -255,13 +255,12 @@ $reviews = $stmt->get_result();
     <div class="customer-nav-links">
         <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
         <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
-        <a href="<?php echo url('frontend/reviews.php'); ?>">Reviews</a>
-        <a href="<?php echo url('frontend/profile.php'); ?>" style="color: #007a3e;"><?php echo htmlspecialchars(explode(' ', $user['full_name'])[0]); ?></a>
-        <a href="<?php echo url('frontend/logout.php'); ?>" class="btn-outline">Logout</a>
-        <a href="<?php echo url('frontend/cart.php'); ?>" class="btn-primary"><i class="fas fa-bag-shopping"></i> Cart</a>
+        <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
+        <a href="<?php echo url('index.php?page=profile'); ?>" style="color: #007a3e;"><?php echo htmlspecialchars(explode(' ', $user['full_name'])[0]); ?></a>
+        <a href="<?php echo url('index.php?page=logout'); ?>" class="btn-outline">Logout</a>
+        <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-primary"><i class="fas fa-bag-shopping"></i> Cart</a>
     </div>
 </nav>
-
             <div class="profile-container">
                 <div class="profile-header">
                     <div class="profile-avatar">
@@ -342,7 +341,7 @@ $reviews = $stmt->get_result();
                                 </a>
                             </div>
                             <?php endwhile; ?>
-                            <a href="orders.php" class="btn-secondary" style="width: 100%; margin-top: 20px;">
+                            <a href="<?php echo url('index.php?page=orders'); ?>" class="btn-secondary" style="width: 100%; margin-top: 20px;">
                                 View All Orders <i class="fas fa-arrow-right"></i>
                             </a>
                         <?php else: ?>

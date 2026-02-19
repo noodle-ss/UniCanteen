@@ -49,28 +49,30 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'customer';
     <div class="main-content">
         <?php
         switch($page) {
-            case 'customer': include 'frontend/customer.php'; break;
-            case 'login': include 'frontend/login.php'; break;
-            case 'register': include 'frontend/register.php'; break;
-            case 'cart': include 'frontend/cart.php'; break;
-            case 'profile': include 'frontend/profile.php'; break;
-            case 'reviews': include 'frontend/reviews.php'; break;
-            case 'vendor':
-                if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'V') {
-                    include 'frontend/vendor.php';
-                } else {
-                    include 'frontend/login.php';
-                }
-                break;
-            case 'sysadmin':
-                if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'A') {
-                    include 'frontend/sysadmin.php';
-                } else {
-                    include 'frontend/login.php';
-                }
-                break;
-            default: include 'frontend/customer.php';
+    case 'customer': include 'frontend/customer.php'; break;
+    case 'login': include 'frontend/login.php'; break;
+    case 'register': include 'frontend/register.php'; break;
+    case 'cart': include 'frontend/cart.php'; break;
+    case 'profile': include 'frontend/profile.php'; break;
+    case 'reviews': include 'frontend/reviews.php'; break;
+    case 'orders': include 'frontend/orders.php'; break;
+    case 'logout': include 'frontend/logout-handler.php'; break; // Add this line
+    case 'vendor':
+        if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'V') {
+            include 'frontend/vendor.php';
+        } else {
+            include 'frontend/login.php';
         }
+        break;
+    case 'sysadmin':
+        if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'A') {
+            include 'frontend/sysadmin.php';
+        } else {
+            include 'frontend/login.php';
+        }
+        break;
+    default: include 'frontend/customer.php';
+}
         ?>
     </div>
     <?php

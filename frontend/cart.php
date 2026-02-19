@@ -167,6 +167,7 @@ foreach ($_SESSION['cart'] as $item) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="../assets/styles.css">
     <style>
+        
         .cart-container {
             max-width: 1000px;
             margin: 40px auto;
@@ -274,185 +275,186 @@ foreach ($_SESSION['cart'] as $item) {
             flex-wrap: wrap;
         }
     </style>
-</head>
-<body>
-    <div class="main-content">
-        <div class="wrapper">
-            <nav class="customer-nav">
-    <a href="<?php echo url('index.php'); ?>" class="logo">UniCanteen <span>DLSU</span></a>
-    <div class="customer-nav-links">
-        <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
-        <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
-        <a href="<?php echo url('frontend/reviews.php'); ?>">Reviews</a>
-        <?php if(isset($_SESSION['user_id'])): ?>
-            <a href="<?php echo url('frontend/profile.php'); ?>"><?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
-            <a href="<?php echo url('frontend/logout.php'); ?>" class="btn-outline">Logout</a>
-        <?php else: ?>
-            <a href="<?php echo url('frontend/login.php'); ?>">Sign In</a>
-            <a href="<?php echo url('frontend/register.php'); ?>" class="btn-outline">Register</a>
-        <?php endif; ?>
-        <a href="<?php echo url('frontend/cart.php'); ?>" class="btn-primary"><i class="fas fa-bag-shopping"></i> Cart 
-            <span class="cart-count"><?php echo $cart_items_count; ?></span>
-        </a>
-    </div>
-</nav>
-
-            <div class="cart-container">
-                <h1 style="font-size: 2.5rem; color: #0f4a2f; margin-bottom: 30px;">Shopping Cart</h1>
-                
-                <?php if($success): ?>
-                <div class="success-message">
-                    <i class="fas fa-check-circle"></i> 
-                    <?php 
-                    if($success == 'added') echo "Item added to cart!";
-                    elseif($success == 'updated') echo "Cart updated successfully!";
-                    elseif($success == 'removed') echo "Item removed from cart!";
-                    elseif($success == 'cleared') echo "Cart cleared!";
-                    ?>
-                </div>
-                <?php endif; ?>
-                
-                <?php if($error): ?>
-                <div class="error-message">
-                    <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
-                </div>
-                <?php endif; ?>
-
-                <?php if(empty($_SESSION['cart'])): ?>
-                <div class="track-card" style="text-align: center; padding: 60px;">
-                    <i class="fas fa-shopping-cart" style="font-size: 4rem; color: #cae3d6; margin-bottom: 20px;"></i>
-                    <h3 style="margin-bottom: 15px; color: #1e3a2f;">Your cart is empty</h3>
-                    <p style="color: #3b7455; margin-bottom: 25px;">Looks like you haven't added any items yet.</p>
-                    <a href="index.php" class="btn-primary" style="display: inline-block;">
-                        <i class="fas fa-utensils"></i> Browse Stalls
-                    </a>
-                </div>
-                <?php else: ?>
-                
-                <div class="restaurant-info">
-                    <i class="fas fa-store" style="color: #007a3e;"></i>
-                    <span>Ordering from: <strong><?php echo htmlspecialchars($restaurant_name); ?></strong></span>
-                    <span style="margin-left: auto; font-size: 0.9rem; color: #3b7455;">
-                        <i class="fas fa-clock"></i> Same restaurant only
-                    </span>
-                </div>
-                
-                <form method="POST" action="cart.php">
-                    <div class="cart-header">
-                        <span>Item</span>
-                        <span>Price</span>
-                        <span>Quantity</span>
-                        <span>Total</span>
-                    </div>
-                    
-                    <div style="background: white; border-radius: 30px; padding: 20px; margin-bottom: 20px;">
-                        <?php foreach($_SESSION['cart'] as $item_id => $item): ?>
-                        <div class="cart-item">
-                            <div class="cart-item-name">
-                                <?php echo htmlspecialchars($item['name']); ?>
-                            </div>
-                            <div class="cart-item-price">
-                                ₱<?php echo number_format($item['price'], 2); ?>
-                            </div>
-                            <div class="cart-item-quantity">
-                                <input type="number" name="quantity[<?php echo $item_id; ?>]" 
-                                       value="<?php echo $item['quantity']; ?>" min="0" max="10">
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span class="cart-item-price">₱<?php echo number_format($item['price'] * $item['quantity'], 2); ?></span>
-                                <a href="cart.php?remove=<?php echo $item_id; ?>" class="cart-item-remove" onclick="return confirm('Remove this item?')">
-                                    <i class="fas fa-trash-alt"></i>
-                                </a>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    
-                    <div class="action-buttons">
-                        <button type="submit" name="update_cart" class="btn-secondary">
-                            <i class="fas fa-sync-alt"></i> Update Cart
-                        </button>
-                        <a href="cart.php?clear=1" class="btn-secondary" onclick="return confirm('Clear your entire cart?')">
-                            <i class="fas fa-trash"></i> Clear Cart
-                        </a>
-                        <a href="customer.php#menu" class="btn-secondary">
-                            <i class="fas fa-plus-circle"></i> Add More Items
-                        </a>
-                    </div>
-                </form>
-
-                <div class="cart-summary">
-                    <h3 style="margin-bottom: 20px; color: #16623b;">Order Summary</h3>
-                    
-                    <?php 
-                    $subtotal = $cart_total;
-                    $service_fee = 20;
-                    $total = $subtotal + $service_fee;
-                    ?>
-                    
-                    <div class="summary-row">
-                        <span>Subtotal (<?php echo $cart_items_count; ?> items)</span>
-                        <span>₱<?php echo number_format($subtotal, 2); ?></span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Service Fee</span>
-                        <span>₱<?php echo number_format($service_fee, 2); ?></span>
-                    </div>
-                    <div class="summary-row total">
-                        <span>Total</span>
-                        <span>₱<?php echo number_format($total, 2); ?></span>
-                    </div>
-
-                    <form method="POST" action="cart.php" id="checkoutForm">
-                        <h4 style="margin: 20px 0 10px; color: #1e3a2f;">Payment Method</h4>
-                        <div class="payment-methods">
-                            <label class="payment-method selected">
-                                <input type="radio" name="payment_method" value="cash" checked>
-                                <i class="fas fa-money-bill-wave"></i>
-                                <div>Cash</div>
-                            </label>
-                            <label class="payment-method">
-                                <input type="radio" name="payment_method" value="gcash">
-                                <i class="fas fa-mobile-alt"></i>
-                                <div>GCash</div>
-                            </label>
-                            <label class="payment-method">
-                                <input type="radio" name="payment_method" value="card">
-                                <i class="fas fa-credit-card"></i>
-                                <div>Card</div>
-                            </label>
-                        </div>
-
-                        <?php if(!isLoggedIn()): ?>
-                        <div class="error-message" style="margin: 20px 0;">
-                            <i class="fas fa-info-circle"></i> Please <a href="login.php" style="color: #007a3e; font-weight: 600;">sign in</a> to checkout
-                        </div>
+    </head>
+    <body>
+        <div class="main-content">
+            <div class="wrapper" style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+                <nav class="customer-nav" style="margin-bottom: 30px;">
+                    <a href="<?php echo url('index.php'); ?>" class="logo">UniCanteen <span>DLSU</span></a>
+                    <div class="customer-nav-links">
+                        <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
+                        <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
+                        <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
+                        <?php if(isset($_SESSION['user_id'])): ?>
+                            <a href="<?php echo url('index.php?page=profile'); ?>"><?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
+                            <a href="<?php echo url('index.php?page=logout'); ?>" class="btn-outline">Logout</a>
+                        <?php else: ?>
+                            <a href="<?php echo url('index.php?page=login'); ?>">Sign In</a>
+                            <a href="<?php echo url('index.php?page=register'); ?>" class="btn-outline">Register</a>
                         <?php endif; ?>
+                        <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-primary"><i class="fas fa-bag-shopping"></i> Cart 
+                            <span class="cart-count"><?php echo $cart_items_count; ?></span>
+                        </a>
+                    </div>
+                </nav>
+                
+                <div class="cart-container" style="max-width: 900px; margin: 0 auto 40px auto;">
+                    <h1 style="font-size: 2.5rem; color: #0f4a2f; margin-bottom: 30px; text-align: center;">Shopping Cart</h1>
+                    
+                    <?php if($success): ?>
+                    <div class="success-message" style="margin: 20px 0;">
+                        <i class="fas fa-check-circle"></i> 
+                        <?php 
+                        if($success == 'added') echo "Item added to cart!";
+                        elseif($success == 'updated') echo "Cart updated successfully!";
+                        elseif($success == 'removed') echo "Item removed from cart!";
+                        elseif($success == 'cleared') echo "Cart cleared!";
+                        ?>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <?php if($error): ?>
+                    <div class="error-message" style="margin: 20px 0;">
+                        <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
+                    </div>
+                    <?php endif; ?>
 
-                        <button type="submit" name="checkout" class="btn-primary" style="width: 100%; padding: 18px; font-size: 1.2rem;"
-                                <?php echo !isLoggedIn() ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''; ?>>
-                            <i class="fas fa-check-circle"></i> Proceed to Checkout
-                        </button>
+                    <?php if(empty($_SESSION['cart'])): ?>
+                    <div class="track-card" style="text-align: center; padding: 60px; max-width: 600px; margin: 0 auto;">
+                        <i class="fas fa-shopping-cart" style="font-size: 4rem; color: #cae3d6; margin-bottom: 20px;"></i>
+                        <h3 style="margin-bottom: 15px; color: #1e3a2f;">Your cart is empty</h3>
+                        <p style="color: #3b7455; margin-bottom: 25px;">Looks like you haven't added any items yet.</p>
+                        <a href="<?php echo url('index.php?page=customer'); ?>" class="btn-primary" style="display: inline-block; text-decoration: none;">
+                            <i class="fas fa-utensils"></i> Browse Stalls
+                        </a>
+                    </div>
+                    <?php else: ?>
+                    
+                    <div class="restaurant-info" style="max-width: 800px; margin: 0 auto 20px auto;">
+                        <i class="fas fa-store" style="color: #007a3e;"></i>
+                        <span>Ordering from: <strong><?php echo htmlspecialchars($restaurant_name); ?></strong></span>
+                        <span style="margin-left: auto; font-size: 0.9rem; color: #3b7455;">
+                            <i class="fas fa-clock"></i> Same restaurant only
+                        </span>
+                    </div>
+                    
+                    <form method="POST" action="cart.php" style="max-width: 800px; margin: 0 auto;">
+                        <div class="cart-header" style="display: grid; grid-template-columns: 3fr 1fr 1fr 1fr; padding: 15px 0; border-bottom: 2px solid #b1d9c4; font-weight: 600; color: #16623b;">
+                            <span>Item</span>
+                            <span style="text-align: center;">Price</span>
+                            <span style="text-align: center;">Quantity</span>
+                            <span style="text-align: right;">Total</span>
+                        </div>
+                        
+                        <div style="background: white; border-radius: 30px; padding: 20px; margin-bottom: 20px;">
+                            <?php foreach($_SESSION['cart'] as $item_id => $item): ?>
+                            <div class="cart-item" style="display: grid; grid-template-columns: 3fr 1fr 1fr 1fr; align-items: center; padding: 20px 0; border-bottom: 1px solid #e0f0e8;">
+                                <div class="cart-item-name" style="font-weight: 500; color: #1a4d31;">
+                                    <?php echo htmlspecialchars($item['name']); ?>
+                                </div>
+                                <div class="cart-item-price" style="font-weight: 600; color: #1c6e3c; text-align: center;">
+                                    ₱<?php echo number_format($item['price'], 2); ?>
+                                </div>
+                                <div class="cart-item-quantity" style="text-align: center;">
+                                    <input type="number" name="quantity[<?php echo $item_id; ?>]" 
+                                        value="<?php echo $item['quantity']; ?>" min="0" max="10"
+                                        style="width: 70px; padding: 8px; border: 2px solid #e0f0e8; border-radius: 30px; text-align: center; font-family: 'Inter', sans-serif;">
+                                </div>
+                                <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
+                                    <span class="cart-item-price" style="font-weight: 600; color: #1c6e3c;">₱<?php echo number_format($item['price'] * $item['quantity'], 2); ?></span>
+                                    <a href="cart.php?remove=<?php echo $item_id; ?>" class="cart-item-remove" onclick="return confirm('Remove this item?')" style="color: #b13e3e; text-decoration: none;">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        
+                        <div class="action-buttons" style="display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; justify-content: center;">
+                            <button type="submit" name="update_cart" class="btn-secondary" style="padding: 12px 24px; border: none; border-radius: 40px; font-weight: 600; cursor: pointer;">
+                                <i class="fas fa-sync-alt"></i> Update Cart
+                            </button>
+                            <a href="cart.php?clear=1" class="btn-secondary" onclick="return confirm('Clear your entire cart?')" style="padding: 12px 24px; border-radius: 40px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-trash"></i> Clear Cart
+                            </a>
+                            <a href="<?php echo url('index.php?page=customer'); ?>#menu" class="btn-secondary" style="padding: 12px 24px; border-radius: 40px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-plus-circle"></i> Add More Items
+                            </a>
+                        </div>
                     </form>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
-        
-        <footer class="footer-note">
-            <i class="fas fa-shopping-cart"></i> Secure Checkout · Multiple Payment Options · Real-time Order Tracking
-        </footer>
-    </div>
 
-    <script>
-    // Payment method selection
-    document.querySelectorAll('.payment-method').forEach(method => {
-        method.addEventListener('click', function() {
-            document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
-            this.classList.add('selected');
-            this.querySelector('input[type="radio"]').checked = true;
+                    <div class="cart-summary" style="background: white; border-radius: 30px; padding: 30px; margin-top: 30px; border: 1px solid var(--border-soft); max-width: 500px; margin-left: auto; margin-right: auto;">
+                        <h3 style="margin-bottom: 20px; color: #16623b; text-align: center;">Order Summary</h3>
+                        
+                        <?php 
+                        $subtotal = $cart_total;
+                        $service_fee = 20;
+                        $total = $subtotal + $service_fee;
+                        ?>
+                        
+                        <div class="summary-row" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e0f0e8;">
+                            <span>Subtotal (<?php echo $cart_items_count; ?> items)</span>
+                            <span style="font-weight: 600;">₱<?php echo number_format($subtotal, 2); ?></span>
+                        </div>
+                        <div class="summary-row" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e0f0e8;">
+                            <span>Service Fee</span>
+                            <span style="font-weight: 600;">₱<?php echo number_format($service_fee, 2); ?></span>
+                        </div>
+                        <div class="summary-row total" style="display: flex; justify-content: space-between; padding: 12px 0; font-size: 1.3rem; font-weight: 700; color: #007a3e;">
+                            <span>Total</span>
+                            <span>₱<?php echo number_format($total, 2); ?></span>
+                        </div>
+
+                        <form method="POST" action="cart.php" id="checkoutForm">
+                            <h4 style="margin: 20px 0 10px; color: #1e3a2f; text-align: center;">Payment Method</h4>
+                            <div class="payment-methods" style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap; justify-content: center;">
+                                <label class="payment-method selected" style="flex: 0 1 auto; min-width: 100px; padding: 15px; border: 2px solid #e0f0e8; border-radius: 30px; text-align: center; cursor: pointer; transition: all 0.2s; background: #e3f4ea; border-color: #007a3e;">
+                                    <input type="radio" name="payment_method" value="cash" checked style="display: none;">
+                                    <i class="fas fa-money-bill-wave" style="font-size: 1.5rem; color: #007a3e; margin-bottom: 8px; display: block;"></i>
+                                    <div>Cash</div>
+                                </label>
+                                <label class="payment-method" style="flex: 0 1 auto; min-width: 100px; padding: 15px; border: 2px solid #e0f0e8; border-radius: 30px; text-align: center; cursor: pointer; transition: all 0.2s;">
+                                    <input type="radio" name="payment_method" value="gcash" style="display: none;">
+                                    <i class="fas fa-mobile-alt" style="font-size: 1.5rem; color: #007a3e; margin-bottom: 8px; display: block;"></i>
+                                    <div>GCash</div>
+                                </label>
+                                <label class="payment-method" style="flex: 0 1 auto; min-width: 100px; padding: 15px; border: 2px solid #e0f0e8; border-radius: 30px; text-align: center; cursor: pointer; transition: all 0.2s;">
+                                    <input type="radio" name="payment_method" value="card" style="display: none;">
+                                    <i class="fas fa-credit-card" style="font-size: 1.5rem; color: #007a3e; margin-bottom: 8px; display: block;"></i>
+                                    <div>Card</div>
+                                </label>
+                            </div>
+
+                            <?php if(!isLoggedIn()): ?>
+                            <div class="error-message" style="margin: 20px 0; padding: 15px; text-align: center;">
+                                <i class="fas fa-info-circle"></i> Please <a href="<?php echo url('index.php?page=login'); ?>" style="color: #007a3e; font-weight: 600;">sign in</a> to checkout
+                            </div>
+                            <?php endif; ?>
+
+                            <button type="submit" name="checkout" class="btn-primary" style="width: 100%; padding: 18px; font-size: 1.2rem; border: none; border-radius: 40px; background: #007a3e; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;"
+                                    <?php echo !isLoggedIn() ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''; ?>>
+                                <i class="fas fa-check-circle"></i> Proceed to Checkout
+                            </button>
+                        </form>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            
+            <footer class="footer-note" style="text-align: center; padding: 32px; color: #3b7455; background: white; border-top: 1px solid #cae3d6; margin-top: 40px;">
+                <i class="fas fa-shopping-cart"></i> Secure Checkout · Multiple Payment Options · Real-time Order Tracking
+            </footer>
+        </div>
+
+        <script>
+        // Payment method selection
+        document.querySelectorAll('.payment-method').forEach(method => {
+            method.addEventListener('click', function() {
+                document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input[type="radio"]').checked = true;
+            });
         });
-    });
-    </script>
-</body>
+        </script>
+    </body>
 </html>
