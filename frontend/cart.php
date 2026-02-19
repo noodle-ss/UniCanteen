@@ -167,7 +167,20 @@ foreach ($_SESSION['cart'] as $item) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="../assets/styles.css">
     <style>
-        
+        body {
+            display: block;
+            min-height: auto;
+            margin: 0;
+            padding: 0;
+        }
+        .main-content {
+            margin-left: 0;
+        }
+        .wrapper {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 36px;
+        }
         .cart-container {
             max-width: 1000px;
             margin: 40px auto;
@@ -274,12 +287,27 @@ foreach ($_SESSION['cart'] as $item) {
             margin-top: 20px;
             flex-wrap: wrap;
         }
+        .customer-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 0;
+            margin-bottom: 30px;
+        }
+        .cart-count {
+            background: white;
+            color: #007a3e;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
     </style>
     </head>
     <body>
         <div class="main-content">
-            <div class="wrapper" style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
-                <nav class="customer-nav" style="margin-bottom: 30px;">
+            <div class="wrapper">
+                <nav class="customer-nav">
                     <a href="<?php echo url('index.php'); ?>" class="logo">UniCanteen <span>DLSU</span></a>
                     <div class="customer-nav-links">
                         <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
@@ -298,7 +326,7 @@ foreach ($_SESSION['cart'] as $item) {
                     </div>
                 </nav>
                 
-                <div class="cart-container" style="max-width: 900px; margin: 0 auto 40px auto;">
+                <div class="cart-container">
                     <h1 style="font-size: 2.5rem; color: #0f4a2f; margin-bottom: 30px; text-align: center;">Shopping Cart</h1>
                     
                     <?php if($success): ?>
@@ -330,7 +358,7 @@ foreach ($_SESSION['cart'] as $item) {
                     </div>
                     <?php else: ?>
                     
-                    <div class="restaurant-info" style="max-width: 800px; margin: 0 auto 20px auto;">
+                    <div class="restaurant-info">
                         <i class="fas fa-store" style="color: #007a3e;"></i>
                         <span>Ordering from: <strong><?php echo htmlspecialchars($restaurant_name); ?></strong></span>
                         <span style="margin-left: auto; font-size: 0.9rem; color: #3b7455;">
@@ -338,8 +366,8 @@ foreach ($_SESSION['cart'] as $item) {
                         </span>
                     </div>
                     
-                    <form method="POST" action="cart.php" style="max-width: 800px; margin: 0 auto;">
-                        <div class="cart-header" style="display: grid; grid-template-columns: 3fr 1fr 1fr 1fr; padding: 15px 0; border-bottom: 2px solid #b1d9c4; font-weight: 600; color: #16623b;">
+                    <form method="POST" action="cart.php">
+                        <div class="cart-header">
                             <span>Item</span>
                             <span style="text-align: center;">Price</span>
                             <span style="text-align: center;">Quantity</span>
@@ -348,21 +376,20 @@ foreach ($_SESSION['cart'] as $item) {
                         
                         <div style="background: white; border-radius: 30px; padding: 20px; margin-bottom: 20px;">
                             <?php foreach($_SESSION['cart'] as $item_id => $item): ?>
-                            <div class="cart-item" style="display: grid; grid-template-columns: 3fr 1fr 1fr 1fr; align-items: center; padding: 20px 0; border-bottom: 1px solid #e0f0e8;">
-                                <div class="cart-item-name" style="font-weight: 500; color: #1a4d31;">
+                            <div class="cart-item">
+                                <div class="cart-item-name">
                                     <?php echo htmlspecialchars($item['name']); ?>
                                 </div>
-                                <div class="cart-item-price" style="font-weight: 600; color: #1c6e3c; text-align: center;">
+                                <div class="cart-item-price" style="text-align: center;">
                                     ₱<?php echo number_format($item['price'], 2); ?>
                                 </div>
                                 <div class="cart-item-quantity" style="text-align: center;">
                                     <input type="number" name="quantity[<?php echo $item_id; ?>]" 
-                                        value="<?php echo $item['quantity']; ?>" min="0" max="10"
-                                        style="width: 70px; padding: 8px; border: 2px solid #e0f0e8; border-radius: 30px; text-align: center; font-family: 'Inter', sans-serif;">
+                                        value="<?php echo $item['quantity']; ?>" min="0" max="10">
                                 </div>
                                 <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
-                                    <span class="cart-item-price" style="font-weight: 600; color: #1c6e3c;">₱<?php echo number_format($item['price'] * $item['quantity'], 2); ?></span>
-                                    <a href="cart.php?remove=<?php echo $item_id; ?>" class="cart-item-remove" onclick="return confirm('Remove this item?')" style="color: #b13e3e; text-decoration: none;">
+                                    <span class="cart-item-price">₱<?php echo number_format($item['price'] * $item['quantity'], 2); ?></span>
+                                    <a href="cart.php?remove=<?php echo $item_id; ?>" class="cart-item-remove" onclick="return confirm('Remove this item?')">
                                         <i class="fas fa-trash-alt"></i>
                                     </a>
                                 </div>
@@ -370,7 +397,7 @@ foreach ($_SESSION['cart'] as $item) {
                             <?php endforeach; ?>
                         </div>
                         
-                        <div class="action-buttons" style="display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; justify-content: center;">
+                        <div class="action-buttons" style="justify-content: center;">
                             <button type="submit" name="update_cart" class="btn-secondary" style="padding: 12px 24px; border: none; border-radius: 40px; font-weight: 600; cursor: pointer;">
                                 <i class="fas fa-sync-alt"></i> Update Cart
                             </button>
@@ -383,7 +410,7 @@ foreach ($_SESSION['cart'] as $item) {
                         </div>
                     </form>
 
-                    <div class="cart-summary" style="background: white; border-radius: 30px; padding: 30px; margin-top: 30px; border: 1px solid var(--border-soft); max-width: 500px; margin-left: auto; margin-right: auto;">
+                    <div class="cart-summary">
                         <h3 style="margin-bottom: 20px; color: #16623b; text-align: center;">Order Summary</h3>
                         
                         <?php 
@@ -392,33 +419,33 @@ foreach ($_SESSION['cart'] as $item) {
                         $total = $subtotal + $service_fee;
                         ?>
                         
-                        <div class="summary-row" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e0f0e8;">
+                        <div class="summary-row">
                             <span>Subtotal (<?php echo $cart_items_count; ?> items)</span>
                             <span style="font-weight: 600;">₱<?php echo number_format($subtotal, 2); ?></span>
                         </div>
-                        <div class="summary-row" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e0f0e8;">
+                        <div class="summary-row">
                             <span>Service Fee</span>
                             <span style="font-weight: 600;">₱<?php echo number_format($service_fee, 2); ?></span>
                         </div>
-                        <div class="summary-row total" style="display: flex; justify-content: space-between; padding: 12px 0; font-size: 1.3rem; font-weight: 700; color: #007a3e;">
+                        <div class="summary-row total">
                             <span>Total</span>
                             <span>₱<?php echo number_format($total, 2); ?></span>
                         </div>
 
                         <form method="POST" action="cart.php" id="checkoutForm">
                             <h4 style="margin: 20px 0 10px; color: #1e3a2f; text-align: center;">Payment Method</h4>
-                            <div class="payment-methods" style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap; justify-content: center;">
-                                <label class="payment-method selected" style="flex: 0 1 auto; min-width: 100px; padding: 15px; border: 2px solid #e0f0e8; border-radius: 30px; text-align: center; cursor: pointer; transition: all 0.2s; background: #e3f4ea; border-color: #007a3e;">
+                            <div class="payment-methods" style="justify-content: center;">
+                                <label class="payment-method selected" style="flex: 0 1 auto; min-width: 100px;">
                                     <input type="radio" name="payment_method" value="cash" checked style="display: none;">
                                     <i class="fas fa-money-bill-wave" style="font-size: 1.5rem; color: #007a3e; margin-bottom: 8px; display: block;"></i>
                                     <div>Cash</div>
                                 </label>
-                                <label class="payment-method" style="flex: 0 1 auto; min-width: 100px; padding: 15px; border: 2px solid #e0f0e8; border-radius: 30px; text-align: center; cursor: pointer; transition: all 0.2s;">
+                                <label class="payment-method" style="flex: 0 1 auto; min-width: 100px;">
                                     <input type="radio" name="payment_method" value="gcash" style="display: none;">
                                     <i class="fas fa-mobile-alt" style="font-size: 1.5rem; color: #007a3e; margin-bottom: 8px; display: block;"></i>
                                     <div>GCash</div>
                                 </label>
-                                <label class="payment-method" style="flex: 0 1 auto; min-width: 100px; padding: 15px; border: 2px solid #e0f0e8; border-radius: 30px; text-align: center; cursor: pointer; transition: all 0.2s;">
+                                <label class="payment-method" style="flex: 0 1 auto; min-width: 100px;">
                                     <input type="radio" name="payment_method" value="card" style="display: none;">
                                     <i class="fas fa-credit-card" style="font-size: 1.5rem; color: #007a3e; margin-bottom: 8px; display: block;"></i>
                                     <div>Card</div>
