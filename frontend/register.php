@@ -166,6 +166,195 @@ $csrf_token = generateCSRFToken();
             cursor: pointer;
             color: #8faa9a;
         }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 50px auto;
+            padding: 0;
+            border-radius: 30px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 70, 30, 0.2);
+            animation: slideIn 0.3s ease;
+            border: 1px solid var(--border-soft);
+        }
+        
+        .modal-header {
+            padding: 25px 30px;
+            border-bottom: 2px solid var(--border-soft);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(to right, #f0f7f0, white);
+            border-radius: 30px 30px 0 0;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            color: var(--dlsu-green);
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .modal-header h2 i {
+            font-size: 1.8rem;
+            color: var(--dlsu-green);
+            background: #e1f3e9;
+            padding: 10px;
+            border-radius: 50%;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #8faa9a;
+            transition: all 0.2s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .modal-close:hover {
+            background: #fee9e9;
+            color: #b13e3e;
+            transform: rotate(90deg);
+        }
+        
+        .modal-body {
+            padding: 30px;
+            line-height: 1.6;
+            color: #1e3a2f;
+        }
+        
+        .modal-body h3 {
+            color: var(--dlsu-green);
+            margin: 25px 0 15px;
+            font-size: 1.3rem;
+            border-left: 4px solid var(--dlsu-green);
+            padding-left: 15px;
+        }
+        
+        .modal-body h3:first-of-type {
+            margin-top: 0;
+        }
+        
+        .modal-body p {
+            margin-bottom: 15px;
+        }
+        
+        .modal-body ul {
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+        
+        .modal-body li {
+            margin-bottom: 8px;
+        }
+        
+        .modal-body .highlight {
+            background: #f0f7f0;
+            padding: 15px 20px;
+            border-radius: 16px;
+            border-left: 4px solid var(--dlsu-green);
+            margin: 20px 0;
+        }
+        
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 2px solid var(--border-soft);
+            text-align: right;
+            background: #f9fffc;
+            border-radius: 0 0 30px 30px;
+        }
+        
+        .modal-footer button {
+            padding: 12px 30px;
+            border-radius: 40px;
+            border: none;
+            background: var(--dlsu-green);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .modal-footer button:hover {
+            background: var(--dlsu-darkgreen);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 122, 62, 0.2);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .terms-link, .privacy-link {
+            color: #007a3e;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+            text-decoration-color: #b8e0cc;
+            text-underline-offset: 3px;
+            transition: all 0.2s ease;
+        }
+        
+        .terms-link:hover, .privacy-link:hover {
+            color: #004f29;
+            text-decoration-color: #007a3e;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 10px 0;
+        }
+        
+        .checkbox-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #007a3e;
+        }
+        
+        .last-updated {
+            font-size: 0.85rem;
+            color: #8faa9a;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-soft);
+            text-align: right;
+        }
     </style>
 </head>
 <body>
@@ -257,11 +446,13 @@ $csrf_token = generateCSRFToken();
                     </div>
                     
                     <div style="margin-bottom: 25px;">
-                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                            <input type="checkbox" name="agree_terms" required style="width: 18px; height: 18px;">
+                        <label class="checkbox-container">
+                            <input type="checkbox" name="agree_terms" required>
                             <span style="color: #1e3a2f;">
-                                I agree to the <a href="#" style="color: #007a3e;">Terms and Conditions</a> and 
-                                <a href="#" style="color: #007a3e;">Privacy Policy</a>
+                                I agree to the 
+                                <span class="terms-link" onclick="openModal('terms')">Terms and Conditions</span> 
+                                and 
+                                <span class="privacy-link" onclick="openModal('privacy')">Privacy Policy</span>
                             </span>
                         </label>
                     </div>
@@ -286,7 +477,158 @@ $csrf_token = generateCSRFToken();
         </div>
     </div>
     
+    <!-- Terms and Conditions Modal -->
+    <div id="termsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-file-contract"></i> Terms and Conditions</h2>
+                <button class="modal-close" onclick="closeModal('terms')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3>1. Acceptance of Terms</h3>
+                <p>By accessing and using UniCanteen ("the Platform"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use the Platform.</p>
+                
+                <h3>2. User Accounts</h3>
+                <p>2.1. You must be a current student, faculty member, or staff of De La Salle University to create an account.<br>
+                2.2. You are responsible for maintaining the confidentiality of your account credentials.<br>
+                2.3. You must provide accurate and complete information during registration.<br>
+                2.4. You are solely responsible for all activities that occur under your account.</p>
+                
+                <h3>3. Ordering and Payments</h3>
+                <p>3.1. All orders placed through UniCanteen are final and cannot be canceled once confirmed.<br>
+                3.2. Payments are processed directly at the food stall upon pickup. No online payments are processed through the Platform.<br>
+                3.3. Prices displayed are in Philippine Peso (PHP) and are subject to change without prior notice.<br>
+                3.4. Food stalls reserve the right to modify menu items and prices.</p>
+                
+                <h3>4. Order Pickup</h3>
+                <p>4.1. Orders must be picked up within the designated time window.<br>
+                4.2. A valid queue number or order confirmation must be presented upon pickup.<br>
+                4.3. UniCanteen and participating stalls are not responsible for orders not picked up within the specified time.</p>
+                
+                <h3>5. Prohibited Conduct</h3>
+                <p>5.1. You agree not to:<br>
+                - Create fake or fraudulent orders<br>
+                - Attempt to manipulate the queue system<br>
+                - Use the Platform for any illegal purpose<br>
+                - Interfere with the proper functioning of the Platform<br>
+                - Impersonate another user or vendor</p>
+                
+                <h3>6. Intellectual Property</h3>
+                <p>All content on UniCanteen, including logos, designs, text, and software, is the property of UniCanteen and its licensors and is protected by intellectual property laws.</p>
+                
+                <h3>7. Limitation of Liability</h3>
+                <p>UniCanteen serves as a platform connecting users with food stalls. We are not liable for:<br>
+                - The quality of food or services provided by stalls<br>
+                - Delays in order preparation<br>
+                - Any disputes between users and vendors<br>
+                - Technical issues beyond our reasonable control</p>
+                
+                <h3>8. Termination</h3>
+                <p>We reserve the right to suspend or terminate accounts that violate these terms, including but not limited to creating fake orders or engaging in fraudulent activity.</p>
+                
+                <h3>9. Modifications</h3>
+                <p>UniCanteen may modify these terms at any time. Continued use of the Platform constitutes acceptance of modified terms.</p>
+                
+                <div class="last-updated">
+                    <i class="fas fa-calendar-alt"></i> Last Updated: January 15, 2024
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('terms')">I Understand</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Privacy Policy Modal -->
+    <div id="privacyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-shield-alt"></i> Privacy Policy</h2>
+                <button class="modal-close" onclick="closeModal('privacy')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3>1. Information We Collect</h3>
+                <p><strong>Personal Information:</strong><br>
+                - Full name<br>
+                - Email address (DLSU email)<br>
+                - User role (student, faculty, staff)<br>
+                - Order history<br>
+                - Ratings and reviews</p>
+                
+                <p><strong>Automatically Collected Information:</strong><br>
+                - IP address<br>
+                - Browser type and version<br>
+                - Device information<br>
+                - Usage patterns and preferences</p>
+                
+                <h3>2. How We Use Your Information</h3>
+                <p>We use your information to:<br>
+                - Create and manage your account<br>
+                - Process and track your orders<br>
+                - Improve our services and user experience<br>
+                - Communicate important updates<br>
+                - Prevent fraudulent activities<br>
+                - Comply with legal obligations</p>
+                
+                <h3>3. Data Sharing and Disclosure</h3>
+                <p>3.1. <strong>With Food Vendors:</strong> Your name and order details are shared with vendors to fulfill your orders.<br>
+                3.2. <strong>With University Administration:</strong> Account information may be shared to verify university affiliation.<br>
+                3.3. <strong>Legal Compliance:</strong> We may disclose information if required by law or to protect our rights.<br>
+                3.4. We do not sell your personal information to third parties.</p>
+                
+                <h3>4. Data Security</h3>
+                <p>We implement appropriate technical and organizational measures to protect your information, including:<br>
+                - Encryption of sensitive data<br>
+                - Regular security assessments<br>
+                - Access controls and authentication<br>
+                - Secure session management</p>
+                
+                <h3>5. Your Rights</h3>
+                <p>You have the right to:<br>
+                - Access your personal information<br>
+                - Correct inaccurate data<br>
+                - Request deletion of your account<br>
+                - Opt-out of non-essential communications<br>
+                - Export your data</p>
+                
+                <h3>6. Cookies and Tracking</h3>
+                <p>We use cookies and similar technologies to:<br>
+                - Maintain your session<br>
+                - Remember your preferences<br>
+                - Analyze platform usage<br>
+                - Improve functionality</p>
+                
+                <h3>7. Data Retention</h3>
+                <p>We retain your information for as long as your account is active and for a reasonable period thereafter to comply with legal obligations and resolve disputes.</p>
+                
+                <h3>8. Third-Party Links</h3>
+                <p>The Platform may contain links to third-party websites. We are not responsible for their privacy practices.</p>
+                
+                <h3>9. Children's Privacy</h3>
+                <p>UniCanteen is intended for university students, faculty, and staff. We do not knowingly collect information from individuals under 18 without parental consent.</p>
+                
+                <h3>10. Changes to Privacy Policy</h3>
+                <p>We may update this Privacy Policy periodically. Material changes will be communicated through the Platform.</p>
+                
+                <h3>11. Contact Information</h3>
+                <div class="highlight">
+                    <p><i class="fas fa-envelope"></i> <strong>Email:</strong> privacy@unicanteen.dlsu.edu.ph<br>
+                    <i class="fas fa-phone"></i> <strong>Phone:</strong> (02) 1234-5678<br>
+                    <i class="fas fa-map-marker-alt"></i> <strong>Address:</strong> De La Salle University, 2401 Taft Avenue, Manila, Philippines</p>
+                </div>
+                
+                <div class="last-updated">
+                    <i class="fas fa-calendar-alt"></i> Last Updated: January 15, 2024
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('privacy')">I Understand</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
+    // Password toggle functionality
     document.getElementById('togglePassword').addEventListener('click', function() {
         const password = document.getElementById('password');
         const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -303,6 +645,7 @@ $csrf_token = generateCSRFToken();
         this.classList.toggle('fa-eye-slash');
     });
     
+    // Password strength checker
     document.getElementById('password').addEventListener('input', function() {
         const password = this.value;
         const strengthMeter = document.getElementById('strengthMeter');
@@ -339,6 +682,7 @@ $csrf_token = generateCSRFToken();
         }
     });
     
+    // Password match checker
     document.getElementById('confirm_password').addEventListener('input', function() {
         const password = document.getElementById('password').value;
         const confirm = this.value;
@@ -354,6 +698,54 @@ $csrf_token = generateCSRFToken();
             matchMsg.style.color = '#b13e3e';
         }
     });
+    
+    // Modal functions
+    function openModal(type) {
+        const modal = document.getElementById(type + 'Modal');
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
+    }
+    
+    function closeModal(type) {
+        const modal = document.getElementById(type + 'Modal');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto'; // Restore scrolling
+    }
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
+    
+    // Prevent checkbox from being checked unless user has viewed documents
+    const termsCheckbox = document.querySelector('input[name="agree_terms"]');
+    const termsViewed = sessionStorage.getItem('termsViewed') === 'true';
+    const privacyViewed = sessionStorage.getItem('privacyViewed') === 'true';
+    
+    termsCheckbox.addEventListener('change', function(e) {
+        if (this.checked) {
+            if (!termsViewed || !privacyViewed) {
+                e.preventDefault();
+                this.checked = false;
+                alert('Please read both the Terms and Conditions and Privacy Policy before agreeing.');
+            }
+        }
+    });
+    
+    // Mark as viewed when modals are closed
+    function markAsViewed(type) {
+        sessionStorage.setItem(type + 'Viewed', 'true');
+    }
+    
+    // Override closeModal to mark as viewed
+    const originalCloseModal = closeModal;
+    closeModal = function(type) {
+        originalCloseModal(type);
+        markAsViewed(type);
+    }
     </script>
 </body>
 </html>
