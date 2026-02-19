@@ -171,6 +171,11 @@ $csrf_token = generateCSRFToken();
     <div class="main-content">
         <div class="wrapper">
             <div class="auth-container">
+                <div style="text-align: left; margin-bottom: 20px;">
+                    <a href="<?php echo url('index.php?page=customer'); ?>" class="btn-secondary" style="display: inline-block; padding: 10px 20px; text-decoration: none;">
+                        <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+            </div>
                 <a href="<?php echo url('index.php'); ?>" class="logo" style="display: block; text-align: center; margin-bottom: 30px;">UniCanteen</a>
                 
                 <h2 style="text-align: center; margin-bottom: 10px;">Create Customer Account</h2>
@@ -241,10 +246,12 @@ $csrf_token = generateCSRFToken();
                         <label style="display: block; margin-bottom: 8px; font-weight: 500;">
                             <i class="fas fa-lock"></i> Confirm Password
                         </label>
-                        <input type="password" name="confirm_password" id="confirm_password" required 
-                               style="width: 100%; padding: 15px; border: 2px solid #e0f0e8; border-radius: 30px; font-family: 'Inter', sans-serif;"
-                               placeholder="Re-enter your password">
-                        <i class="fas fa-eye toggle-password" id="toggleConfirmPassword" style="right: 20px;"></i>
+                        <div style="position: relative;">
+                            <input type="password" name="confirm_password" id="confirm_password" required 
+                                   style="width: 100%; padding: 15px; border: 2px solid #e0f0e8; border-radius: 30px; font-family: 'Inter', sans-serif;"
+                                   placeholder="Re-enter your password">
+                            <i class="fas fa-eye toggle-password" id="toggleConfirmPassword" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #8faa9a; z-index: 10;"></i>
+                        </div>
                         <small id="passwordMatch" style="display: block; margin-top: 5px;"></small>
                     </div>
                     

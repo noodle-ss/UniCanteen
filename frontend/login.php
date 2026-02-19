@@ -124,7 +124,7 @@ $csrf_token = generateCSRFToken();
         .toggle-password {
             position: absolute;
             right: 15px;
-            top: 50%;
+            top: 70%;
             transform: translateY(-50%);
             cursor: pointer;
             color: #8faa9a;
@@ -135,6 +135,11 @@ $csrf_token = generateCSRFToken();
     <div class="main-content">
         <div class="wrapper">
             <div class="auth-container">
+                <div style="text-align: left; margin-bottom: 20px;">
+                    <a href="<?php echo url('index.php?page=home'); ?>" class="btn-secondary">
+    <i class="fas fa-arrow-left"></i> Back to Home
+</a>
+                </div>
                 <a href="<?php echo url('index.php'); ?>" class="logo" style="display: block; text-align: center; margin-bottom: 30px;">UniCanteen</a>
                 
                 <h2 style="text-align: center; margin-bottom: 30px;">Welcome Back</h2>

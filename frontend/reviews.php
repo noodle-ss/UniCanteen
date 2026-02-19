@@ -3,41 +3,68 @@ require_once __DIR__ . '/../config/config.php';
 
 $db = Database::getInstance()->getConnection();
 
-$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+$page = isset($_GET['page_num']) ? intval($_GET['page_num']) : 1;
 $limit = 10;
 $offset = ($page - 1) * $limit;
 $restaurant_filter = isset($_GET['restaurant']) ? intval($_GET['restaurant']) : 0;
 
+// Build the count query with filter
 $countQuery = "SELECT COUNT(*) as total FROM Ratings";
+$countParams = [];
+$countTypes = "";
+
 if ($restaurant_filter > 0) {
-    $countQuery .= " WHERE restaurant_ID = $restaurant_filter";
+    $countQuery .= " WHERE restaurant_ID = ?";
+    $countParams[] = $restaurant_filter;
+    $countTypes .= "i";
 }
-$countResult = $db->query($countQuery);
-$total_reviews = $countResult->fetch_assoc()['total'];
+
+$countStmt = $db->prepare($countQuery);
+if (!empty($countParams)) {
+    $countStmt->bind_param($countTypes, ...$countParams);
+}
+$countStmt->execute();
+$total_reviews = $countStmt->get_result()->fetch_assoc()['total'];
 $total_pages = ceil($total_reviews / $limit);
 
+// Get all restaurants for filter
 $restaurantsQuery = "SELECT ID, name FROM Restaurants ORDER BY name";
 $restaurants = $db->query($restaurantsQuery);
 
+// Get reviews with pagination
 $reviewsQuery = "SELECT 
     rt.*,
     r.name as restaurant_name,
-    u.full_name as reviewer_name,
+    COALESCE(u.full_name, 'Anonymous') as reviewer_name,
     u.email,
     o.queue_number as order_number
     FROM Ratings rt
     JOIN Restaurants r ON rt.restaurant_ID = r.ID
     LEFT JOIN Orders o ON rt.order_ID = o.ID
-    LEFT JOIN Users u ON o.customer_ID = u.ID
-    " . ($restaurant_filter > 0 ? "WHERE rt.restaurant_ID = $restaurant_filter" : "") . "
-    ORDER BY rt.timestamp DESC
-    LIMIT ? OFFSET ?";
+    LEFT JOIN Users u ON o.customer_ID = u.ID";
+    
+$reviewParams = [];
+$reviewTypes = "";
 
-$stmt = $db->prepare($reviewsQuery);
-$stmt->bind_param("ii", $limit, $offset);
-$stmt->execute();
-$reviews = $stmt->get_result();
+if ($restaurant_filter > 0) {
+    $reviewsQuery .= " WHERE rt.restaurant_ID = ?";
+    $reviewParams[] = $restaurant_filter;
+    $reviewTypes .= "i";
+}
 
+$reviewsQuery .= " ORDER BY rt.timestamp DESC LIMIT ? OFFSET ?";
+$reviewParams[] = $limit;
+$reviewParams[] = $offset;
+$reviewTypes .= "ii";
+
+$reviewStmt = $db->prepare($reviewsQuery);
+if (!empty($reviewParams)) {
+    $reviewStmt->bind_param($reviewTypes, ...$reviewParams);
+}
+$reviewStmt->execute();
+$reviews = $reviewStmt->get_result();
+
+// Get rating statistics
 $statsQuery = "SELECT 
     COUNT(*) as total_reviews,
     COALESCE(AVG(rating), 0) as avg_rating,
@@ -46,12 +73,24 @@ $statsQuery = "SELECT
     SUM(CASE WHEN rating >= 2.5 AND rating < 3.5 THEN 1 ELSE 0 END) as three_star,
     SUM(CASE WHEN rating < 2.5 THEN 1 ELSE 0 END) as two_star
     FROM Ratings";
-if ($restaurant_filter > 0) {
-    $statsQuery .= " WHERE restaurant_ID = $restaurant_filter";
-}
-$statsResult = $db->query($statsQuery);
-$stats = $statsResult->fetch_assoc();
+    
+$statsParams = [];
+$statsTypes = "";
 
+if ($restaurant_filter > 0) {
+    $statsQuery .= " WHERE restaurant_ID = ?";
+    $statsParams[] = $restaurant_filter;
+    $statsTypes .= "i";
+}
+
+$statsStmt = $db->prepare($statsQuery);
+if (!empty($statsParams)) {
+    $statsStmt->bind_param($statsTypes, ...$statsParams);
+}
+$statsStmt->execute();
+$stats = $statsStmt->get_result()->fetch_assoc();
+
+// Handle review submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && isLoggedIn()) {
     $order_id = intval($_POST['order_id']);
     $rating = floatval($_POST['rating']);
@@ -74,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
             $insertStmt = $db->prepare("INSERT INTO Ratings (restaurant_ID, order_ID, rating, review) VALUES (?, ?, ?, ?)");
             $insertStmt->bind_param("iids", $restaurant_id, $order_id, $rating, $review);
             if ($insertStmt->execute()) {
-                header("Location: reviews.php?success=1" . ($restaurant_filter ? "&restaurant=$restaurant_filter" : ""));
+                header("Location: index.php?page=reviews&success=1" . ($restaurant_filter ? "&restaurant=$restaurant_filter" : ""));
                 exit();
             }
         }
@@ -91,14 +130,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
+    <link rel="stylesheet" href="../assets/styles.css">
     <style>
+        body {
+            display: block;
+            min-height: auto;
+            margin: 0;
+            padding: 0;
+        }
+        .main-content {
+            margin-left: 0;
+        }
         .reviews-header {
             background: linear-gradient(rgba(245,250,245,0.9), rgba(245,250,245,0.95));
-            background-size: cover;
-            padding: 60px 0;
+            padding: 40px 0;
             margin-bottom: 40px;
-            border-bottom: 1px solid var(--border-soft);
+            border-bottom: 1px solid #e0f0e8;
         }
         .rating-big {
             background: white;
@@ -109,6 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
             gap: 40px;
             flex-wrap: wrap;
             box-shadow: 0 10px 30px rgba(0,70,30,0.1);
+            margin-top: 30px;
         }
         .rating-circle {
             width: 150px;
@@ -170,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
             border-radius: 30px;
             padding: 30px;
             margin-bottom: 30px;
-            border: 1px solid var(--border-soft);
+            border: 1px solid #e0f0e8;
         }
         .star-rating {
             display: flex;
@@ -197,35 +245,72 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
             background: white;
             color: #007a3e;
             text-decoration: none;
-            border: 1px solid var(--border-soft);
+            border: 1px solid #e0f0e8;
         }
         .page-link.active {
             background: #007a3e;
             color: white;
             border-color: #007a3e;
         }
+        .reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin: 30px 0;
+        }
+        .wrapper {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 36px;
+        }
+        .back-button {
+            margin-bottom: 20px;
+        }
+        .back-button a {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: white;
+            border-radius: 30px;
+            text-decoration: none;
+            color: #007a3e;
+            font-weight: 500;
+            border: 1px solid #e0f0e8;
+        }
+        .back-button a:hover {
+            background: #f0f7f0;
+        }
+        .customer-nav {
+            background: transparent !important;
+            padding: 0 !important;
+            margin-bottom: 20px;
+        }
+        
     </style>
 </head>
 <body>
     <div class="main-content">
         <section class="reviews-header">
             <div class="wrapper">
-                <nav class="customer-nav" style="background: transparent; padding-top: 0;">
-    <a href="<?php echo url('index.php'); ?>" class="logo">UniCanteen <span>DLSU</span></a>
-    <div class="customer-nav-links">
-        <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
-        <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
-        <a href="<?php echo url('frontend/reviews.php'); ?>">Reviews</a>
-        <?php if(isset($_SESSION['user_id'])): ?>
-            <a href="<?php echo url('frontend/profile.php'); ?>"><?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
-            <a href="<?php echo url('frontend/logout.php'); ?>" class="btn-outline">Logout</a>
-        <?php else: ?>
-            <a href="<?php echo url('frontend/login.php'); ?>">Sign In</a>
-            <a href="<?php echo url('frontend/register.php'); ?>" class="btn-outline">Register</a>
-        <?php endif; ?>
-        <a href="<?php echo url('frontend/cart.php'); ?>" class="btn-primary"><i class="fas fa-bag-shopping"></i> Cart</a>
-    </div>
-</nav>
+                <nav class="customer-nav">
+                    <a href="index.php?page=customer" class="logo">UniCanteen <span>DLSU</span></a>
+                    <div class="customer-nav-links">
+                        <a href="index.php?page=customer#menu">Menu</a>
+                        <a href="index.php?page=customer#track">Track</a>
+                        <a href="index.php?page=reviews">Reviews</a>
+                        <?php if(isset($_SESSION['user_id'])): ?>
+                            <a href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'])[0]); ?></a>
+                            <a href="logout.php" class="btn-outline">Logout</a>
+                        <?php else: ?>
+                            <a href="index.php?page=login">Sign In</a>
+                            <a href="index.php?page=register" class="btn-outline">Register</a>
+                        <?php endif; ?>
+                        <a href="index.php?page=cart" class="btn-primary">
+                            <i class="fas fa-bag-shopping"></i> Cart
+                        </a>
+                    </div>
+                </nav>
 
                 <div class="rating-big">
                     <div class="rating-circle">
@@ -270,7 +355,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
             <div class="filter-section">
                 <i class="fas fa-filter" style="color: #007a3e;"></i>
                 <span style="font-weight: 600;">Filter by:</span>
-                <select onchange="window.location.href='<?php echo url('frontend/reviews.php'); ?>?restaurant=' + this.value" 
+                <select onchange="window.location.href='index.php?page=reviews&restaurant=' + this.value" 
                         style="padding: 10px 20px; border: 2px solid #e0f0e8; border-radius: 30px; font-family: 'Inter', sans-serif;">
                     <option value="0">All Restaurants</option>
                     <?php 
@@ -284,7 +369,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
                 </select>
                 
                 <?php if($restaurant_filter > 0): ?>
-                <a href="<?php echo url('frontend/reviews.php'); ?>" class="btn-secondary" style="padding: 8px 20px;">
+                <a href="index.php?page=reviews" class="btn-secondary" style="padding: 8px 20px;">
                     <i class="fas fa-times"></i> Clear Filter
                 </a>
                 <?php endif; ?>
@@ -350,7 +435,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
                     <?php while($review = $reviews->fetch_assoc()): ?>
                     <div class="review-card">
                         <div class="reviewer-avatar">
-                            <i class="fas fa-user-circle"></i>
+                            <i class="fas fa-user-circle" style="font-size: 2.5rem; color: #007a3e;"></i>
                             <div>
                                 <span class="name"><?php echo htmlspecialchars($review['reviewer_name'] ?? 'Anonymous'); ?></span>
                                 <div style="font-size: 0.7rem; color: #5f8b74;">
@@ -385,7 +470,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
                     </div>
                     <?php endwhile; ?>
                 <?php else: ?>
-                    <div style="text-align: center; padding: 60px; background: white; border-radius: 30px;">
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px; background: white; border-radius: 30px;">
                         <i class="fas fa-star" style="font-size: 4rem; color: #cae3d6; margin-bottom: 20px;"></i>
                         <h3 style="margin-bottom: 10px;">No Reviews Yet</h3>
                         <p style="color: #3b7455;">Be the first to leave a review!</p>
@@ -396,20 +481,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
             <?php if($total_pages > 1): ?>
             <div class="pagination">
                 <?php if($page > 1): ?>
-                <a href="?page=<?php echo $page-1; ?><?php echo $restaurant_filter ? '&restaurant='.$restaurant_filter : ''; ?>" class="page-link">
+                <a href="index.php?page=reviews&page_num=<?php echo $page-1; ?><?php echo $restaurant_filter ? '&restaurant='.$restaurant_filter : ''; ?>" class="page-link">
                     <i class="fas fa-chevron-left"></i>
                 </a>
                 <?php endif; ?>
                 
                 <?php for($i = 1; $i <= $total_pages; $i++): ?>
-                <a href="?page=<?php echo $i; ?><?php echo $restaurant_filter ? '&restaurant='.$restaurant_filter : ''; ?>" 
+                <a href="index.php?page=reviews&page_num=<?php echo $i; ?><?php echo $restaurant_filter ? '&restaurant='.$restaurant_filter : ''; ?>" 
                    class="page-link <?php echo $i == $page ? 'active' : ''; ?>">
                     <?php echo $i; ?>
                 </a>
                 <?php endfor; ?>
                 
                 <?php if($page < $total_pages): ?>
-                <a href="?page=<?php echo $page+1; ?><?php echo $restaurant_filter ? '&restaurant='.$restaurant_filter : ''; ?>" class="page-link">
+                <a href="index.php?page=reviews&page_num=<?php echo $page+1; ?><?php echo $restaurant_filter ? '&restaurant='.$restaurant_filter : ''; ?>" class="page-link">
                     <i class="fas fa-chevron-right"></i>
                 </a>
                 <?php endif; ?>
@@ -423,6 +508,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
     </div>
 
     <script>
+    // Star rating functionality
     const stars = document.querySelectorAll('#starRating i');
     const ratingInput = document.getElementById('ratingValue');
     

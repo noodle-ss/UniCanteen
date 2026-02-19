@@ -14,13 +14,15 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Site configuration - Check if constants are already defined before defining them
 if (!defined('BASE_PATH')) {
-    define('BASE_PATH', '/mp-itprog/UniCanteen/');
+    $scriptName = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+    define('BASE_PATH', rtrim($scriptName, '/') . '/');
 }
 if (!defined('SITE_NAME')) {
     define('SITE_NAME', 'UniCanteen');
 }
 if (!defined('SITE_URL')) {
-    define('SITE_URL', 'http://localhost/mp-itprog/UniCanteen');
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+    define('SITE_URL', $protocol . $_SERVER['HTTP_HOST'] . BASE_PATH);
 }
 if (!defined('UPLOAD_PATH')) {
     define('UPLOAD_PATH', $_SERVER['DOCUMENT_ROOT'] . '/mp-itprog/UniCanteen/uploads/');

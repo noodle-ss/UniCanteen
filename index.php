@@ -1,6 +1,5 @@
 <?php
 session_start();
-define('BASE_PATH', dirname(__FILE__));
 require_once __DIR__ . '/config/config.php';
 
 // Route logic

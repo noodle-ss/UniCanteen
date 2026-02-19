@@ -394,13 +394,13 @@ if (isLoggedIn()) {
                 <?php endif; ?>
 
                 <!-- Recent Ratings section -->
-                <div class="section-header" id="reviews">
-                    <i class="fas fa-star"></i>
-                    <h2>Recent Ratings & Reviews</h2>
-                    <a href="<?php echo url('frontend/reviews.php'); ?>" style="margin-left: auto; color: #007a3e; font-weight: 500; text-decoration: none;">
-                        See all <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
+<div class="section-header" id="reviews">
+    <i class="fas fa-star"></i>
+    <h2>Recent Ratings & Reviews</h2>
+    <a href="index.php?page=reviews" style="margin-left: auto; color: #007a3e; font-weight: 500; text-decoration: none;">
+        See all <i class="fas fa-arrow-right"></i>
+    </a>
+</div>
                 
                 <div class="reviews-grid">
                     <?php 
