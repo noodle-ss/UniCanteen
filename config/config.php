@@ -12,6 +12,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Start output buffering to prevent header issues
+ob_start();
+
 // Site configuration - Check if constants are already defined before defining them
 if (!defined('BASE_PATH')) {
     $scriptName = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
@@ -153,9 +156,12 @@ if (!function_exists('isValidDLSUEmail')) {
 
 if (!function_exists('secureSessionRegenerate')) {
     function secureSessionRegenerate() {
-        $old_session_id = session_id();
-        session_regenerate_id(true);
-        return true;
+        // Only regenerate if headers haven't been sent
+        if (!headers_sent()) {
+            session_regenerate_id(true);
+            return true;
+        }
+        return false;
     }
 }
 ?>

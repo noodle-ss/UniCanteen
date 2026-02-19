@@ -76,28 +76,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $insertStmt->bind_param("sss", $email, $hashed_password, $full_name);
                     
                     if ($insertStmt->execute()) {
-                        $user_id = $db->insert_id;
-                        
-                        $logStmt = $db->prepare(
-                            "INSERT INTO UserLogs (user_id, action, ip_address, user_agent) 
-                             VALUES (?, 'REGISTER', ?, ?)"
-                        );
-                        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-                        $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
-                        $logStmt->bind_param("iss", $user_id, $ip, $ua);
-                        $logStmt->execute();
-                        
-                        $db->commit();
-                        
-                        $success = 'Registration successful! You can now login with your credentials.';
-                        
-                        $full_name = '';
-                        $email = '';
-                        
-                        header("refresh:3;url=login.php");
-                    } else {
-                        throw new Exception("Registration failed");
-                    }
+                    $user_id = $db->insert_id;
+    
+                    $logStmt = $db->prepare(
+                        "INSERT INTO UserLogs (user_id, action, ip_address, user_agent) 
+                        VALUES (?, 'REGISTER', ?, ?)"
+                    );
+                    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+                    $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+                    $logStmt->bind_param("iss", $user_id, $ip, $ua);
+                    $logStmt->execute();
+    
+                    $db->commit();
+    
+                    $success = 'Registration successful! You can now login with your credentials.';
+    
+                    $full_name = '';
+                    $email = '';
+    
+                    // FIX: Use the url() helper function to generate the correct path
+                    header("refresh:3;url=" . url('index.php?page=login'));
+                } else {
+                    throw new Exception("Registration failed");
+                }
                 } catch (Exception $e) {
                     $db->rollback();
                     error_log("Registration error: " . $e->getMessage());
@@ -272,7 +273,7 @@ $csrf_token = generateCSRFToken();
                 
                 <div style="text-align: center; margin-top: 25px; padding-top: 20px; border-top: 1px solid #e0f0e8;">
                     <p style="color: #3b7455;">
-                        Already have an account? <a href="<?php echo url('frontend/login.php'); ?>" style="color: #007a3e; font-weight: 600;">Sign In</a>
+                        Already have an account? <a href="<?php echo url('index.php?page=login'); ?>" style="color: #007a3e; font-weight: 600;">Sign In</a>
                     </p>
                 </div>
                 

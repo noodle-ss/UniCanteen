@@ -90,29 +90,31 @@ class Database {
     }
     
     public function validateSession($token) {
-        $stmt = $this->connection->prepare(
-            "SELECT s.*, u.ID as user_id, u.role, u.full_name, u.email 
-             FROM Sessions s
-             JOIN Users u ON s.user_id = u.ID
-             WHERE s.session_token = ? AND s.expires_at > NOW() AND u.is_active = TRUE AND u.is_banned = FALSE"
+    $stmt = $this->connection->prepare(
+        "SELECT s.*, u.ID as user_id, u.role, u.full_name, u.email 
+         FROM Sessions s
+         JOIN Users u ON s.user_id = u.ID
+         WHERE s.session_token = ? AND s.expires_at > NOW() AND u.is_active = TRUE AND u.is_banned = FALSE"
+    );
+    $stmt->bind_param("s", $token);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $session = $result->fetch_assoc();
+        
+        // Fix: Create variables for bind_param
+        $lifetime = SESSION_LIFETIME;
+        $updateStmt = $this->connection->prepare(
+            "UPDATE Sessions SET expires_at = DATE_ADD(NOW(), INTERVAL ? SECOND) WHERE session_token = ?"
         );
-        $stmt->bind_param("s", $token);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $updateStmt->bind_param("is", $lifetime, $token);
+        $updateStmt->execute();
         
-        if ($result->num_rows > 0) {
-            $session = $result->fetch_assoc();
-            
-            $updateStmt = $this->connection->prepare(
-                "UPDATE Sessions SET expires_at = DATE_ADD(NOW(), INTERVAL ? SECOND) WHERE session_token = ?"
-            );
-            $updateStmt->bind_param("is", SESSION_LIFETIME, $token);
-            $updateStmt->execute();
-            
-            return $session;
-        }
-        
-        return null;
+        return $session;
     }
+    
+    return null;
+}
 }
 ?>

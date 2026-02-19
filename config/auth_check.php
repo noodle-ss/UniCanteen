@@ -4,11 +4,11 @@ if (!function_exists('requireLogin')) {
     require_once __DIR__ . '/config.php';
 
     function requireLogin() {
-        if (!isLoggedIn()) {
-            $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
-            redirect('frontend/login.php');
-        }
+    if (!isLoggedIn()) {
+        $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
+        redirect('index.php?page=login');
     }
+}
 
     function requireCustomer() {
         requireLogin();

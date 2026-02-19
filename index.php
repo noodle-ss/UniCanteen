@@ -73,5 +73,9 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'customer';
         }
         ?>
     </div>
+    <?php
+    // Flush output buffer at the end
+    ob_end_flush();
+    ?>
 </body>
 </html>
