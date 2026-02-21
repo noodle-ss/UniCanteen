@@ -138,7 +138,7 @@ $csrf_token = generateCSRFToken();
                 <a href="<?php echo url('frontend/forgot-password.php'); ?>" style="color: #007a3e; font-size: 0.9rem;">Forgot Password?</a>
             </div>
             
-            <button type="submit" class="btn-primary" style="width: 100%; padding: 16px; font-size: 1.1rem;">
+            <button type="submit" class="btn-primary" style="color: #007a3e; background: #e0f0e8; width: 100%; padding: 16px; font-size: 1.1rem;">
                 <i class="fas fa-sign-in-alt"></i> Sign In
             </button>
         </form>
