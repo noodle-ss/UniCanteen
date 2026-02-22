@@ -3,21 +3,21 @@ require_once '../config/auth_check.php';
 require_once '../config/database.php';
 
 
-// if (!(isset($_SESSION['user_id'])) && $_SESSION['role'] !== 'vendor') {
-//     header("Location: login.php");
-//     exit();
-// }
+if (!(isset($_SESSION['user_id'])) && $_SESSION['role'] !== 'vendor') {
+    header("Location: login.php");
+    exit();
+}
 
-// $user_id = $_SESSION['user_id'] ?? null;
+$user_id = $_SESSION['user_id'] ?? null;
 
 
-// $query = "SELECT full_name FROM Users WHERE ID = ?";
-// $stmt = Database::getInstance()->getConnection()->prepare($query);
-// $stmt->bind_param("i", $user_id);
-// $stmt->execute();
-// $result = $stmt->get_result();
+$query = "SELECT full_name FROM Users WHERE ID = ?";
+$stmt = Database::getInstance()->getConnection()->prepare($query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
 
-//requireVendorLogin();
+requireVendorLogin();
 
 
 
