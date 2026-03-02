@@ -120,24 +120,43 @@ $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
               </div>
             </div>
 
-            <!-- Menu Items with Toggle -->
-            <div style="margin-bottom: 16px;">
-              <div style="display: grid; grid-template-columns: 2fr 80px 120px; padding: 10px 0; border-bottom: 2px solid #b1d9c4; font-weight: 600; color: #16623b; font-size: 0.9rem;">
-                <span>Item Name</span><span>Price</span><span style="text-align: center;">Status</span>
-              </div>
-              
-            <?php foreach ($menu_items as $item): ?>
-            <tr>
-                <td><?= htmlspecialchars($item['name']) ?></td>
-                <td>₱<?= number_format($item['price'], 2) ?></td>
+            <!-- Menu Items Header -->
+            <div style="display: grid; grid-template-columns: 2fr 80px 180px; ...">
+              <span>Item Name</span>
+              <span>Price</span>
+              <span style="text-align: center;">Actions</span>
+            </div>
 
-                <td>
-                    <select onchange="toggleStatus(<?= $item['id'] ?>, this.value)">
-                        <option value="available" <?= $item['status']=='available'?'selected':'' ?>>Available</option>
-                        <option value="sold_out" <?= $item['status']=='sold_out'?'selected':'' ?>>Sold Out</option>
-                    </select>
-                </td>
-            </tr>
+            <!-- Menu Items List -->
+            <?php foreach ($menu_items as $item): ?>
+            <div class="menu-edit-row">
+              <div class="item-info">
+                <i class="fas fa-burger"></i>
+                <span class="item-name"><?= htmlspecialchars($item['name']) ?></span>
+              </div>
+              <span class="item-price">₱<?= number_format($item['price'], 2) ?></span>
+              <div style="display:flex; gap:8px; justify-content:center;">
+                <!-- Status Toggle -->
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                  <input type="checkbox" <?= $item['status']=='available'?'checked':'' ?>
+                        onchange="toggleStatus(<?= $item['id'] ?>, this.checked)"
+                        style="accent-color: var(--dlsu-green); width:18px; height:18px;">
+                  <span class="toggle-avail"><?= $item['status']=='available'?'Available':'Sold Out' ?></span>
+                </label>
+
+                <!-- Edit Button -->
+                <button onclick="openEditModal(<?= $item['id'] ?>)"
+                        style="padding:4px 12px; border-radius:20px; border:none; background:#f0f0f0; cursor:pointer;">
+                  <i class="fas fa-pen"></i> Edit
+                </button>
+
+                <!-- Delete Button -->
+                <button class="delete-btn" data-id="<?= $item['id'] ?>"
+                        style="background:#b13e3e; color:white; border:none; border-radius:8px; padding:4px 10px; cursor:pointer;">
+                  <i class="fas fa-trash"></i> Delete
+                </button>
+              </div>
+            </div>
             <?php endforeach; ?>
 
             </div>
@@ -171,21 +190,6 @@ $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                     <button type="submit" style="padding:8px 16px; border:none; border-radius:8px; background:var(--dlsu-green); color:white;">Add Item</button>
                   </div>
                 </form>
-              </div>
-            </div>
-
-            <!-- Edit Buuton -->
-            <div class="menu-edit-row">
-              <div class="item-info"><i class="fas fa-burger"></i><span class="item-name">Cheeseburger</span></div>
-              <span class="item-price">₱85</span>
-              <div style="display: flex; justify-content: center; gap: 8px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                  <input type="checkbox" checked style="accent-color: var(--dlsu-green); width: 18px; height: 18px;">
-                  <span class="toggle-avail" style="padding: 4px 12px;">Available</span>
-                </label>
-                <button onclick="openEditModal(1)" style="padding:4px 12px; border-radius:20px; border:none; background:#f0f0f0; cursor:pointer;">
-                  <i class="fas fa-pen"></i> Edit
-                </button>
               </div>
             </div>
 
@@ -454,6 +458,29 @@ $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                     } else {
                         alert("Failed to update item.");
                     }
+                });
+              });
+
+              document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                  if(confirm("Are you sure you want to delete this item?")) {
+                    let itemId = this.dataset.id;
+
+                    fetch('delete_item.php', {
+                      method: 'POST',
+                      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                      body: `id=${itemId}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                      if(data.success){
+                        alert("Item deleted successfully!");
+                        location.reload(); // refresh menu
+                      } else {
+                        alert("Failed to delete item.");
+                      }
+                    });
+                  }
                 });
               });
               </script>
