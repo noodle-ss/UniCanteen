@@ -55,8 +55,6 @@ $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     }
   </style>
 </head>
-
-
 <body>
   <div class="main-content">
     <section id="vendor" class="page-section">
@@ -126,53 +124,69 @@ $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                 <span>Item Name</span><span>Price</span><span style="text-align: center;">Status</span>
               </div>
               
-            <?php foreach ($menu_items as $item): ?>
-            <tr>
-                <td><?= htmlspecialchars($item['name']) ?></td>
-                <td>₱<?= number_format($item['price'], 2) ?></td>
-
-                <td>
-                    <select onchange="toggleStatus(<?= $item['id'] ?>, this.value)">
-                        <option value="available" <?= $item['status']=='available'?'selected':'' ?>>Available</option>
-                        <option value="sold_out" <?= $item['status']=='sold_out'?'selected':'' ?>>Sold Out</option>
-                    </select>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-
+              <div class="menu-edit-row">
+                <div class="item-info"><i class="fas fa-burger"></i><span class="item-name">Cheeseburger</span></div>
+                <span class="item-price">₱85</span>
+                <div style="display: flex; justify-content: center;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" checked style="accent-color: var(--dlsu-green); width: 18px; height: 18px;">
+                    <span class="toggle-avail" style="padding: 4px 12px;">Available</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="menu-edit-row">
+                <div class="item-info"><i class="fas fa-mug-hot"></i><span class="item-name">Brewed Coffee</span></div>
+                <span class="item-price">₱45</span>
+                <div style="display: flex; justify-content: center;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" checked style="accent-color: var(--dlsu-green); width: 18px; height: 18px;">
+                    <span class="toggle-avail" style="padding: 4px 12px;">Available</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="menu-edit-row">
+                <div class="item-info"><i class="fas fa-fish"></i><span class="item-name">Tuna Pandesal</span></div>
+                <span class="item-price">₱50</span>
+                <div style="display: flex; justify-content: center;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" style="accent-color: var(--dlsu-green); width: 18px; height: 18px;">
+                    <span class="toggle-sold" style="padding: 4px 12px;">Not Available</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="menu-edit-row">
+                <div class="item-info"><i class="fas fa-cake"></i><span class="item-name">Brownie</span></div>
+                <span class="item-price">₱35</span>
+                <div style="display: flex; justify-content: center;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" checked style="accent-color: var(--dlsu-green); width: 18px; height: 18px;">
+                    <span class="toggle-avail" style="padding: 4px 12px;">Available</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="menu-edit-row">
+                <div class="item-info"><i class="fas fa-mug-saucer"></i><span class="item-name">Matcha Latte</span></div>
+                <span class="item-price">₱65</span>
+                <div style="display: flex; justify-content: center;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" style="accent-color: var(--dlsu-green); width: 18px; height: 18px;">
+                    <span class="toggle-sold" style="padding: 4px 12px;">Not Available</span>
+                  </label>
+                </div>
+              </div>
             </div>
 
             <!-- Add New Item -->
-
-            <button onclick="openAddModal()" style="background: var(--dlsu-green); color: white; border: none; padding: 10px 20px; border-radius: 40px; font-weight: 600;"><i class="fas fa-plus"></i> Add New Item</button>  
-
-            <!-- Add Menu Item Modal -->
-            <div id="addItemModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:9999;">
-              <div style="background:white; border-radius:20px; padding:24px; width:400px; max-width:90%;">
-                <h3 style="margin-top:0;"><i class="fas fa-plus-circle"></i> Add New Menu Item</h3>
-                <form id="addItemForm">
-                  <div style="margin-bottom:12px;">
-                    <label>Item Name</label>
-                    <input type="text" name="name" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                  </div>
-                  <div style="margin-bottom:12px;">
-                    <label>Price (₱)</label>
-                    <input type="number" name="price" required min="0" step="0.01" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                  </div>
-                  <div style="margin-bottom:12px;">
-                    <label>Status</label>
-                    <select name="status" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                      <option value="available">Available</option>
-                      <option value="sold_out">Sold Out</option>
-                    </select>
-                  </div>
-                  <div style="display:flex; gap:12px; justify-content:flex-end;">
-                    <button type="button" onclick="closeAddModal()" style="padding:8px 16px; border:none; border-radius:8px; background:#ccc;">Cancel</button>
-                    <button type="submit" style="padding:8px 16px; border:none; border-radius:8px; background:var(--dlsu-green); color:white;">Add Item</button>
-                  </div>
-                </form>
-              </div>
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed #b8d5c4;">
+              <button style="background: transparent; border: 1px dashed var(--dlsu-green); color: var(--dlsu-green); padding: 10px 20px; border-radius: 40px; width: 100%; font-weight: 600; cursor: pointer;">
+                <i class="fas fa-plus-circle"></i> Add New Menu Item
+              </button>
             </div>
+          </div>
 
           <!-- orders dashboard with status badges -->
           <div class="admin-card">
@@ -360,54 +374,5 @@ $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
       </div>
     </section>
   </div>
-
-          <script>
-            function toggleStatus(itemId, isChecked) {
-              let status = isChecked ? 'available' : 'sold_out';
-
-              fetch('toggle_item_status.php', {
-                  method: 'POST',
-                  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                  body: `item_id=${itemId}&status=${status}`
-              })
-              .then(res => res.json())
-              .then(data => {
-                  if(!data.success){
-                    alert("Failed to update status");
-                  } else {
-                    location.reload(); // refresh UI
-                }
-             });
-            }
-    
-              function openAddModal() {
-                document.getElementById('addItemModal').style.display = 'flex';
-              }
-
-              function closeAddModal() {
-                document.getElementById('addItemModal').style.display = 'none';
-              }
-
-              // Handle form submission
-              document.getElementById('addItemForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                let formData = new FormData(this);
-
-                fetch('add_item.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if(data.success){
-                        alert("Item added successfully!");
-                        location.reload(); // reload to show new item
-                    } else {
-                        alert("Failed to add item.");
-                    }
-                });
-              });
-              </script>
-
 </body>
 </html>
