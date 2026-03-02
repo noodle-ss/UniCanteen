@@ -16,7 +16,23 @@ $stmt = Database::getInstance()->getConnection()->prepare($query);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
+
+// Get vendor info (restaurant name, etc.)
+$query = "SELECT * FROM Restaurants WHERE user_id = ?";
+$stmt = Database::getInstance()->getConnection()->prepare($query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$restaurant = $stmt->get_result()->fetch_assoc();
+
+$query = "SELECT * FROM Items WHERE vendor_id = ?";
+$stmt = Database::getInstance()->getConnection()->prepare($query);
+$stmt->bind_param("i", $restaurant['id']);
+$stmt->execute();
+$menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="en">
