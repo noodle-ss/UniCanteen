@@ -174,6 +174,21 @@ $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
               </div>
             </div>
 
+            <!-- Edit Buuton -->
+            <div class="menu-edit-row">
+              <div class="item-info"><i class="fas fa-burger"></i><span class="item-name">Cheeseburger</span></div>
+              <span class="item-price">₱85</span>
+              <div style="display: flex; justify-content: center; gap: 8px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" checked style="accent-color: var(--dlsu-green); width: 18px; height: 18px;">
+                  <span class="toggle-avail" style="padding: 4px 12px;">Available</span>
+                </label>
+                <button onclick="openEditModal(1)" style="padding:4px 12px; border-radius:20px; border:none; background:#f0f0f0; cursor:pointer;">
+                  <i class="fas fa-pen"></i> Edit
+                </button>
+              </div>
+            </div>
+
             <!-- Edit Item Modal -->
             <div id="editItemModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
                 background: rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
