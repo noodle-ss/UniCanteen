@@ -174,6 +174,36 @@ $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
               </div>
             </div>
 
+            <!-- Edit Item Modal -->
+            <div id="editItemModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+                background: rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+              <div style="background:white; padding:30px; border-radius:20px; width:400px; position:relative;">
+                <h3>Edit Menu Item</h3>
+                <form id="editItemForm">
+                  <input type="hidden" name="item_id" id="edit_item_id">
+                  <div style="margin-bottom:12px;">
+                    <label>Item Name</label>
+                    <input type="text" name="item_name" id="edit_item_name" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
+                  </div>
+                  <div style="margin-bottom:12px;">
+                    <label>Price</label>
+                    <input type="number" name="price" id="edit_item_price" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
+                  </div>
+                  <div style="margin-bottom:12px;">
+                    <label>Availability</label>
+                    <select name="availability" id="edit_item_availability" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
+                      <option value="1">Available</option>
+                      <option value="0">Not Available</option>
+                    </select>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; margin-top:20px;">
+                    <button type="button" onclick="closeEditModal()" style="padding:10px 20px; border:none; border-radius:40px; background:#ccc; color:white; font-weight:600;">Cancel</button>
+                    <button type="submit" style="padding:10px 20px; border:none; border-radius:40px; background:var(--dlsu-green); color:white; font-weight:600;">Update Item</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
           <!-- orders dashboard with status badges -->
           <div class="admin-card">
             <h3><i class="fas fa-clock"></i> Order Manager · Real-time Queue</h3>
@@ -381,29 +411,33 @@ $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
             }
     
               function openAddModal() {
-                document.getElementById('addItemModal').style.display = 'flex';
+                document.getElementById('editItemModal').style.display = 'flex';
+                document.getElementById('edit_item_id').value = id;
+                document.getElementById('edit_item_name').value = name;
+                document.getElementById('edit_item_price').value = price;
+                document.getElementById('edit_item_availability').value = availability ? '1' : '0';
               }
 
-              function closeAddModal() {
-                document.getElementById('addItemModal').style.display = 'none';
+              function closeEditModal() {
+                document.getElementById('editItemModal').style.display = 'none';
               }
 
               // Handle form submission
-              document.getElementById('addItemForm').addEventListener('submit', function(e) {
+              document.getElementById('editItemForm').addEventListener('submit', function(e) {
                 e.preventDefault();
                 let formData = new FormData(this);
 
-                fetch('add_item.php', {
+                fetch('edit_item.php', {
                     method: 'POST',
                     body: formData
                 })
                 .then(res => res.json())
                 .then(data => {
                     if(data.success){
-                        alert("Item added successfully!");
-                        location.reload(); // reload to show new item
+                        alert("Item updated successfully!");
+                        location.reload(); // reload to show updated item
                     } else {
-                        alert("Failed to add item.");
+                        alert("Failed to update item.");
                     }
                 });
               });
