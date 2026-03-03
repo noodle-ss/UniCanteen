@@ -24,12 +24,24 @@ $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $restaurant = $stmt->get_result()->fetch_assoc();
 
-$query = "SELECT * FROM Items WHERE vendor_id = ?";
+$query = "SELECT * FROM Items WHERE restaurant_id = ?";
 $stmt = Database::getInstance()->getConnection()->prepare($query);
 $stmt->bind_param("i", $restaurant['id']);
 $stmt->execute();
 $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
+$orderQuery = "
+SELECT o.*, u.full_name 
+FROM Orders o
+JOIN Users u ON o.customer_ID = u.ID
+WHERE o.restaurant_ID = ?
+ORDER BY o.order_date DESC
+";
+
+$stmt = $conn->prepare($orderQuery);
+$stmt->bind_param("i", $restaurant['id']);
+$stmt->execute();
+$orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 ?>
 
 
@@ -241,41 +253,21 @@ $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
               <span>Order Items</span><span>Customer</span><span>Time</span><span>Status</span><span></span>
             </div>
             
-            <div class="queue-item" style="grid-template-columns: 2fr 1.2fr 1.2fr 0.8fr 0.5fr;">
-              <span><?php echo $order_items; ?></span><span><?php echo $customer_name; ?></span><span><?php echo date("g:i A"); ?></span>
-              <span><select style="background: #fff1cf; border: none; padding: 6px 12px; border-radius: 30px; font-weight: 600; color: #9e6d0b;">
-                <option>Preparing</option>
-                <option>Ready</option>
-                <option>Completed</option>
-              </select></span>
-              <span><i class="fas fa-chevron-circle-right" style="color:#007a3e; cursor: pointer;"></i></span>
+            <?php foreach ($orders as $order): ?>
+            <div class="order-card">
+                <p><strong>Queue #<?= $order['queue_number'] ?></strong></p>
+                <p>Customer: <?= htmlspecialchars($order['full_name']) ?></p>
+                <p>Total: ₱<?= number_format($order['total_amount'],2) ?></p>
+
+                <select onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)">
+                    <option value="P" <?= $order['status']=='P'?'selected':'' ?>>Pending</option>
+                    <option value="PR" <?= $order['status']=='PR'?'selected':'' ?>>Preparing</option>
+                    <option value="R" <?= $order['status']=='R'?'selected':'' ?>>Ready</option>
+                    <option value="C" <?= $order['status']=='C'?'selected':'' ?>>Completed</option>
+                </select>
             </div>
-            
-            <div class="queue-item" style="grid-template-columns: 2fr 1.2fr 1.2fr 0.8fr 0.5fr;">
-              <span>Siomai Rice, 2x Gulaman</span><span>Justin S.</span><span>10:45 AM</span>
-              <span><span class="status-badge ready" style="background: #c9f0d7; color: #0c6e3a;">Ready</span></span>
-              <span><i class="fas fa-check-circle" style="color:#007a3e; cursor: pointer;"></i></span>
+            <?php endforeach; ?>
             </div>
-            
-            <div class="queue-item" style="grid-template-columns: 2fr 1.2fr 1.2fr 0.8fr 0.5fr;">
-              <span>Iced Coffee, 1x Brownie</span><span>Adriane C.</span><span>10:58 AM</span>
-              <span><span class="status-badge pending" style="background: #f5e6e6; color: #b13e3e;">Pending</span></span>
-              <span><i class="fas fa-hourglass" style="color:#b13e3e;"></i></span>
-            </div>
-            
-            <div class="queue-item" style="grid-template-columns: 2fr 1.2fr 1.2fr 0.8fr 0.5fr;">
-              <span>Club Sandwich, Fries</span><span>Mikaela L.</span><span>11:15 AM</span>
-              <span><span class="status-badge completed" style="background: #d0e3ff; color: #1f5090;">Completed</span></span>
-              <span><i class="fas fa-check-double" style="color:#16623b;"></i></span>
-            </div>
-            
-            <div class="queue-item" style="grid-template-columns: 2fr 1.2fr 1.2fr 0.8fr 0.5fr;">
-              <span>Beef Tapa, 2x Rice</span><span>Charles B.</span><span>11:22 AM</span>
-              <span><span class="status-badge preparing" style="background: #fff1cf; color: #9e6d0b;">Preparing</span></span>
-              <span><i class="fas fa-chevron-circle-right" style="color:#007a3e; cursor: pointer;"></i></span>
-            </div>
-          </div>
-        </div>
 
         <!-- Sales Monitoring Section -->
         <div class="admin-card" style="margin-bottom:30px;">
@@ -411,6 +403,23 @@ $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
   </div>
 
           <script>
+            
+            function updateOrderStatus(orderId, status) {
+                fetch('update_order_status.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: 'order_id=' + orderId + '&status=' + status
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success){
+                        alert("Order updated!");
+                    } else {
+                        alert("Failed to update order.");
+                    }
+                });
+            }
+
             function toggleStatus(itemId, isChecked) {
               let status = isChecked ? 'available' : 'sold_out';
 
@@ -428,7 +437,25 @@ $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                 }
              });
             }
-    
+
+            function deleteItem(id) {
+              if(confirm("Delete this item?")) {
+                fetch('delete_item.php', {
+                  method: 'POST',
+                  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                  body: `id=${id}`
+                })
+                .then(res => res.json())
+                .then(data => {
+                  if(data.success){
+                    location.reload();
+                  } else {
+                    alert("Delete failed");
+                  }
+                });
+              }
+            }
+              
               function openAddModal() {
                 document.getElementById('editItemModal').style.display = 'flex';
                 document.getElementById('edit_item_id').value = id;
