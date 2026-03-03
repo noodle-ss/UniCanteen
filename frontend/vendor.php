@@ -18,7 +18,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 // Get vendor info (restaurant name, etc.)
-$query = "SELECT * FROM Restaurants WHERE user_id = ?";
+$query = "SELECT * FROM Restaurants WHERE owner_id = ?";
 $stmt = Database::getInstance()->getConnection()->prepare($query);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -30,6 +30,13 @@ $stmt->bind_param("i", $restaurant['id']);
 $stmt->execute();
 $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
+$dbConn = Database::getInstance()->getConnection();
+
+$total_revenue = $dbConn->query("SELECT SUM(total_amount) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='C'")->fetch_row()[0] ?? 0;
+$total_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']}")->fetch_row()[0] ?? 0;
+$pending_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='P'")->fetch_row()[0] ?? 0;
+$completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='C'")->fetch_row()[0] ?? 0;
+
 $orderQuery = "
 SELECT o.*, u.full_name 
 FROM Orders o
@@ -38,10 +45,40 @@ WHERE o.restaurant_ID = ?
 ORDER BY o.order_date DESC
 ";
 
-$stmt = $conn->prepare($orderQuery);
+$dbConn = Database::getInstance()->getConnection();
+$stmt = $dbConn->prepare($orderQuery);
 $stmt->bind_param("i", $restaurant['id']);
 $stmt->execute();
 $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+foreach ($orders as &$order) { // use reference so we can add order items
+    $orderItemsQuery = "
+        SELECT i.name, oi.quantity
+        FROM Order_ItemLine oi
+        JOIN Items i ON oi.item_ID = i.ID
+        WHERE oi.order_ID = ?
+    ";
+    $stmtItems = $conn->prepare($orderItemsQuery);
+    $stmtItems->bind_param("i", $order['ID']);
+    $stmtItems->execute();
+    $order_items = $stmtItems->get_result()->fetch_all(MYSQLI_ASSOC);
+    
+    // Attach items to the order
+    $order['items'] = $order_items;
+}
+
+// Get vendor info
+$restaurantQuery = "SELECT * FROM Restaurants WHERE owner_id = ?";
+$stmt = $dbConn->prepare($restaurantQuery);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$restaurant = $stmt->get_result()->fetch_assoc();
+
+// === Dashboard metrics ===
+$total_revenue = $dbConn->query("SELECT SUM(total_amount) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='C'")->fetch_row()[0] ?? 0;
+$total_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']}")->fetch_row()[0] ?? 0;
+$pending_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='P'")->fetch_row()[0] ?? 0;
+$completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='C'")->fetch_row()[0] ?? 0;
 ?>
 
 
@@ -150,15 +187,19 @@ $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
               <div style="display:flex; gap:8px; justify-content:center;">
                 <!-- Status Toggle -->
                 <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" <?= $item['status']=='available'?'checked':'' ?>
+                  <input type="checkbox" <?= $item['isAvailable']?'checked':'' ?>
                         onchange="toggleStatus(<?= $item['id'] ?>, this.checked)"
                         style="accent-color: var(--dlsu-green); width:18px; height:18px;">
-                  <span class="toggle-avail"><?= $item['status']=='available'?'Available':'Sold Out' ?></span>
+                  <span class="toggle-avail"><?= $item['isAvailable']?'Available':'Sold Out' ?></span>
                 </label>
 
                 <!-- Edit Button -->
-                <button onclick="openEditModal(<?= $item['id'] ?>)"
-                        style="padding:4px 12px; border-radius:20px; border:none; background:#f0f0f0; cursor:pointer;">
+                <button onclick="openEditModal(
+                    <?= $item['ID'] ?>, 
+                    '<?= htmlspecialchars($item['name'], ENT_QUOTES) ?>', 
+                    <?= $item['price'] ?>, 
+                    <?= $item['isAvailable'] ? 'true' : 'false' ?>
+                )" style="padding:4px 12px; border-radius:20px; border:none; background:#f0f0f0; cursor:pointer;">
                   <i class="fas fa-pen"></i> Edit
                 </button>
 
@@ -258,6 +299,21 @@ $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                 <p><strong>Queue #<?= $order['queue_number'] ?></strong></p>
                 <p>Customer: <?= htmlspecialchars($order['full_name']) ?></p>
                 <p>Total: ₱<?= number_format($order['total_amount'],2) ?></p>
+
+                <p>Items:</p>
+                <ul>
+                  <?php foreach($order['items'] as $oi): ?>
+                    <li><?= htmlspecialchars($oi['name']) ?> x<?= $oi['quantity'] ?></li>
+                  <?php endforeach; ?>
+                </ul>
+
+    <select onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)">
+        <option value="P" <?= $order['status']=='P'?'selected':'' ?>>Pending</option>
+        <option value="PR" <?= $order['status']=='PR'?'selected':'' ?>>Preparing</option>
+        <option value="R" <?= $order['status']=='R'?'selected':'' ?>>Ready</option>
+        <option value="C" <?= $order['status']=='C'?'selected':'' ?>>Completed</option>
+    </select>
+</div>
 
                 <select onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)">
                     <option value="P" <?= $order['status']=='P'?'selected':'' ?>>Pending</option>
@@ -403,7 +459,7 @@ $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
   </div>
 
           <script>
-            
+
             function updateOrderStatus(orderId, status) {
                 fetch('update_order_status.php', {
                     method: 'POST',
@@ -456,16 +512,28 @@ $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
               }
             }
               
+              // Open the Add Item modal
               function openAddModal() {
-                document.getElementById('editItemModal').style.display = 'flex';
-                document.getElementById('edit_item_id').value = id;
-                document.getElementById('edit_item_name').value = name;
-                document.getElementById('edit_item_price').value = price;
-                document.getElementById('edit_item_availability').value = availability ? '1' : '0';
+                  document.getElementById('addItemModal').style.display = 'flex';
               }
 
+              // Close the Add Item modal
+              function closeAddModal() {
+                  document.getElementById('addItemModal').style.display = 'none';
+              }
+
+              // Open the Edit Item modal and populate the fields
+              function openEditModal(id, name, price, isAvailable) {
+                  document.getElementById('editItemModal').style.display = 'flex';
+                  document.getElementById('edit_item_id').value = id;
+                  document.getElementById('edit_item_name').value = name;
+                  document.getElementById('edit_item_price').value = price;
+                  document.getElementById('edit_item_availability').value = isAvailable ? '1' : '0';
+              }
+
+              // Close the Edit Item modal
               function closeEditModal() {
-                document.getElementById('editItemModal').style.display = 'none';
+                  document.getElementById('editItemModal').style.display = 'none';
               }
 
               // Handle form submission
