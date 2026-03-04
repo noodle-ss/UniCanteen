@@ -6,9 +6,13 @@ requireVendorLogin();
 
 $user_id = $_SESSION['user_id'] ?? null;
 
-if (!$user_id) {
-    header("Location: login.php");
-    exit();
+function requireVendorLogin() {
+    session_start();
+
+    if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'V') {
+        header("Location: login.php");
+        exit();
+    }
 }
 
 $query = "SELECT full_name FROM Users WHERE ID = ?";
@@ -58,7 +62,7 @@ foreach ($orders as &$order) { // use reference so we can add order items
         JOIN Items i ON oi.item_ID = i.ID
         WHERE oi.order_ID = ?
     ";
-    $stmtItems = $conn->prepare($orderItemsQuery);
+    $stmtItems = $dbConn->prepare($orderItemsQuery);
     $stmtItems->bind_param("i", $order['ID']);
     $stmtItems->execute();
     $order_items = $stmtItems->get_result()->fetch_all(MYSQLI_ASSOC);
