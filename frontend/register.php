@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $checkResult = $checkStmt->get_result();
 
             if ($checkResult && $checkResult->num_rows > 0) {
-                $errors[] = 'Email already registered. Please use a different email or <a href="login.php">login</a>.';
+                $errors[] = 'Email already registered. Please use a different email or <a href="' . url('index.php?page=login') . '" style="color:#007a3e;font-weight:600;">login here</a>.';
             } else {
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT, ['cost' => BCRYPT_COST]);
 
@@ -117,6 +117,7 @@ $csrf_token = generateCSRFToken();
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -135,7 +136,7 @@ $csrf_token = generateCSRFToken();
             background: white;
             border-radius: 30px;
             padding: 40px;
-            box-shadow: 0 10px 30px rgba(0,70,30,0.1);
+            box-shadow: 0 10px 30px rgba(0, 70, 30, 0.1);
         }
 
         .password-strength {

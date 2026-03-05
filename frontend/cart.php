@@ -44,11 +44,13 @@ if (isset($_GET['add']) && isset($_GET['restaurant_id'])) {
                     'restaurant_name' => $item['restaurant_name'],
                 ];
             }
-            header("Location: index.php?page=cart&success=added");
+            // Stay on restaurant page with a flash, NOT redirect to cart
+            $itemName = urlencode($item['name']);
+            header("Location: index.php?page=restaurant&id={$restaurant_id}&added=" . $itemName);
             exit();
         }
     }
-    header("Location: index.php?page=cart&error=" . urlencode($addError ?? "Item not available."));
+    header("Location: index.php?page=restaurant&id={$restaurant_id}&error=" . urlencode($addError ?? "Item not available."));
     exit();
 }
 

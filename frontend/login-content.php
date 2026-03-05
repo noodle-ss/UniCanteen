@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         $email = sanitizeInput($_POST['email']);
         $password = $_POST['password'];
-        
+
         if (empty($email) || empty($password)) {
             $error = 'Please enter both email and password';
         } else {
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $lockCheckStmt->bind_param("s", $email);
             $lockCheckStmt->execute();
             $lockResult = $lockCheckStmt->get_result();
-            
+
             if ($lockResult->num_rows > 0) {
                 $error = 'Account is locked. Please try again later.';
             } else {
@@ -39,10 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $stmt->bind_param("s", $email);
                 $stmt->execute();
                 $result = $stmt->get_result();
-                
+
                 if ($result && $result->num_rows > 0) {
                     $user = $result->fetch_assoc();
-                    
+
                     if (!$user['is_active'] || $user['is_banned']) {
                         $error = 'Account is disabled. Please contact administrator.';
                     } else {
@@ -53,28 +53,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 $rehashStmt->bind_param("si", $newHash, $user['ID']);
                                 $rehashStmt->execute();
                             }
-                            
+
                             $resetStmt = $db->prepare("UPDATE Users SET login_attempts = 0, last_login = NOW() WHERE ID = ?");
                             $resetStmt->bind_param("i", $user['ID']);
                             $resetStmt->execute();
-                            
+
                             $database = Database::getInstance();
                             $session_token = $database->createSession($user['ID']);
-                            
+
                             $_SESSION['user_id'] = $user['ID'];
                             $_SESSION['user_email'] = $user['email'];
                             $_SESSION['user_name'] = $user['full_name'];
                             $_SESSION['user_role'] = $user['role'];
                             $_SESSION['session_token'] = $session_token;
-                            
+
                             secureSessionRegenerate();
-                            
+
                             $redirect = isset($_SESSION['redirect_after_login']) ? $_SESSION['redirect_after_login'] : 'index.php?page=customer';
                             unset($_SESSION['redirect_after_login']);
                             redirect($redirect);
                         } else {
                             $attempts = $user['login_attempts'] + 1;
-                            
+
                             if ($attempts >= MAX_LOGIN_ATTEMPTS) {
                                 $locked_until = date('Y-m-d H:i:s', time() + LOCKOUT_TIME);
                                 $lockStmt = $db->prepare("UPDATE Users SET login_attempts = ?, locked_until = ? WHERE ID = ?");
@@ -106,50 +106,54 @@ $csrf_token = generateCSRFToken();
                 <i class="fas fa-arrow-left"></i> Back to Home
             </a>
         </div>
-        <a href="<?php echo url('index.php'); ?>" class="logo" style="display: block; text-align: center; margin-bottom: 30px;">UniCanteen</a>
-        
+        <a href="<?php echo url('index.php'); ?>" class="logo"
+            style="display: block; text-align: center; margin-bottom: 30px;">UniCanteen</a>
+
         <h2 style="text-align: center; margin-bottom: 30px;">Welcome Back</h2>
-        
-        <?php if($error): ?>
-        <div class="error-message">
-            <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
-        </div>
+
+        <?php if ($error): ?>
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
+            </div>
         <?php endif; ?>
-        
+
         <form method="POST" action="" id="loginForm">
             <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-            
+
             <div style="margin-bottom: 20px;">
                 <label style="display: block; margin-bottom: 8px; font-weight: 500;">Email Address</label>
-                <input type="email" name="email" value="<?php echo htmlspecialchars($email); ?>" required 
-                       style="width: 100%; padding: 15px; border: 2px solid #e0f0e8; border-radius: 30px; font-family: 'Inter', sans-serif;"
-                       placeholder="your@email.com">
+                <input type="email" name="email" value="<?php echo htmlspecialchars($email); ?>" required
+                    style="width: 100%; padding: 15px; border: 2px solid #e0f0e8; border-radius: 30px; font-family: 'Inter', sans-serif;"
+                    placeholder="your@email.com">
             </div>
-            
+
             <div style="margin-bottom: 10px; position: relative;" class="password-toggle">
                 <label style="display: block; margin-bottom: 8px; font-weight: 500;">Password</label>
-                <input type="password" name="password" id="password" required 
-                       style="width: 100%; padding: 15px; border: 2px solid #e0f0e8; border-radius: 30px; font-family: 'Inter', sans-serif;"
-                       placeholder="••••••••">
+                <input type="password" name="password" id="password" required
+                    style="width: 100%; padding: 15px; border: 2px solid #e0f0e8; border-radius: 30px; font-family: 'Inter', sans-serif;"
+                    placeholder="••••••••">
                 <i class="fas fa-eye toggle-password" id="togglePassword" style="right: 20px;"></i>
             </div>
-            
+
             <div style="text-align: right; margin-bottom: 20px;">
-                <a href="<?php echo url('frontend/forgot-password.php'); ?>" style="color: #007a3e; font-size: 0.9rem;">Forgot Password?</a>
+                <a href="<?php echo url('index.php?page=forgot-password'); ?>"
+                    style="color: #007a3e; font-size: 0.9rem;">Forgot Password?</a>
             </div>
-            
-            <button type="submit" class="btn-primary" style="color: #007a3e; background: #e0f0e8; width: 100%; padding: 16px; font-size: 1.1rem;">
+
+            <button type="submit" class="btn-primary"
+                style="color: #007a3e; background: #e0f0e8; width: 100%; padding: 16px; font-size: 1.1rem;">
                 <i class="fas fa-sign-in-alt"></i> Sign In
             </button>
         </form>
-        
+
         <div style="text-align: center; margin-top: 25px; padding-top: 20px; border-top: 1px solid #e0f0e8;">
             <p style="color: #3b7455; margin-bottom: 10px;">New to UniCanteen?</p>
-            <a href="<?php echo url('index.php?page=register'); ?>" class="btn-secondary" style="text-decoration: none; display: inline-block; padding: 12px 30px;">
+            <a href="<?php echo url('index.php?page=register'); ?>" class="btn-secondary"
+                style="text-decoration: none; display: inline-block; padding: 12px 30px;">
                 <i class="fas fa-user-plus"></i> Create Customer Account
             </a>
         </div>
-        
+
         <div style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: #8faa9a;">
             <i class="fas fa-shield-alt"></i> Your information is secure and encrypted
         </div>
@@ -157,11 +161,11 @@ $csrf_token = generateCSRFToken();
 </div>
 
 <script>
-document.getElementById('togglePassword')?.addEventListener('click', function() {
-    const password = document.getElementById('password');
-    const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-    password.setAttribute('type', type);
-    this.classList.toggle('fa-eye');
-    this.classList.toggle('fa-eye-slash');
-});
+    document.getElementById('togglePassword')?.addEventListener('click', function () {
+        const password = document.getElementById('password');
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        this.classList.toggle('fa-eye');
+        this.classList.toggle('fa-eye-slash');
+    });
 </script>

@@ -68,6 +68,9 @@ if (isset($_SESSION['cart'])) {
         $cart_items_count += $item['quantity'];
     }
 }
+// Flash messages from add-to-cart redirect
+$flash_added = isset($_GET['added']) ? urldecode($_GET['added']) : '';
+$flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -111,6 +114,49 @@ if (isset($_SESSION['cart'])) {
             padding: 2px 6px;
             font-size: 0.7rem;
             margin-left: 5px;
+        }
+
+        /* ── Toast notification ── */
+        .toast-fixed {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 9999;
+            min-width: 260px;
+            max-width: 380px;
+            padding: 14px 20px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+            animation: toastSlide 0.3s ease;
+        }
+
+        .toast-fixed.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1.5px solid #bbf7d0;
+        }
+
+        .toast-fixed.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1.5px solid #fecaca;
+        }
+
+        @keyframes toastSlide {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         /* ── Hero ── */
@@ -333,10 +379,9 @@ if (isset($_SESSION['cart'])) {
         .menu-card {
             background: #fff;
             border-radius: 20px;
-            padding: 20px 22px;
             display: flex;
-            align-items: center;
-            gap: 16px;
+            flex-direction: column;
+            overflow: hidden;
             border: 1.5px solid #e8f4ee;
             transition: box-shadow 0.18s, border-color 0.18s, transform 0.18s;
             position: relative;
@@ -352,24 +397,36 @@ if (isset($_SESSION['cart'])) {
             opacity: 0.72;
         }
 
+        .menu-card-img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            display: block;
+            border-bottom: 1.5px solid #e8f4ee;
+        }
+
         .menu-card-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
+            width: 100%;
+            height: 220px;
             background: #f0faf4;
-            border: 1px solid #d0eddc;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #007a3e;
-            font-size: 1.2rem;
-            flex-shrink: 0;
+            font-size: 3.5rem;
+            border-bottom: 1.5px solid #e8f4ee;
         }
 
         .menu-card.sold-out-card .menu-card-icon {
             background: #fef2f2;
-            border-color: #fecaca;
             color: #b91c1c;
+        }
+
+        .menu-card-info-row {
+            padding: 20px 22px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
         .menu-card-body {
@@ -590,6 +647,23 @@ if (isset($_SESSION['cart'])) {
                 </nav>
             </div>
 
+            <!-- Flash toasts -->
+            <?php if ($flash_added): ?>
+                <div class="toast-fixed success" id="addToast">
+                    <i class="fas fa-circle-check"></i>
+                    <span><strong><?php echo htmlspecialchars($flash_added); ?></strong> added to cart!</span>
+                    <a href="index.php?page=cart"
+                        style="margin-left:auto; color:inherit; font-weight:700; white-space:nowrap; text-decoration:underline;">View
+                        Cart</a>
+                </div>
+            <?php endif; ?>
+            <?php if ($flash_error): ?>
+                <div class="toast-fixed error" id="errToast">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <?php echo htmlspecialchars($flash_error); ?>
+                </div>
+            <?php endif; ?>
+
             <!-- Hero -->
             <div class="r-hero">
                 <div class="r-hero-inner">
@@ -675,31 +749,37 @@ if (isset($_SESSION['cart'])) {
                             $count++;
                             ?>
                             <div class="menu-card <?php echo !$isAvailable ? 'sold-out-card' : ''; ?>">
-                                <div class="menu-card-icon">
-                                    <i class="fas fa-<?php echo $isAvailable ? 'bowl-food' : 'ban'; ?>"></i>
-                                </div>
-                                <div class="menu-card-body">
-                                    <div class="menu-card-name"><?php echo htmlspecialchars($item['name']); ?></div>
-                                    <?php if ($item['description']): ?>
-                                        <div class="menu-card-desc"><?php echo htmlspecialchars($item['description']); ?></div>
-                                    <?php endif; ?>
-                                    <div class="menu-card-price" style="margin-top:6px;">
-                                        ₱<?php echo number_format($item['price'], 0); ?></div>
-                                </div>
-                                <div class="menu-card-actions">
-                                    <span class="avail-tag-small <?php echo $isAvailable ? 'yes' : 'no'; ?>">
-                                        <?php echo $isAvailable ? 'Available' : 'Sold Out'; ?>
-                                    </span>
-                                    <?php if ($isAvailable): ?>
-                                        <a href="index.php?page=restaurant&id=<?php echo $restaurant_id; ?>&add_to_cart=<?php echo $item['ID']; ?>"
-                                            class="btn-add" id="cart-btn-<?php echo $item['ID']; ?>">
-                                            <i class="fas fa-plus"></i> Add
-                                        </a>
-                                    <?php else: ?>
-                                        <span class="btn-sold">
-                                            <i class="fas fa-times"></i> Sold Out
+                                <?php if (!empty($item['image_url'])): ?>
+                                    <img src="<?php echo htmlspecialchars(url($item['image_url'])); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="menu-card-img">
+                                <?php else: ?>
+                                    <div class="menu-card-icon">
+                                        <i class="fas fa-<?php echo $isAvailable ? 'bowl-food' : 'ban'; ?>"></i>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="menu-card-info-row">
+                                    <div class="menu-card-body">
+                                        <div class="menu-card-name"><?php echo htmlspecialchars($item['name']); ?></div>
+                                        <?php if ($item['description']): ?>
+                                            <div class="menu-card-desc"><?php echo htmlspecialchars($item['description']); ?></div>
+                                        <?php endif; ?>
+                                        <div class="menu-card-price" style="margin-top:6px;">
+                                            ₱<?php echo number_format($item['price'], 0); ?></div>
+                                    </div>
+                                    <div class="menu-card-actions">
+                                        <span class="avail-tag-small <?php echo $isAvailable ? 'yes' : 'no'; ?>">
+                                            <?php echo $isAvailable ? 'Available' : 'Sold Out'; ?>
                                         </span>
-                                    <?php endif; ?>
+                                        <?php if ($isAvailable): ?>
+                                            <a href="index.php?page=restaurant&id=<?php echo $restaurant_id; ?>&add_to_cart=<?php echo $item['ID']; ?>"
+                                                class="btn-add" id="cart-btn-<?php echo $item['ID']; ?>">
+                                                <i class="fas fa-plus"></i> Add
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="btn-sold">
+                                                <i class="fas fa-times"></i> Sold Out
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
                         <?php endwhile; ?>
@@ -740,7 +820,8 @@ if (isset($_SESSION['cart'])) {
                                         </div>
                                         <div>
                                             <div class="rev-name">
-                                                <?php echo htmlspecialchars($review['reviewer_name'] ?? 'Anonymous'); ?></div>
+                                                <?php echo htmlspecialchars($review['reviewer_name'] ?? 'Anonymous'); ?>
+                                            </div>
                                             <div class="rev-time"><?php echo getTimeAgo($review['timestamp']); ?></div>
                                         </div>
                                     </div>
@@ -811,6 +892,11 @@ if (isset($_SESSION['cart'])) {
                 const target = document.querySelector(this.getAttribute('href'));
                 if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
+        });
+        // Auto-dismiss toasts after 3 s
+        ['addToast', 'errToast'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) setTimeout(() => { el.style.transition = 'opacity 0.5s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 500); }, 3000);
         });
     </script>
 </body>

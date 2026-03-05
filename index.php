@@ -124,14 +124,16 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'customer';
                 if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'V') {
                     include 'frontend/vendor.php';
                 } else {
-                    include 'frontend/login.php';
+                    header('Location: index.php?page=login&error=unauthorized');
+                    exit();
                 }
                 break;
             case 'sysadmin':
                 if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'A') {
                     include 'frontend/sysadmin.php';
                 } else {
-                    include 'frontend/login.php';
+                    header('Location: index.php?page=login&error=unauthorized');
+                    exit();
                 }
                 break;
             default:
