@@ -20,10 +20,9 @@ function requireVendorLogin() {
 }
 
 
-
 $query = "SELECT full_name FROM Users WHERE role='V'";
 $stmt = Database::getInstance()->getConnection()->prepare($query);
-$stmt->bind_param("i", $user_id);
+//$stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
