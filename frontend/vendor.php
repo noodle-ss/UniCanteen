@@ -1,5 +1,5 @@
 <?php
-require_once '../config/auth_check.php';
+require_once __DIR__ . '/../config/auth_check.php';
 require_once '../config/database.php';
 
 // =====================
