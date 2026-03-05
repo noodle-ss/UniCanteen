@@ -563,10 +563,7 @@ $completed_orders = $restaurant_id
       </div>
     </section>
   </div>
-
           <script>
-
-
             function updateOrderStatus(orderId, status) {
                 fetch('update_order_status.php', {
                     method: 'POST',
