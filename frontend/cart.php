@@ -4,56 +4,55 @@ require_once __DIR__ . '/../config/auth_check.php';
 
 $db = Database::getInstance()->getConnection();
 
-// Initialize cart if not exists
+// Initialize cart
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
 }
 
-// Handle add to cart
+// ── Handle add to cart ──────────────────────────────────────────────────────
 if (isset($_GET['add']) && isset($_GET['restaurant_id'])) {
-    $item_id = intval($_GET['add']);
+    $item_id      = intval($_GET['add']);
     $restaurant_id = intval($_GET['restaurant_id']);
-    
-    // Check if item exists and is available
-    $checkQuery = "SELECT i.*, r.name as restaurant_name, r.ID as restaurant_id 
-                   FROM Items i 
-                   JOIN Restaurants r ON i.restaurant_ID = r.ID 
+
+    $checkQuery = "SELECT i.*, r.name as restaurant_name, r.ID as restaurant_id
+                   FROM Items i
+                   JOIN Restaurants r ON i.restaurant_ID = r.ID
                    WHERE i.ID = ? AND i.isAvailable = TRUE";
     $stmt = $db->prepare($checkQuery);
     $stmt->bind_param("i", $item_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
+    $addError = null;
     if ($item = $result->fetch_assoc()) {
-        // Check if cart has items from different restaurant
         if (!empty($_SESSION['cart'])) {
-            $first_item = reset($_SESSION['cart']);
-            if ($first_item['restaurant_id'] != $restaurant_id) {
-                $error = "You can only order from one restaurant at a time. Please clear your cart first.";
+            $first = reset($_SESSION['cart']);
+            if ($first['restaurant_id'] != $restaurant_id) {
+                $addError = "You can only order from one restaurant at a time. Clear your cart first.";
             }
         }
-        
-        if (!isset($error)) {
+        if (!$addError) {
             if (isset($_SESSION['cart'][$item_id])) {
                 $_SESSION['cart'][$item_id]['quantity']++;
             } else {
                 $_SESSION['cart'][$item_id] = [
-                    'id' => $item['ID'],
-                    'name' => $item['name'],
-                    'price' => $item['price'],
-                    'quantity' => 1,
-                    'restaurant_id' => $item['restaurant_id'],
-                    'restaurant_name' => $item['restaurant_name']
+                    'id'              => $item['ID'],
+                    'name'            => $item['name'],
+                    'price'           => $item['price'],
+                    'quantity'        => 1,
+                    'restaurant_id'   => $item['restaurant_id'],
+                    'restaurant_name' => $item['restaurant_name'],
                 ];
             }
-            $success = "Item added to cart!";
+            header("Location: index.php?page=cart&success=added");
+            exit();
         }
     }
-    header("Location: cart.php?" . (isset($error) ? "error=" . urlencode($error) : "success=added"));
+    header("Location: index.php?page=cart&error=" . urlencode($addError ?? "Item not available."));
     exit();
 }
 
-// Handle update quantity
+// ── Handle update quantity ───────────────────────────────────────────────────
 if (isset($_POST['update_cart'])) {
     foreach ($_POST['quantity'] as $item_id => $quantity) {
         $quantity = intval($quantity);
@@ -63,425 +62,693 @@ if (isset($_POST['update_cart'])) {
             $_SESSION['cart'][$item_id]['quantity'] = $quantity;
         }
     }
-    header("Location: cart.php?success=updated");
+    header("Location: index.php?page=cart&success=updated");
     exit();
 }
 
-// Handle remove item
+// ── Handle remove ───────────────────────────────────────────────────────────
 if (isset($_GET['remove'])) {
-    $item_id = intval($_GET['remove']);
-    unset($_SESSION['cart'][$item_id]);
-    header("Location: cart.php?success=removed");
+    unset($_SESSION['cart'][intval($_GET['remove'])]);
+    header("Location: index.php?page=cart&success=removed");
     exit();
 }
 
-// Handle clear cart
+// ── Handle clear ────────────────────────────────────────────────────────────
 if (isset($_GET['clear'])) {
     $_SESSION['cart'] = [];
-    header("Location: cart.php?success=cleared");
+    header("Location: index.php?page=cart&success=cleared");
     exit();
 }
 
-// Handle checkout
+// ── Handle checkout ─────────────────────────────────────────────────────────
 if (isset($_POST['checkout'])) {
     if (empty($_SESSION['cart'])) {
-        $error = "Your cart is empty!";
+        $checkoutError = "Your cart is empty!";
     } elseif (!isLoggedIn()) {
-        $_SESSION['redirect_after_login'] = 'cart.php';
-        header("Location: login.php");
+        $_SESSION['redirect_after_login'] = 'index.php?page=cart';
+        header("Location: index.php?page=login");
         exit();
     } else {
-        // Calculate total
-        $total = 0;
+        $total         = 0;
         $restaurant_id = null;
         foreach ($_SESSION['cart'] as $item) {
             $total += $item['price'] * $item['quantity'];
             $restaurant_id = $item['restaurant_id'];
         }
-        
-        // Get next queue number for this restaurant
-        $queueQuery = "SELECT COALESCE(MAX(queue_number), 2400) + 1 as next_queue 
+
+        $queueQuery = "SELECT COALESCE(MAX(queue_number), 2400) + 1 as next_queue
                        FROM Orders WHERE restaurant_ID = ? AND DATE(order_date) = CURDATE()";
         $stmt = $db->prepare($queueQuery);
         $stmt->bind_param("i", $restaurant_id);
         $stmt->execute();
-        $queueResult = $stmt->get_result();
-        $queueData = $queueResult->fetch_assoc();
+        $queueData    = $stmt->get_result()->fetch_assoc();
         $queue_number = $queueData['next_queue'];
-        
-        // Create order
+
         $db->begin_transaction();
         try {
-            $orderQuery = "INSERT INTO Orders (customer_ID, restaurant_ID, total_amount, status, queue_number, payment_method) 
-                           VALUES (?, ?, ?, 'P', ?, ?)";
+            $orderQuery = "INSERT INTO Orders (customer_ID, restaurant_ID, total_amount, status, queue_number, payment_method)
+                           VALUES (?, ?, ?, 'P', ?, 'gcash')";
             $stmt = $db->prepare($orderQuery);
-            $payment_method = $_POST['payment_method'] ?? 'cash';
-            $stmt->bind_param("iidss", $_SESSION['user_id'], $restaurant_id, $total, $queue_number, $payment_method);
+            $stmt->bind_param("iidi", $_SESSION['user_id'], $restaurant_id, $total, $queue_number);
             $stmt->execute();
             $order_id = $db->insert_id;
-            
-            // Add order items
+
             foreach ($_SESSION['cart'] as $item) {
-                $itemQuery = "INSERT INTO Order_ItemLine (order_ID, item_ID, quantity, price_at_time) 
-                              VALUES (?, ?, ?, ?)";
+                $itemQuery = "INSERT INTO Order_ItemLine (order_ID, item_ID, quantity, price_at_time) VALUES (?, ?, ?, ?)";
                 $stmt = $db->prepare($itemQuery);
                 $stmt->bind_param("iiid", $order_id, $item['id'], $item['quantity'], $item['price']);
                 $stmt->execute();
             }
-            
+
             $db->commit();
             $_SESSION['cart'] = [];
-            header("Location: order-confirmation.php?id=$order_id");
+            header("Location: index.php?page=orders&order_id=$order_id&success=placed");
             exit();
-            
         } catch (Exception $e) {
             $db->rollback();
-            $error = "Checkout failed. Please try again.";
+            $checkoutError = "Checkout failed. Please try again.";
         }
     }
 }
 
-// Get success/error messages
-$success = $_GET['success'] ?? '';
-$error = $_GET['error'] ?? '';
+// ── Page vars ────────────────────────────────────────────────────────────────
+$successMsg = $_GET['success'] ?? '';
+$errorMsg   = $_GET['error']   ?? ($checkoutError ?? '');
 
-// Calculate cart totals
-$cart_total = 0;
+$cart_total       = 0;
 $cart_items_count = 0;
-$restaurant_name = '';
+$restaurant_name  = '';
 foreach ($_SESSION['cart'] as $item) {
-    $cart_total += $item['price'] * $item['quantity'];
+    $cart_total       += $item['price'] * $item['quantity'];
     $cart_items_count += $item['quantity'];
-    $restaurant_name = $item['restaurant_name'];
+    $restaurant_name   = $item['restaurant_name'];
 }
+$restaurant_id_for_back = '';
+if (!empty($_SESSION['cart'])) {
+    $first = reset($_SESSION['cart']);
+    $restaurant_id_for_back = $first['restaurant_id'];
+}
+
+$subtotal    = $cart_total;
+$service_fee = 20;
+$grand_total = $subtotal + $service_fee;
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopping Cart - UniCanteen</title>
+    <title>Your Cart · UniCanteen</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="../assets/styles.css">
+    <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
-        body {
-            display: block;
-            min-height: auto;
-            margin: 0;
+        /* ── Layout reset ── */
+        body { display: block; min-height: auto; margin: 0; padding: 0; background: #f0f7f2; }
+        .main-content { margin-left: 0; }
+        .wrapper { max-width: 1200px; margin: 0 auto; padding: 0 36px; }
+
+        .cart-count {
+            background: white; color: #007a3e;
+            border-radius: 50%; padding: 2px 6px;
+            font-size: 0.7rem; margin-left: 5px;
+        }
+
+        /* ── Page hero ── */
+        .cart-hero {
+            background: linear-gradient(135deg, #005c2e 0%, #007a3e 50%, #1a8c4a 100%);
             padding: 0;
         }
-        .main-content {
-            margin-left: 0;
+        .cart-hero-inner {
+            padding: 32px 0 36px;
         }
-        .wrapper {
-            max-width: 1300px;
-            margin: 0 auto;
-            padding: 0 36px;
-        }
-        .cart-container {
-            max-width: 1000px;
-            margin: 40px auto;
-        }
-        .cart-header {
-            display: grid;
-            grid-template-columns: 3fr 1fr 1fr 1fr;
-            padding: 15px 0;
-            border-bottom: 2px solid #b1d9c4;
-            font-weight: 600;
-            color: #16623b;
-        }
-        .cart-item {
-            display: grid;
-            grid-template-columns: 3fr 1fr 1fr 1fr;
+        .btn-back {
+            display: inline-flex;
             align-items: center;
-            padding: 20px 0;
-            border-bottom: 1px solid #e0f0e8;
-        }
-        .cart-item:last-child {
-            border-bottom: none;
-        }
-        .cart-item-name {
-            font-weight: 500;
-            color: #1a4d31;
-        }
-        .cart-item-price {
-            font-weight: 600;
-            color: #1c6e3c;
-        }
-        .cart-item-quantity input {
-            width: 70px;
-            padding: 8px;
-            border: 2px solid #e0f0e8;
-            border-radius: 30px;
-            text-align: center;
-            font-family: 'Inter', sans-serif;
-        }
-        .cart-item-remove {
-            color: #b13e3e;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 0.9rem;
-        }
-        .cart-summary {
-            background: white;
-            border-radius: 30px;
-            padding: 30px;
-            margin-top: 30px;
-            border: 1px solid var(--border-soft);
-        }
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #e0f0e8;
-        }
-        .summary-row.total {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #007a3e;
-            border-bottom: none;
-        }
-        .payment-methods {
-            display: flex;
-            gap: 20px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-        .payment-method {
-            flex: 1;
-            min-width: 120px;
-            padding: 15px;
-            border: 2px solid #e0f0e8;
-            border-radius: 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .payment-method.selected {
-            border-color: #007a3e;
-            background: #e3f4ea;
-        }
-        .payment-method input[type="radio"] {
-            display: none;
-        }
-        .payment-method i {
-            font-size: 1.5rem;
-            color: #007a3e;
-            margin-bottom: 8px;
-        }
-        .restaurant-info {
-            background: #e3f4ea;
-            padding: 15px 20px;
+            gap: 8px;
+            background: rgba(255,255,255,0.17);
+            border: 1.5px solid rgba(255,255,255,0.38);
+            color: #fff;
+            padding: 9px 20px;
             border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-decoration: none;
             margin-bottom: 20px;
+            transition: background 0.2s;
+        }
+        .btn-back:hover { background: rgba(255,255,255,0.28); }
+        .cart-hero h1 {
+            font-size: 2.2rem; font-weight: 700;
+            color: #fff; margin: 0 0 6px;
+        }
+        .cart-hero-sub { color: rgba(255,255,255,0.8); font-size: 0.95rem; margin: 0; }
+
+        /* ── Content layout ── */
+        .cart-body { padding: 40px 0 60px; }
+        .cart-layout {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 28px;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .cart-layout { grid-template-columns: 1fr; }
+        }
+
+        /* ── Toasts ── */
+        .toast {
             display: flex;
             align-items: center;
             gap: 10px;
+            padding: 13px 20px;
+            border-radius: 16px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
         }
-        .action-buttons {
+        .toast.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .toast.error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+        /* ── Restaurant banner ── */
+        .stall-banner {
+            display: flex; align-items: center;
+            gap: 12px;
+            background: #fff;
+            border: 1.5px solid #d0eddc;
+            border-radius: 18px;
+            padding: 14px 20px;
+            margin-bottom: 18px;
+        }
+        .stall-banner-icon {
+            width: 40px; height: 40px;
+            background: #e3f4ea; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: #007a3e; font-size: 1rem; flex-shrink: 0;
+        }
+        .stall-banner-name { font-weight: 700; color: #1a3d28; font-size: 0.95rem; }
+        .stall-banner-note { font-size: 0.78rem; color: #6b8f7a; margin-top: 2px; }
+
+        /* ── Cart items card ── */
+        .cart-card {
+            background: #fff;
+            border-radius: 24px;
+            border: 1.5px solid #e0f0e8;
+            overflow: hidden;
+        }
+        .cart-card-header {
+            display: grid;
+            grid-template-columns: 1fr 90px 90px 90px 44px;
+            gap: 8px;
+            padding: 14px 22px;
+            background: #f4fbf7;
+            border-bottom: 1.5px solid #e0f0e8;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #4a7560;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .cart-card-header span:not(:first-child) { text-align: center; }
+        .cart-card-header span:nth-child(3) { text-align: right; }
+
+        .cart-row {
+            display: grid;
+            grid-template-columns: 1fr 90px 90px 90px 44px;
+            gap: 8px;
+            align-items: center;
+            padding: 16px 22px;
+            border-bottom: 1px solid #eef7f2;
+            transition: background 0.15s;
+        }
+        .cart-row:last-child { border-bottom: none; }
+        .cart-row:hover { background: #fafffe; }
+
+        .item-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #1a3d28;
+        }
+        .item-rest {
+            font-size: 0.75rem;
+            color: #6b8f7a;
+            margin-top: 2px;
+        }
+        .item-price {
+            text-align: center;
+            font-weight: 500;
+            color: #2d6347;
+            font-size: 0.9rem;
+        }
+
+        .qty-control {
             display: flex;
-            gap: 15px;
-            margin-top: 20px;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .qty-control input[type="number"] {
+            width: 52px;
+            padding: 7px 6px;
+            border: 1.5px solid #c8e6d4;
+            border-radius: 10px;
+            text-align: center;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: #1a3d28;
+            font-weight: 600;
+            background: #f4fbf7;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+        .qty-control input:focus { border-color: #007a3e; background: #fff; }
+        .qty-control input::-webkit-outer-spin-button,
+        .qty-control input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+        .item-subtotal {
+            text-align: right;
+            font-weight: 700;
+            color: #007a3e;
+            font-size: 0.95rem;
+        }
+        .btn-remove {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+            margin: 0 auto;
+        }
+        .btn-remove:hover { background: #fee2e2; }
+
+        /* action bar */
+        .cart-actions {
+            display: flex;
+            gap: 10px;
+            padding: 16px 22px;
+            background: #f9fef9;
+            border-top: 1.5px solid #e0f0e8;
             flex-wrap: wrap;
         }
-        .customer-nav {
+        .btn-sm {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 18px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.825rem;
+            cursor: pointer;
+            text-decoration: none;
+            border: none;
+            transition: all 0.18s;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-sm.update { background: #e3f4ea; color: #007a3e; }
+        .btn-sm.update:hover { background: #007a3e; color: #fff; }
+        .btn-sm.clear  { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .btn-sm.clear:hover { background: #fee2e2; }
+        .btn-sm.add-more { background: #f4fbf7; color: #1a3d28; border: 1px solid #c8e6d4; margin-left: auto; }
+        .btn-sm.add-more:hover { background: #e0f0e8; }
+
+        /* ── Empty cart ── */
+        .empty-cart {
+            background: #fff;
+            border-radius: 24px;
+            border: 1.5px dashed #c8e6d4;
+            padding: 64px 32px;
+            text-align: center;
+            color: #5f8b74;
+        }
+        .empty-cart i { font-size: 3rem; opacity: 0.25; display: block; margin-bottom: 16px; }
+        .empty-cart h3 { color: #1a3d28; margin-bottom: 8px; }
+        .empty-cart p  { margin-bottom: 24px; }
+
+        /* ── Summary sidebar ── */
+        .summary-card {
+            background: #fff;
+            border-radius: 24px;
+            border: 1.5px solid #e0f0e8;
+            overflow: hidden;
+            position: sticky;
+            top: 24px;
+        }
+        .summary-header {
+            padding: 18px 24px 14px;
+            border-bottom: 1.5px solid #e8f5ee;
+        }
+        .summary-header h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #0f3d24;
+            margin: 0;
+        }
+        .summary-rows { padding: 16px 24px; }
+        .sum-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 24px 0;
-            margin-bottom: 30px;
+            padding: 9px 0;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #eef7f2;
+            color: #3d675a;
         }
-        .cart-count {
-            background: white;
+        .sum-row:last-child { border-bottom: none; }
+        .sum-row.total-row {
+            font-size: 1.1rem;
+            font-weight: 700;
             color: #007a3e;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 0.7rem;
-            margin-left: 5px;
+            border-top: 2px solid #e0f0e8;
+            border-bottom: none;
+            padding-top: 14px;
+            margin-top: 6px;
         }
-    </style>
-    </head>
-    <body>
-        <div class="main-content">
-            <div class="wrapper">
-                <nav class="customer-nav">
-                    <a href="<?php echo url('index.php'); ?>" class="logo">UniCanteen <span>DLSU</span></a>
-                    <div class="customer-nav-links">
-                        <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
-                        <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
-                        <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
-                        <?php if(isset($_SESSION['user_id'])): ?>
-                            <a href="<?php echo url('index.php?page=profile'); ?>"><?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
-                            <a href="<?php echo url('index.php?page=logout'); ?>" class="btn-outline">Logout</a>
-                        <?php else: ?>
-                            <a href="<?php echo url('index.php?page=login'); ?>">Sign In</a>
-                            <a href="<?php echo url('index.php?page=register'); ?>" class="btn-outline">Register</a>
-                        <?php endif; ?>
-                        <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-primary"><i class="fas fa-bag-shopping"></i> Cart 
-                            <span class="cart-count"><?php echo $cart_items_count; ?></span>
-                        </a>
-                    </div>
-                </nav>
-                
-                <div class="cart-container">
-                    <h1 style="font-size: 2.5rem; color: #0f4a2f; margin-bottom: 30px; text-align: center;">Shopping Cart</h1>
-                    
-                    <?php if($success): ?>
-                    <div class="success-message" style="margin: 20px 0;">
-                        <i class="fas fa-check-circle"></i> 
-                        <?php 
-                        if($success == 'added') echo "Item added to cart!";
-                        elseif($success == 'updated') echo "Cart updated successfully!";
-                        elseif($success == 'removed') echo "Item removed from cart!";
-                        elseif($success == 'cleared') echo "Cart cleared!";
-                        ?>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <?php if($error): ?>
-                    <div class="error-message" style="margin: 20px 0;">
-                        <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
-                    </div>
-                    <?php endif; ?>
+        .sum-label { font-weight: 500; }
+        .sum-val   { font-weight: 600; }
 
-                    <?php if(empty($_SESSION['cart'])): ?>
-                    <div class="track-card" style="text-align: center; padding: 60px; max-width: 600px; margin: 0 auto;">
-                        <i class="fas fa-shopping-cart" style="font-size: 4rem; color: #cae3d6; margin-bottom: 20px;"></i>
-                        <h3 style="margin-bottom: 15px; color: #1e3a2f;">Your cart is empty</h3>
-                        <p style="color: #3b7455; margin-bottom: 25px;">Looks like you haven't added any items yet.</p>
-                        <a href="<?php echo url('index.php?page=customer'); ?>" class="btn-primary" style="display: inline-block; text-decoration: none;">
-                            <i class="fas fa-utensils"></i> Browse Stalls
-                        </a>
+        /* ── GCash payment block ── */
+        .gcash-block {
+            margin: 0 24px 20px;
+            border: 2px solid #007a3e;
+            border-radius: 18px;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #f0faf5, #e3f4ea);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .gcash-logo {
+            width: 48px; height: 48px;
+            background: #007a3e;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+        .gcash-title {
+            font-weight: 700;
+            color: #0a3d22;
+            font-size: 0.95rem;
+        }
+        .gcash-sub {
+            font-size: 0.78rem;
+            color: #3d7455;
+            margin-top: 2px;
+        }
+        .gcash-check {
+            margin-left: auto;
+            color: #007a3e;
+            font-size: 1.3rem;
+        }
+
+        /* ── Checkout button ── */
+        .checkout-wrap { padding: 0 24px 24px; }
+        .btn-checkout {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 40px;
+            background: #007a3e;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+            text-decoration: none;
+        }
+        .btn-checkout:hover {
+            background: #005c2e;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0,90,44,0.28);
+        }
+        .btn-checkout:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .login-notice {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 14px;
+            padding: 12px 16px;
+            font-size: 0.85rem;
+            color: #92400e;
+            margin: 0 24px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .login-notice a { color: #007a3e; font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="main-content">
+<section class="page-section">
+
+    <!-- Nav -->
+    <div class="wrapper">
+        <nav class="customer-nav">
+            <a href="index.php?page=customer" class="logo">UniCanteen <span>DLSU</span></a>
+            <div class="customer-nav-links">
+                <a href="index.php?page=customer#menu">Menu</a>
+                <a href="index.php?page=customer#track">Track</a>
+                <a href="index.php?page=reviews">Reviews</a>
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <a href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'])[0]); ?></a>
+                    <a href="frontend/logout.php" class="btn-outline">Logout</a>
+                <?php else: ?>
+                    <a href="index.php?page=login">Sign In</a>
+                    <a href="index.php?page=register" class="btn-outline">Register</a>
+                <?php endif; ?>
+                <a href="index.php?page=cart" class="btn-primary">
+                    <i class="fas fa-bag-shopping"></i> Cart
+                    <span class="cart-count"><?php echo $cart_items_count; ?></span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Hero -->
+    <div class="cart-hero">
+        <div class="cart-hero-inner">
+            <div class="wrapper">
+                <?php
+                $backUrl = $restaurant_id_for_back
+                    ? "index.php?page=restaurant&id={$restaurant_id_for_back}"
+                    : "index.php?page=customer#menu";
+                ?>
+                <a href="<?php echo $backUrl; ?>" class="btn-back">
+                    <i class="fas fa-arrow-left"></i>
+                    <?php echo $restaurant_id_for_back ? 'Back to Restaurant' : 'Back to Stalls'; ?>
+                </a>
+                <h1><i class="fas fa-bag-shopping" style="font-size:1.8rem; margin-right:12px; opacity:0.85;"></i>Your Cart</h1>
+                <p class="cart-hero-sub">
+                    <?php echo $cart_items_count; ?> item<?php echo $cart_items_count != 1 ? 's' : ''; ?>
+                    <?php echo $restaurant_name ? '· ' . htmlspecialchars($restaurant_name) : ''; ?>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Body -->
+    <div class="cart-body">
+        <div class="wrapper">
+
+            <!-- Toasts -->
+            <?php if ($successMsg): ?>
+            <div class="toast success">
+                <i class="fas fa-circle-check"></i>
+                <?php
+                    $msgs = ['added'=>'Item added to cart!','updated'=>'Cart updated!','removed'=>'Item removed.','cleared'=>'Cart cleared.','placed'=>'Order placed successfully!'];
+                    echo $msgs[$successMsg] ?? 'Done!';
+                ?>
+            </div>
+            <?php endif; ?>
+            <?php if ($errorMsg): ?>
+            <div class="toast error">
+                <i class="fas fa-exclamation-circle"></i>
+                <?php echo htmlspecialchars($errorMsg); ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if (empty($_SESSION['cart'])): ?>
+            <!-- Empty state -->
+            <div class="empty-cart">
+                <i class="fas fa-bag-shopping"></i>
+                <h3>Your cart is empty</h3>
+                <p>Add some items from our stalls and they'll appear here.</p>
+                <a href="index.php?page=customer#menu" class="btn-checkout" style="width:auto; display:inline-flex; padding:13px 28px;">
+                    <i class="fas fa-utensils"></i> Browse Stalls
+                </a>
+            </div>
+
+            <?php else: ?>
+            <div class="cart-layout">
+
+                <!-- LEFT: Items -->
+                <div>
+                    <!-- Stall banner -->
+                    <div class="stall-banner">
+                        <div class="stall-banner-icon"><i class="fas fa-store"></i></div>
+                        <div>
+                            <div class="stall-banner-name"><?php echo htmlspecialchars($restaurant_name); ?></div>
+                            <div class="stall-banner-note">Items are from one stall only</div>
+                        </div>
                     </div>
-                    <?php else: ?>
-                    
-                    <div class="restaurant-info">
-                        <i class="fas fa-store" style="color: #007a3e;"></i>
-                        <span>Ordering from: <strong><?php echo htmlspecialchars($restaurant_name); ?></strong></span>
-                        <span style="margin-left: auto; font-size: 0.9rem; color: #3b7455;">
-                            <i class="fas fa-clock"></i> Same restaurant only
-                        </span>
-                    </div>
-                    
-                    <form method="POST" action="cart.php">
-                        <div class="cart-header">
+
+                    <!-- Items card -->
+                    <div class="cart-card">
+                        <div class="cart-card-header">
                             <span>Item</span>
-                            <span style="text-align: center;">Price</span>
-                            <span style="text-align: center;">Quantity</span>
-                            <span style="text-align: right;">Total</span>
+                            <span style="text-align:center;">Unit Price</span>
+                            <span style="text-align:center;">Qty</span>
+                            <span style="text-align:right;">Subtotal</span>
+                            <span></span>
                         </div>
-                        
-                        <div style="background: white; border-radius: 30px; padding: 20px; margin-bottom: 20px;">
-                            <?php foreach($_SESSION['cart'] as $item_id => $item): ?>
-                            <div class="cart-item">
-                                <div class="cart-item-name">
-                                    <?php echo htmlspecialchars($item['name']); ?>
-                                </div>
-                                <div class="cart-item-price" style="text-align: center;">
-                                    ₱<?php echo number_format($item['price'], 2); ?>
-                                </div>
-                                <div class="cart-item-quantity" style="text-align: center;">
-                                    <input type="number" name="quantity[<?php echo $item_id; ?>]" 
-                                        value="<?php echo $item['quantity']; ?>" min="0" max="10">
-                                </div>
-                                <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
-                                    <span class="cart-item-price">₱<?php echo number_format($item['price'] * $item['quantity'], 2); ?></span>
-                                    <a href="cart.php?remove=<?php echo $item_id; ?>" class="cart-item-remove" onclick="return confirm('Remove this item?')">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </a>
-                                </div>
+
+                        <form method="POST" action="index.php?page=cart" id="cartForm">
+                        <?php foreach ($_SESSION['cart'] as $item_id => $item): ?>
+                        <div class="cart-row">
+                            <div>
+                                <div class="item-name"><?php echo htmlspecialchars($item['name']); ?></div>
+                                <div class="item-rest"><?php echo htmlspecialchars($item['restaurant_name']); ?></div>
                             </div>
-                            <?php endforeach; ?>
+                            <div class="item-price">₱<?php echo number_format($item['price'], 0); ?></div>
+                            <div class="qty-control">
+                                <input type="number"
+                                       name="quantity[<?php echo $item_id; ?>]"
+                                       value="<?php echo $item['quantity']; ?>"
+                                       min="0" max="20">
+                            </div>
+                            <div class="item-subtotal">₱<?php echo number_format($item['price'] * $item['quantity'], 0); ?></div>
+                            <a href="index.php?page=cart&remove=<?php echo $item_id; ?>"
+                               class="btn-remove"
+                               onclick="return confirm('Remove this item?')">
+                                <i class="fas fa-xmark"></i>
+                            </a>
                         </div>
-                        
-                        <div class="action-buttons" style="justify-content: center;">
-                            <button type="submit" name="update_cart" class="btn-secondary" style="padding: 12px 24px; border: none; border-radius: 40px; font-weight: 600; cursor: pointer;">
-                                <i class="fas fa-sync-alt"></i> Update Cart
+                        <?php endforeach; ?>
+
+                        <div class="cart-actions">
+                            <button type="submit" name="update_cart" class="btn-sm update">
+                                <i class="fas fa-rotate-right"></i> Update
                             </button>
-                            <a href="cart.php?clear=1" class="btn-secondary" onclick="return confirm('Clear your entire cart?')" style="padding: 12px 24px; border-radius: 40px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                            <a href="index.php?page=cart&clear=1"
+                               class="btn-sm clear"
+                               onclick="return confirm('Clear your entire cart?')">
                                 <i class="fas fa-trash"></i> Clear Cart
                             </a>
-                            <a href="<?php echo url('index.php?page=customer'); ?>#menu" class="btn-secondary" style="padding: 12px 24px; border-radius: 40px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-plus-circle"></i> Add More Items
+                            <a href="<?php echo $restaurant_id_for_back ? "index.php?page=restaurant&id={$restaurant_id_for_back}" : "index.php?page=customer#menu"; ?>"
+                               class="btn-sm add-more">
+                                <i class="fas fa-plus"></i> Add More
                             </a>
                         </div>
-                    </form>
-
-                    <div class="cart-summary">
-                        <h3 style="margin-bottom: 20px; color: #16623b; text-align: center;">Order Summary</h3>
-                        
-                        <?php 
-                        $subtotal = $cart_total;
-                        $service_fee = 20;
-                        $total = $subtotal + $service_fee;
-                        ?>
-                        
-                        <div class="summary-row">
-                            <span>Subtotal (<?php echo $cart_items_count; ?> items)</span>
-                            <span style="font-weight: 600;">₱<?php echo number_format($subtotal, 2); ?></span>
-                        </div>
-                        <div class="summary-row">
-                            <span>Service Fee</span>
-                            <span style="font-weight: 600;">₱<?php echo number_format($service_fee, 2); ?></span>
-                        </div>
-                        <div class="summary-row total">
-                            <span>Total</span>
-                            <span>₱<?php echo number_format($total, 2); ?></span>
-                        </div>
-
-                        <form method="POST" action="cart.php" id="checkoutForm">
-                            <h4 style="margin: 20px 0 10px; color: #1e3a2f; text-align: center;">Payment Method</h4>
-                            <div class="payment-methods" style="justify-content: center;">
-                                <label class="payment-method selected" style="flex: 0 1 auto; min-width: 100px;">
-                                    <input type="radio" name="payment_method" value="cash" checked style="display: none;">
-                                    <i class="fas fa-money-bill-wave" style="font-size: 1.5rem; color: #007a3e; margin-bottom: 8px; display: block;"></i>
-                                    <div>Cash</div>
-                                </label>
-                                <label class="payment-method" style="flex: 0 1 auto; min-width: 100px;">
-                                    <input type="radio" name="payment_method" value="gcash" style="display: none;">
-                                    <i class="fas fa-mobile-alt" style="font-size: 1.5rem; color: #007a3e; margin-bottom: 8px; display: block;"></i>
-                                    <div>GCash</div>
-                                </label>
-                                <label class="payment-method" style="flex: 0 1 auto; min-width: 100px;">
-                                    <input type="radio" name="payment_method" value="card" style="display: none;">
-                                    <i class="fas fa-credit-card" style="font-size: 1.5rem; color: #007a3e; margin-bottom: 8px; display: block;"></i>
-                                    <div>Card</div>
-                                </label>
-                            </div>
-
-                            <?php if(!isLoggedIn()): ?>
-                            <div class="error-message" style="margin: 20px 0; padding: 15px; text-align: center;">
-                                <i class="fas fa-info-circle"></i> Please <a href="<?php echo url('index.php?page=login'); ?>" style="color: #007a3e; font-weight: 600;">sign in</a> to checkout
-                            </div>
-                            <?php endif; ?>
-
-                            <button type="submit" name="checkout" class="btn-primary" style="width: 100%; padding: 18px; font-size: 1.2rem; border: none; border-radius: 40px; background: #007a3e; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;"
-                                    <?php echo !isLoggedIn() ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''; ?>>
-                                <i class="fas fa-check-circle"></i> Proceed to Checkout
-                            </button>
                         </form>
                     </div>
-                    <?php endif; ?>
                 </div>
-            </div>
-            
-            <footer class="footer-note" style="text-align: center; padding: 32px; color: #3b7455; background: white; border-top: 1px solid #cae3d6; margin-top: 40px;">
-                <i class="fas fa-shopping-cart"></i> Secure Checkout · Multiple Payment Options · Real-time Order Tracking
-            </footer>
-        </div>
 
-        <script>
-        // Payment method selection
-        document.querySelectorAll('.payment-method').forEach(method => {
-            method.addEventListener('click', function() {
-                document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
-                this.classList.add('selected');
-                this.querySelector('input[type="radio"]').checked = true;
-            });
+                <!-- RIGHT: Summary -->
+                <div>
+                    <div class="summary-card">
+                        <div class="summary-header">
+                            <h3><i class="fas fa-receipt" style="color:#007a3e; margin-right:8px;"></i>Order Summary</h3>
+                        </div>
+
+                        <div class="summary-rows">
+                            <div class="sum-row">
+                                <span class="sum-label">Subtotal (<?php echo $cart_items_count; ?> items)</span>
+                                <span class="sum-val">₱<?php echo number_format($subtotal, 2); ?></span>
+                            </div>
+                            <div class="sum-row">
+                                <span class="sum-label">Service Fee</span>
+                                <span class="sum-val">₱<?php echo number_format($service_fee, 2); ?></span>
+                            </div>
+                            <div class="sum-row total-row">
+                                <span>Total</span>
+                                <span>₱<?php echo number_format($grand_total, 2); ?></span>
+                            </div>
+                        </div>
+
+                        <!-- GCash-only payment -->
+                        <div class="gcash-block">
+                            <div class="gcash-logo"><i class="fas fa-mobile-screen-button"></i></div>
+                            <div>
+                                <div class="gcash-title">GCash</div>
+                                <div class="gcash-sub">Cashless · Secure · Instant</div>
+                            </div>
+                            <div class="gcash-check"><i class="fas fa-circle-check"></i></div>
+                        </div>
+
+                        <?php if (!isLoggedIn()): ?>
+                        <div class="login-notice">
+                            <i class="fas fa-info-circle"></i>
+                            Please <a href="index.php?page=login">sign in</a> to checkout.
+                        </div>
+                        <?php endif; ?>
+
+                        <div class="checkout-wrap">
+                            <form method="POST" action="index.php?page=cart">
+                                <input type="hidden" name="payment_method" value="gcash">
+                                <button type="submit" name="checkout" class="btn-checkout"
+                                    <?php echo !isLoggedIn() ? 'disabled' : ''; ?>>
+                                    <i class="fas fa-check-circle"></i>
+                                    Place Order · ₱<?php echo number_format($grand_total, 2); ?>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /cart-layout -->
+            <?php endif; ?>
+
+        </div><!-- /wrapper -->
+    </div><!-- /cart-body -->
+
+    <footer class="footer-note">
+        <i class="fas fa-lock"></i> GCash Secure Checkout · UniCanteen DLSU · Real-time Order Tracking
+    </footer>
+</section>
+</div>
+
+<script>
+// Reset add-buttons when navigating back (prevents stuck "Added!" state)
+window.addEventListener('pageshow', function(e) {
+    if (e.persisted) {
+        document.querySelectorAll('.btn-add').forEach(btn => {
+            btn.innerHTML = '<i class="fas fa-plus"></i> Add';
+            btn.style.background = '';
+            btn.style.color = '';
         });
-        </script>
-    </body>
+    }
+});
+
+// Live subtotal update
+document.querySelectorAll('.qty-control input').forEach(input => {
+    input.addEventListener('input', function() {
+        const row = this.closest('.cart-row');
+        if (!row) return;
+        const priceText = row.querySelector('.item-price').textContent.replace(/[₱,]/g,'');
+        const price = parseFloat(priceText);
+        const qty   = parseInt(this.value) || 0;
+        const sub   = row.querySelector('.item-subtotal');
+        if (sub) sub.textContent = '₱' + (price * qty).toLocaleString('en-PH', {minimumFractionDigits:0});
+    });
+});
+</script>
+</body>
 </html>

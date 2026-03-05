@@ -92,7 +92,11 @@ if (isset($_SESSION['cart'])) {
             padding: 0;
             background: #f0f7f2;
         }
-        .main-content { margin-left: 0; }
+
+        .main-content {
+            margin-left: 0;
+        }
+
         .wrapper {
             max-width: 1200px;
             margin: 0 auto;
@@ -116,15 +120,17 @@ if (isset($_SESSION['cart'])) {
             position: relative;
             overflow: hidden;
         }
+
         .r-hero::before {
             content: '';
             position: absolute;
             inset: 0;
             background:
-                radial-gradient(ellipse at 80% 50%, rgba(255,255,255,0.06) 0%, transparent 60%),
-                radial-gradient(ellipse at 20% 80%, rgba(0,0,0,0.12) 0%, transparent 50%);
+                radial-gradient(ellipse at 80% 50%, rgba(255, 255, 255, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 20% 80%, rgba(0, 0, 0, 0.12) 0%, transparent 50%);
             pointer-events: none;
         }
+
         .r-hero-inner {
             position: relative;
             z-index: 1;
@@ -136,8 +142,8 @@ if (isset($_SESSION['cart'])) {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            background: rgba(255,255,255,0.18);
-            border: 1.5px solid rgba(255,255,255,0.40);
+            background: rgba(255, 255, 255, 0.18);
+            border: 1.5px solid rgba(255, 255, 255, 0.40);
             color: #fff;
             padding: 9px 20px;
             border-radius: 40px;
@@ -148,9 +154,10 @@ if (isset($_SESSION['cart'])) {
             transition: background 0.2s, border-color 0.2s;
             backdrop-filter: blur(4px);
         }
+
         .btn-back:hover {
-            background: rgba(255,255,255,0.30);
-            border-color: rgba(255,255,255,0.65);
+            background: rgba(255, 255, 255, 0.30);
+            border-color: rgba(255, 255, 255, 0.65);
         }
 
         .r-hero h1 {
@@ -160,8 +167,9 @@ if (isset($_SESSION['cart'])) {
             margin: 0 0 10px;
             line-height: 1.2;
         }
+
         .r-hero-desc {
-            color: rgba(255,255,255,0.85);
+            color: rgba(255, 255, 255, 0.85);
             font-size: 1rem;
             margin: 0 0 22px;
             max-width: 580px;
@@ -175,6 +183,7 @@ if (isset($_SESSION['cart'])) {
             gap: 10px;
             align-items: center;
         }
+
         .h-pill {
             display: inline-flex;
             align-items: center;
@@ -183,26 +192,36 @@ if (isset($_SESSION['cart'])) {
             border-radius: 40px;
             font-size: 0.85rem;
             font-weight: 500;
-            background: rgba(255,255,255,0.14);
-            border: 1px solid rgba(255,255,255,0.25);
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.25);
             color: #fff;
         }
+
         .h-pill.pill-open {
-            background: rgba(74,222,128,0.22);
-            border-color: rgba(74,222,128,0.45);
+            background: rgba(74, 222, 128, 0.22);
+            border-color: rgba(74, 222, 128, 0.45);
         }
+
         .h-pill.pill-closed {
-            background: rgba(239,68,68,0.22);
-            border-color: rgba(239,68,68,0.45);
+            background: rgba(239, 68, 68, 0.22);
+            border-color: rgba(239, 68, 68, 0.45);
         }
+
         .h-pill .dot {
-            width: 7px; height: 7px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
             background: currentColor;
             flex-shrink: 0;
         }
-        .pill-open .dot  { background: #4ade80; }
-        .pill-closed .dot { background: #f87171; }
+
+        .pill-open .dot {
+            background: #4ade80;
+        }
+
+        .pill-closed .dot {
+            background: #f87171;
+        }
 
         /* Hero right — View Cart button */
         .r-hero-row {
@@ -212,6 +231,7 @@ if (isset($_SESSION['cart'])) {
             flex-wrap: wrap;
             gap: 24px;
         }
+
         .btn-hero-cart {
             display: inline-flex;
             align-items: center;
@@ -225,13 +245,15 @@ if (isset($_SESSION['cart'])) {
             text-decoration: none;
             white-space: nowrap;
             transition: all 0.2s;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
             flex-shrink: 0;
         }
+
         .btn-hero-cart:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
         }
+
         .btn-hero-cart .badge {
             background: #007a3e;
             color: #fff;
@@ -252,8 +274,10 @@ if (isset($_SESSION['cart'])) {
             gap: 12px;
             margin-bottom: 20px;
         }
+
         .sec-header-icon {
-            width: 40px; height: 40px;
+            width: 40px;
+            height: 40px;
             background: #e3f4ea;
             border-radius: 12px;
             display: flex;
@@ -263,24 +287,28 @@ if (isset($_SESSION['cart'])) {
             font-size: 1rem;
             flex-shrink: 0;
         }
+
         .sec-header h2 {
             font-size: 1.35rem;
             font-weight: 700;
             color: #0f3d24;
             margin: 0;
         }
+
         .sec-header .sec-subtitle {
             font-size: 0.85rem;
             color: #5f8b74;
             margin: 0;
             font-weight: 400;
         }
+
         .sec-header-end {
             margin-left: auto;
             display: flex;
             align-items: center;
             gap: 10px;
         }
+
         .availability-pill {
             background: #e3f4ea;
             border: 1px solid #b8e0cc;
@@ -301,6 +329,7 @@ if (isset($_SESSION['cart'])) {
             gap: 14px;
             margin-bottom: 48px;
         }
+
         .menu-card {
             background: #fff;
             border-radius: 20px;
@@ -312,16 +341,20 @@ if (isset($_SESSION['cart'])) {
             transition: box-shadow 0.18s, border-color 0.18s, transform 0.18s;
             position: relative;
         }
+
         .menu-card:hover {
-            box-shadow: 0 6px 24px rgba(0,80,20,0.10);
+            box-shadow: 0 6px 24px rgba(0, 80, 20, 0.10);
             border-color: #b8d9c8;
             transform: translateY(-2px);
         }
+
         .menu-card.sold-out-card {
             opacity: 0.72;
         }
+
         .menu-card-icon {
-            width: 48px; height: 48px;
+            width: 48px;
+            height: 48px;
             border-radius: 14px;
             background: #f0faf4;
             border: 1px solid #d0eddc;
@@ -332,15 +365,18 @@ if (isset($_SESSION['cart'])) {
             font-size: 1.2rem;
             flex-shrink: 0;
         }
+
         .menu-card.sold-out-card .menu-card-icon {
             background: #fef2f2;
             border-color: #fecaca;
             color: #b91c1c;
         }
+
         .menu-card-body {
             flex: 1;
             min-width: 0;
         }
+
         .menu-card-name {
             font-weight: 600;
             font-size: 0.95rem;
@@ -349,6 +385,7 @@ if (isset($_SESSION['cart'])) {
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+
         .menu-card-desc {
             font-size: 0.8rem;
             color: #6b8f7a;
@@ -357,12 +394,14 @@ if (isset($_SESSION['cart'])) {
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+
         .menu-card-price {
             font-size: 1.05rem;
             font-weight: 700;
             color: #007a3e;
             white-space: nowrap;
         }
+
         .menu-card-actions {
             display: flex;
             flex-direction: column;
@@ -370,6 +409,7 @@ if (isset($_SESSION['cart'])) {
             gap: 8px;
             flex-shrink: 0;
         }
+
         .btn-add {
             display: inline-flex;
             align-items: center;
@@ -386,11 +426,13 @@ if (isset($_SESSION['cart'])) {
             white-space: nowrap;
             transition: background 0.18s, transform 0.15s, box-shadow 0.15s;
         }
+
         .btn-add:hover {
             background: #005a2c;
             transform: translateY(-1px);
-            box-shadow: 0 4px 14px rgba(0,90,44,0.30);
+            box-shadow: 0 4px 14px rgba(0, 90, 44, 0.30);
         }
+
         .btn-sold {
             display: inline-flex;
             align-items: center;
@@ -404,14 +446,23 @@ if (isset($_SESSION['cart'])) {
             white-space: nowrap;
             border: 1.5px solid #fecaca;
         }
+
         .avail-tag-small {
             font-size: 0.72rem;
             font-weight: 600;
             padding: 3px 10px;
             border-radius: 20px;
         }
-        .avail-tag-small.yes { background: #dcfce7; color: #15803d; }
-        .avail-tag-small.no  { background: #fef2f2; color: #b91c1c; }
+
+        .avail-tag-small.yes {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .avail-tag-small.no {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
 
         /* Empty state */
         .empty-state {
@@ -423,7 +474,13 @@ if (isset($_SESSION['cart'])) {
             color: #5f8b74;
             grid-column: 1/-1;
         }
-        .empty-state i { font-size: 2.8rem; opacity: 0.3; margin-bottom: 14px; display: block; }
+
+        .empty-state i {
+            font-size: 2.8rem;
+            opacity: 0.3;
+            margin-bottom: 14px;
+            display: block;
+        }
 
         /* ── Reviews ── */
         .reviews-grid-local {
@@ -432,6 +489,7 @@ if (isset($_SESSION['cart'])) {
             gap: 18px;
             margin-bottom: 48px;
         }
+
         .rev-card {
             background: #fff;
             border-radius: 20px;
@@ -442,31 +500,42 @@ if (isset($_SESSION['cart'])) {
             gap: 12px;
             transition: box-shadow 0.18s;
         }
-        .rev-card:hover { box-shadow: 0 6px 20px rgba(0,80,20,0.08); }
+
+        .rev-card:hover {
+            box-shadow: 0 6px 20px rgba(0, 80, 20, 0.08);
+        }
+
         .rev-top {
             display: flex;
             align-items: center;
             gap: 12px;
         }
+
         .rev-avatar {
-            width: 42px; height: 42px;
+            width: 42px;
+            height: 42px;
             background: #e3f4ea;
             border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: #007a3e;
             font-size: 1.1rem;
             flex-shrink: 0;
         }
+
         .rev-name {
             font-weight: 600;
             font-size: 0.9rem;
             color: #1a3d28;
         }
+
         .rev-time {
             font-size: 0.73rem;
             color: #8faa9a;
             margin-top: 2px;
         }
+
         .rev-stars {
             display: flex;
             align-items: center;
@@ -474,12 +543,14 @@ if (isset($_SESSION['cart'])) {
             color: #f59e0b;
             font-size: 0.85rem;
         }
+
         .rev-stars span {
             color: #4a7560;
             font-size: 0.8rem;
             margin-left: 5px;
             font-weight: 600;
         }
+
         .rev-text {
             font-size: 0.875rem;
             color: #4a6655;
@@ -490,237 +561,258 @@ if (isset($_SESSION['cart'])) {
         }
     </style>
 </head>
+
 <body>
-<div class="main-content">
-<section class="page-section">
+    <div class="main-content">
+        <section class="page-section">
 
-    <!-- Nav -->
-    <div class="wrapper">
-        <nav class="customer-nav">
-            <a href="index.php?page=customer" class="logo">UniCanteen <span>DLSU</span></a>
-            <div class="customer-nav-links">
-                <a href="index.php?page=customer#menu">Menu</a>
-                <a href="index.php?page=customer#track">Track</a>
-                <a href="index.php?page=reviews">Reviews</a>
-                <?php if (isset($_SESSION['user_id'])): ?>
-                        <a href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'])[0]); ?></a>
-                        <a href="frontend/logout.php" class="btn-outline">Logout</a>
-                <?php else: ?>
-                        <a href="index.php?page=login">Sign In</a>
-                        <a href="index.php?page=register" class="btn-outline">Register</a>
-                <?php endif; ?>
-                <a href="index.php?page=cart" class="btn-primary">
-                    <i class="fas fa-bag-shopping"></i> Cart
-                    <span class="cart-count"><?php echo $cart_items_count; ?></span>
-                </a>
-            </div>
-        </nav>
-    </div>
-
-    <!-- Hero -->
-    <div class="r-hero">
-        <div class="r-hero-inner">
+            <!-- Nav -->
             <div class="wrapper">
-                <!-- Back button -->
-                <div>
-                    <a href="index.php?page=customer#menu" class="btn-back">
-                        <i class="fas fa-arrow-left"></i> Back to Stalls
-                    </a>
-                </div>
-
-                <div class="r-hero-row">
-                    <div>
-                        <h1><?php echo htmlspecialchars($restaurant['name']); ?></h1>
-                        <?php if ($restaurant['description']): ?>
-                                <p class="r-hero-desc"><?php echo htmlspecialchars($restaurant['description']); ?></p>
+                <nav class="customer-nav">
+                    <a href="index.php?page=customer" class="logo">UniCanteen <span>DLSU</span></a>
+                    <div class="customer-nav-links">
+                        <a href="index.php?page=customer#menu">Menu</a>
+                        <a href="index.php?page=customer#track">Track</a>
+                        <a href="index.php?page=reviews">Reviews</a>
+                        <?php if (isset($_SESSION['user_id'])): ?>
+                            <a
+                                href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'])[0]); ?></a>
+                            <a href="frontend/logout.php" class="btn-outline">Logout</a>
+                        <?php else: ?>
+                            <a href="index.php?page=login">Sign In</a>
+                            <a href="index.php?page=register" class="btn-outline">Register</a>
                         <?php endif; ?>
-                        <div class="hero-pills">
-                            <span class="h-pill <?php echo $restaurant['is_open'] ? 'pill-open' : 'pill-closed'; ?>">
-                                <span class="dot"></span>
-                                <?php echo $restaurant['is_open'] ? 'Open Now' : 'Closed'; ?>
-                            </span>
-                            <span class="h-pill">
-                                <i class="fas fa-star" style="color:#fbbf24;"></i>
-                                <?php echo number_format($restaurant['avg_rating'], 1); ?>
-                                <span style="opacity:0.65;">(<?php echo $restaurant['rating_count']; ?> reviews)</span>
-                            </span>
-                            <span class="h-pill">
-                                <i class="fas fa-utensils"></i>
-                                <?php echo $restaurant['available_items_count']; ?>/<?php echo $restaurant['total_items_count']; ?> items available
-                            </span>
-                            <?php if ($restaurant['address']): ?>
-                                <span class="h-pill">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <?php echo htmlspecialchars($restaurant['address']); ?>
-                                </span>
+                        <a href="index.php?page=cart" class="btn-primary">
+                            <i class="fas fa-bag-shopping"></i> Cart
+                            <span class="cart-count"><?php echo $cart_items_count; ?></span>
+                        </a>
+                    </div>
+                </nav>
+            </div>
+
+            <!-- Hero -->
+            <div class="r-hero">
+                <div class="r-hero-inner">
+                    <div class="wrapper">
+                        <!-- Back button -->
+                        <div>
+                            <a href="index.php?page=customer#menu" class="btn-back">
+                                <i class="fas fa-arrow-left"></i> Back to Stalls
+                            </a>
+                        </div>
+
+                        <div class="r-hero-row">
+                            <div>
+                                <h1><?php echo htmlspecialchars($restaurant['name']); ?></h1>
+                                <?php if ($restaurant['description']): ?>
+                                    <p class="r-hero-desc"><?php echo htmlspecialchars($restaurant['description']); ?></p>
+                                <?php endif; ?>
+                                <div class="hero-pills">
+                                    <span
+                                        class="h-pill <?php echo $restaurant['is_open'] ? 'pill-open' : 'pill-closed'; ?>">
+                                        <span class="dot"></span>
+                                        <?php echo $restaurant['is_open'] ? 'Open Now' : 'Closed'; ?>
+                                    </span>
+                                    <span class="h-pill">
+                                        <i class="fas fa-star" style="color:#fbbf24;"></i>
+                                        <?php echo number_format($restaurant['avg_rating'], 1); ?>
+                                        <span style="opacity:0.65;">(<?php echo $restaurant['rating_count']; ?>
+                                            reviews)</span>
+                                    </span>
+                                    <span class="h-pill">
+                                        <i class="fas fa-utensils"></i>
+                                        <?php echo $restaurant['available_items_count']; ?>/<?php echo $restaurant['total_items_count']; ?>
+                                        items available
+                                    </span>
+                                    <?php if ($restaurant['address']): ?>
+                                        <span class="h-pill">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            <?php echo htmlspecialchars($restaurant['address']); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <!-- View Cart button -->
+                            <?php if ($cart_items_count > 0): ?>
+                                <a href="index.php?page=cart" class="btn-hero-cart">
+                                    <i class="fas fa-bag-shopping"></i>
+                                    View Cart
+                                    <span class="badge"><?php echo $cart_items_count; ?></span>
+                                </a>
                             <?php endif; ?>
                         </div>
                     </div>
-
-                    <!-- View Cart button -->
-                    <?php if ($cart_items_count > 0): ?>
-                        <a href="index.php?page=cart" class="btn-hero-cart">
-                            <i class="fas fa-bag-shopping"></i>
-                            View Cart
-                            <span class="badge"><?php echo $cart_items_count; ?></span>
-                        </a>
-                    <?php endif; ?>
                 </div>
             </div>
-        </div>
+
+            <!-- Body content -->
+            <div class="r-body">
+                <div class="wrapper">
+
+                    <!-- ── FULL MENU ── -->
+                    <div class="sec-header">
+                        <div class="sec-header-icon"><i class="fas fa-utensils"></i></div>
+                        <div>
+                            <h2>Full Menu</h2>
+                            <p class="sec-subtitle"><?php echo $restaurant['name']; ?></p>
+                        </div>
+                        <div class="sec-header-end">
+                            <span class="availability-pill">
+                                <i class="fas fa-circle-check" style="font-size:0.75rem;"></i>
+                                <?php echo $restaurant['available_items_count']; ?> of
+                                <?php echo $restaurant['total_items_count']; ?> available
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="menu-grid-2col">
+                        <?php
+                        $itemsResult->data_seek(0);
+                        $count = 0;
+                        while ($item = $itemsResult->fetch_assoc()):
+                            $isAvailable = ($item['isAvailable'] == 1 || $item['isAvailable'] === '1' || $item['isAvailable'] === true);
+                            $count++;
+                            ?>
+                            <div class="menu-card <?php echo !$isAvailable ? 'sold-out-card' : ''; ?>">
+                                <div class="menu-card-icon">
+                                    <i class="fas fa-<?php echo $isAvailable ? 'bowl-food' : 'ban'; ?>"></i>
+                                </div>
+                                <div class="menu-card-body">
+                                    <div class="menu-card-name"><?php echo htmlspecialchars($item['name']); ?></div>
+                                    <?php if ($item['description']): ?>
+                                        <div class="menu-card-desc"><?php echo htmlspecialchars($item['description']); ?></div>
+                                    <?php endif; ?>
+                                    <div class="menu-card-price" style="margin-top:6px;">
+                                        ₱<?php echo number_format($item['price'], 0); ?></div>
+                                </div>
+                                <div class="menu-card-actions">
+                                    <span class="avail-tag-small <?php echo $isAvailable ? 'yes' : 'no'; ?>">
+                                        <?php echo $isAvailable ? 'Available' : 'Sold Out'; ?>
+                                    </span>
+                                    <?php if ($isAvailable): ?>
+                                        <a href="index.php?page=restaurant&id=<?php echo $restaurant_id; ?>&add_to_cart=<?php echo $item['ID']; ?>"
+                                            class="btn-add" id="cart-btn-<?php echo $item['ID']; ?>">
+                                            <i class="fas fa-plus"></i> Add
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="btn-sold">
+                                            <i class="fas fa-times"></i> Sold Out
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endwhile; ?>
+
+                        <?php if ($count === 0): ?>
+                            <div class="empty-state">
+                                <i class="fas fa-utensils"></i>
+                                No items listed for this stall yet.
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- ── REVIEWS ── -->
+                    <div class="sec-header" id="reviews">
+                        <div class="sec-header-icon"><i class="fas fa-star"></i></div>
+                        <div>
+                            <h2>Customer Reviews</h2>
+                            <p class="sec-subtitle">What others are saying</p>
+                        </div>
+                        <div class="sec-header-end">
+                            <a href="index.php?page=reviews"
+                                style="color:#007a3e; font-weight:600; font-size:0.875rem; text-decoration:none; display:flex; align-items:center; gap:6px;">
+                                See all <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="reviews-grid-local">
+                        <?php
+                        $reviewsResult->data_seek(0);
+                        if ($reviewsResult->num_rows > 0):
+                            while ($review = $reviewsResult->fetch_assoc()):
+                                ?>
+                                <div class="rev-card">
+                                    <div class="rev-top">
+                                        <div class="rev-avatar">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div>
+                                            <div class="rev-name">
+                                                <?php echo htmlspecialchars($review['reviewer_name'] ?? 'Anonymous'); ?></div>
+                                            <div class="rev-time"><?php echo getTimeAgo($review['timestamp']); ?></div>
+                                        </div>
+                                    </div>
+                                    <div class="rev-stars">
+                                        <?php
+                                        $rating = $review['rating'];
+                                        for ($i = 1; $i <= 5; $i++):
+                                            if ($i <= floor($rating)): ?>
+                                                <i class="fas fa-star"></i>
+                                            <?php elseif ($i - 0.5 <= $rating): ?>
+                                                <i class="fas fa-star-half-alt"></i>
+                                            <?php else: ?>
+                                                <i class="far fa-star" style="color:#d1d5db;"></i>
+                                            <?php endif;
+                                        endfor; ?>
+                                        <span><?php echo number_format($rating, 1); ?></span>
+                                    </div>
+                                    <?php if ($review['review']): ?>
+                                        <div class="rev-text"><?php echo htmlspecialchars($review['review']); ?></div>
+                                    <?php endif; ?>
+                                </div>
+                                <?php
+                            endwhile;
+                        else:
+                            ?>
+                            <div class="empty-state" style="grid-column:1/-1;">
+                                <i class="fas fa-star"></i>
+                                No reviews yet — be the first to review this stall!
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                </div><!-- /wrapper -->
+            </div><!-- /r-body -->
+
+            <footer class="footer-note">
+                <i class="fas fa-store"></i>
+                <?php echo htmlspecialchars($restaurant['name']); ?> · UniCanteen DLSU · Real-time availability
+            </footer>
+
+        </section>
     </div>
 
-    <!-- Body content -->
-    <div class="r-body">
-        <div class="wrapper">
-
-            <!-- ── FULL MENU ── -->
-            <div class="sec-header">
-                <div class="sec-header-icon"><i class="fas fa-utensils"></i></div>
-                <div>
-                    <h2>Full Menu</h2>
-                    <p class="sec-subtitle"><?php echo $restaurant['name']; ?></p>
-                </div>
-                <div class="sec-header-end">
-                    <span class="availability-pill">
-                        <i class="fas fa-circle-check" style="font-size:0.75rem;"></i>
-                        <?php echo $restaurant['available_items_count']; ?> of <?php echo $restaurant['total_items_count']; ?> available
-                    </span>
-                </div>
-            </div>
-
-            <div class="menu-grid-2col">
-                <?php
-                $itemsResult->data_seek(0);
-                $count = 0;
-                while ($item = $itemsResult->fetch_assoc()):
-                    $isAvailable = ($item['isAvailable'] == 1 || $item['isAvailable'] === '1' || $item['isAvailable'] === true);
-                    $count++;
-                    ?>
-                    <div class="menu-card <?php echo !$isAvailable ? 'sold-out-card' : ''; ?>">
-                        <div class="menu-card-icon">
-                            <i class="fas fa-<?php echo $isAvailable ? 'bowl-food' : 'ban'; ?>"></i>
-                        </div>
-                        <div class="menu-card-body">
-                            <div class="menu-card-name"><?php echo htmlspecialchars($item['name']); ?></div>
-                            <?php if ($item['description']): ?>
-                                    <div class="menu-card-desc"><?php echo htmlspecialchars($item['description']); ?></div>
-                            <?php endif; ?>
-                            <div class="menu-card-price" style="margin-top:6px;">₱<?php echo number_format($item['price'], 0); ?></div>
-                        </div>
-                        <div class="menu-card-actions">
-                            <span class="avail-tag-small <?php echo $isAvailable ? 'yes' : 'no'; ?>">
-                                <?php echo $isAvailable ? 'Available' : 'Sold Out'; ?>
-                            </span>
-                            <?php if ($isAvailable): ?>
-                                    <a href="index.php?page=restaurant&id=<?php echo $restaurant_id; ?>&add_to_cart=<?php echo $item['ID']; ?>"
-                                       class="btn-add" id="cart-btn-<?php echo $item['ID']; ?>">
-                                        <i class="fas fa-plus"></i> Add
-                                    </a>
-                            <?php else: ?>
-                                    <span class="btn-sold">
-                                        <i class="fas fa-times"></i> Sold Out
-                                    </span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endwhile; ?>
-
-                <?php if ($count === 0): ?>
-                    <div class="empty-state">
-                        <i class="fas fa-utensils"></i>
-                        No items listed for this stall yet.
-                    </div>
-                <?php endif; ?>
-            </div>
-
-            <!-- ── REVIEWS ── -->
-            <div class="sec-header" id="reviews">
-                <div class="sec-header-icon"><i class="fas fa-star"></i></div>
-                <div>
-                    <h2>Customer Reviews</h2>
-                    <p class="sec-subtitle">What others are saying</p>
-                </div>
-                <div class="sec-header-end">
-                    <a href="index.php?page=reviews" style="color:#007a3e; font-weight:600; font-size:0.875rem; text-decoration:none; display:flex; align-items:center; gap:6px;">
-                        See all <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-
-            <div class="reviews-grid-local">
-                <?php
-                $reviewsResult->data_seek(0);
-                if ($reviewsResult->num_rows > 0):
-                    while ($review = $reviewsResult->fetch_assoc()):
-                        ?>
-                        <div class="rev-card">
-                            <div class="rev-top">
-                                <div class="rev-avatar">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <div>
-                                    <div class="rev-name"><?php echo htmlspecialchars($review['reviewer_name'] ?? 'Anonymous'); ?></div>
-                                    <div class="rev-time"><?php echo getTimeAgo($review['timestamp']); ?></div>
-                                </div>
-                            </div>
-                            <div class="rev-stars">
-                                <?php
-                                $rating = $review['rating'];
-                                for ($i = 1; $i <= 5; $i++):
-                                    if ($i <= floor($rating)): ?>
-                                                <i class="fas fa-star"></i>
-                                        <?php elseif ($i - 0.5 <= $rating): ?>
-                                                <i class="fas fa-star-half-alt"></i>
-                                        <?php else: ?>
-                                                <i class="far fa-star" style="color:#d1d5db;"></i>
-                                        <?php endif;
-                                endfor; ?>
-                                <span><?php echo number_format($rating, 1); ?></span>
-                            </div>
-                            <?php if ($review['review']): ?>
-                                <div class="rev-text"><?php echo htmlspecialchars($review['review']); ?></div>
-                            <?php endif; ?>
-                        </div>
-                        <?php
-                    endwhile;
-                else:
-                    ?>
-                    <div class="empty-state" style="grid-column:1/-1;">
-                        <i class="fas fa-star"></i>
-                        No reviews yet — be the first to review this stall!
-                    </div>
-                <?php endif; ?>
-            </div>
-
-        </div><!-- /wrapper -->
-    </div><!-- /r-body -->
-
-    <footer class="footer-note">
-        <i class="fas fa-store"></i>
-        <?php echo htmlspecialchars($restaurant['name']); ?> · UniCanteen DLSU · Real-time availability
-    </footer>
-
-</section>
-</div>
-
-<script>
-// Add-to-cart visual feedback
-document.querySelectorAll('.btn-add').forEach(btn => {
-    btn.addEventListener('click', function () {
-        this.innerHTML = '<i class="fas fa-check"></i> Added!';
-        this.style.background = '#15803d';
-    });
-});
-
-// Smooth scroll
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-});
-</script>
+    <script>
+        // Reset add-buttons when user presses Back (pageshow covers bfcache restore)
+        function resetAddButtons() {
+            document.querySelectorAll('.btn-add').forEach(btn => {
+                btn.innerHTML = '<i class="fas fa-plus"></i> Add';
+                btn.style.background = '';
+                btn.style.color = '';
+            });
+        }
+        window.addEventListener('pageshow', function (e) {
+            if (e.persisted) resetAddButtons();
+        });
+        // Brief visual feedback on click (will be reset if user comes back)
+        document.querySelectorAll('.btn-add').forEach(btn => {
+            btn.addEventListener('click', function () {
+                this.innerHTML = '<i class="fas fa-check"></i> Added!';
+                this.style.background = '#15803d';
+                this.style.color = '#fff';
+            });
+        });
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+    </script>
 </body>
+
 </html>
