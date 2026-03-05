@@ -2,6 +2,14 @@
 session_start();
 require_once __DIR__ . '/config/config.php';
 
+//this is a simple router/controller pattern where we include different frontend PHP files based on the 'page' query parameter. Each frontend file is responsible for rendering a specific view (customer, vendor, sysadmin) and handling its own logic. The left sidebar allows switching between these views, and the main content area displays the selected view's content.
+// DEV HACK – always act as vendor #3
+if (isset($_GET['dev']) && $_GET['dev'] === 'vendor') {
+    $_SESSION['user_id']   = 3;
+    $_SESSION['user_role'] = 'V';        // matches the checks below
+    $_SESSION['user_name'] = 'Test Vendor';
+} // this is temporary to allow quick access during development, but should be protected by proper authentication checks in production
+
 // Route logic
 $page = isset($_GET['page']) ? $_GET['page'] : 'customer';
 ?>
@@ -124,12 +132,13 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'customer';
                 include 'frontend/logout-handler.php';
                 break; // Add this line
             case 'vendor':
-                if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'V') {
-                    include 'frontend/vendor.php';
-                } else {
-                    header('Location: index.php?page=login&error=unauthorized');
-                    exit();
-                }
+                // if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'V') {
+                //     include 'frontend/vendor.php';
+                // } else {
+                //     header('Location: index.php?page=login&error=unauthorized');
+                //     exit();
+                // }
+                include 'frontend/vendor.php'; // this is temporary to allow quick access during development, but should be protected by the above check in production
                 break;
             case 'sysadmin':
                 if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'A') {

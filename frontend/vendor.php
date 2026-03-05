@@ -6,11 +6,10 @@ $dbConn = Database::getInstance()->getConnection();
 // =====================
 // AUTO-LOGIN DEFAULT VENDOR FOR TESTING
 // =====================
+
 if (!isset($_SESSION['user_id'])) {
-    $_SESSION['user_id'] = 3;
-    // keep consistency with index.php checks
-    $_SESSION['role'] = 'V';
-    $_SESSION['user_role'] = 'V';
+    $_SESSION['user_id']   = 3;       // existing vendor ID
+    $_SESSION['user_role'] = 'V';     // or whatever key your router checks
 }
 
 // function requireVendorLogin() {
@@ -22,12 +21,11 @@ if (!isset($_SESSION['user_id'])) {
 //     }
 // }
 
-requireVendorLogin();
+//requireVendorLogin();
 $user_id = $_SESSION['user_id'] ?? null;
 
 $query = "SELECT full_name FROM Users WHERE ID = ?";
 $stmt = Database::getInstance()->getConnection()->prepare($query);
-//$stmt = $dbConn->prepare($query);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -214,204 +212,224 @@ $completed_orders = $restaurant_id
           <!-- menu management + inventory summary -->
           <div class="admin-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-              <h3 style="margin: 0;"><i class="fas fa-pen-to-square"></i> Menu Management</h3>
-              <span style="background: var(--dlsu-lightgreen); padding: 6px 14px; border-radius: 30px; font-size: 0.8rem; font-weight: 600; color: var(--dlsu-green);">
-                <i class="fas fa-rotate"></i> Live Sync
-              </span>
+                <h3 style="margin: 0;"><i class="fas fa-pen-to-square"></i> Menu Management</h3>
+                <span style="background: var(--dlsu-lightgreen); padding: 6px 14px; border-radius: 30px; font-size: 0.8rem; font-weight: 600; color: var(--dlsu-green);">
+                    <i class="fas fa-rotate"></i> Live Sync
+                </span>
             </div>
-           
+
             <!-- Inventory Summary Cards -->
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px;">
-              <div style="background: #e3f4ea; border-radius: 16px; padding: 12px; text-align: center;">
-                <div style="font-size: 0.7rem; color: #1a633a; text-transform: uppercase;">Total</div>
-                <div style="font-weight: 700; font-size: 1.5rem; color: #0b4d2c;"><?php echo $total_items; ?></div>
-              </div>
-              <div style="background: #d4f0e0; border-radius: 16px; padding: 12px; text-align: center;">
-                <div style="font-size: 0.7rem; color: #1a633a; text-transform: uppercase;">Available</div>
-                <div style="font-weight: 700; font-size: 1.5rem; color: #0b4d2c;"><?php echo $available_count; ?></div>
-              </div>
-              <div style="background: #fee9e9; border-radius: 16px; padding: 12px; text-align: center;">
-                <div style="font-size: 0.7rem; color: #b13e3e; text-transform: uppercase;">Sold Out</div>
-                <div style="font-weight: 700; font-size: 1.5rem; color: #b13e3e;"><?php echo $sold_out_count; ?></div>
-              </div>
-              <div style="background: #fff1cf; border-radius: 16px; padding: 12px; text-align: center;">
-                <div style="font-size: 0.7rem; color: #9e6d0b; text-transform: uppercase;">Low Stock</div>
-                <div style="font-weight: 700; font-size: 1.5rem; color: #9e6d0b;"><?php echo $low_stock_count; ?></div>
-              </div>
+                <div style="background: #e3f4ea; border-radius: 16px; padding: 12px; text-align: center;">
+                    <div style="font-size: 0.7rem; color: #1a633a; text-transform: uppercase;">Total</div>
+                    <div style="font-weight: 700; font-size: 1.5rem; color: #0b4d2c;"><?php echo $total_items; ?></div>
+                </div>
+                <div style="background: #d4f0e0; border-radius: 16px; padding: 12px; text-align: center;">
+                    <div style="font-size: 0.7rem; color: #1a633a; text-transform: uppercase;">Available</div>
+                    <div style="font-weight: 700; font-size: 1.5rem; color: #0b4d2c;"><?php echo $available_count; ?></div>
+                </div>
+                <div style="background: #fee9e9; border-radius: 16px; padding: 12px; text-align: center;">
+                    <div style="font-size: 0.7rem; color: #b13e3e; text-transform: uppercase;">Sold Out</div>
+                    <div style="font-weight: 700; font-size: 1.5rem; color: #b13e3e;"><?php echo $sold_out_count; ?></div>
+                </div>
+                <div style="background: #fff1cf; border-radius: 16px; padding: 12px; text-align: center;">
+                    <div style="font-size: 0.7rem; color: #9e6d0b; text-transform: uppercase;">Low Stock</div>
+                    <div style="font-weight: 700; font-size: 1.5rem; color: #9e6d0b;"><?php echo $low_stock_count; ?></div>
+                </div>
             </div>
-
 
             <!-- Menu Items Header -->
-            <div style="display: grid; grid-template-columns: 2fr 80px 180px; ...">
-              <span>Item Name</span>
-              <span>Price</span>
-              <span style="text-align: center;">Actions</span>
+            <div style="display: grid; grid-template-columns: 2fr 100px 80px 80px; gap: 10px; font-weight:600; margin-bottom:12px;">
+                <span>Item Name</span>
+                <span>Price</span>
+                <span>Delete</span>
+                <span>Edit</span>
             </div>
-
 
             <!-- Menu Items List -->
             <?php foreach ($menu_items as $item): ?>
-            <div class="menu-edit-row">
-              <div class="item-info">
-                <i class="fas fa-burger"></i>
-                <span class="item-name"><?= htmlspecialchars($item['name']) ?></span>
-              </div>
-              <span class="item-price">₱<?= number_format($item['price'], 2) ?></span>
-              <div style="display:flex; gap:8px; justify-content:center;">
-                <!-- Status Toggle -->
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" <?= $item['isAvailable']?'checked':'' ?>
-                        onchange="toggleStatus(<?= $item['ID'] ?>, this.checked)"
-                        style="accent-color: var(--dlsu-green); width:18px; height:18px;">
-                  <span class="toggle-avail"><?= $item['isAvailable']?'Available':'Sold Out' ?></span>
-                </label>
+            <div class="menu-edit-row" style="display:grid; grid-template-columns:2fr 100px 80px 80px; gap:10px; align-items:center; margin-bottom:12px;">
 
+                <!-- Item Name -->
+                <div class="item-info" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-burger"></i>
+                    <span class="item-name"><?= htmlspecialchars($item['name']) ?></span>
+                </div>
 
-                <!-- Edit Button -->
-                <button onclick="openEditModal(
-                    <?= $item['ID'] ?>,
-                    '<?= htmlspecialchars($item['name'], ENT_QUOTES) ?>',
-                    <?= $item['price'] ?>,
-                    <?= $item['isAvailable'] ? 'true' : 'false' ?>
-                )" style="padding:4px 12px; border-radius:20px; border:none; background:#f0f0f0; cursor:pointer;">
-                  <i class="fas fa-pen"></i> Edit
-                </button>
-
+                <!-- Price -->
+                <div style="display:flex; align-items:center; justify-content:center; height:100%;">
+                  <span class="item-price">₱<?= number_format($item['price'], 2) ?></span>
+                </div>
 
                 <!-- Delete Button -->
-                <button class="delete-btn" data-id="<?= $item['ID'] ?>"
-                        style="background:#b13e3e; color:white; border:none; border-radius:8px; padding:4px 10px; cursor:pointer;">
-                  <i class="fas fa-trash"></i> Delete
-                </button>
-              </div>
+                <div style="display:flex; align-items:center; justify-content:center; height:100%;">
+                    <button class="delete-btn" data-id="<?= $item['ID'] ?>"
+                            style="background:#b13e3e; color:white; border:none; border-radius:8px; padding:4px 10px; cursor:pointer;">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+
+                <!-- Edit Modal Button -->
+                <div style="display:flex; align-items:center; justify-content:center;">
+                    <button onclick="openEditModal(
+                        <?= $item['ID'] ?>,
+                        '<?= htmlspecialchars($item['name'], ENT_QUOTES) ?>',
+                        <?= $item['price'] ?>,
+                        <?= $item['isAvailable'] ? 'true' : 'false' ?>
+                    )" style="padding:4px 8px; border-radius:8px; border:none; background:#0b4d2c; color:white; cursor:pointer;">
+                        <i class="fas fa-pen"></i> Edit
+                    </button>
+                </div>
+
             </div>
             <?php endforeach; ?>
 
-
-            </div>
-
-
             <!-- Add New Item -->
-
-
-            <button onclick="openAddModal()" style="background: var(--dlsu-green); color: white; border: none; padding: 10px 20px; border-radius: 40px; font-weight: 600;"><i class="fas fa-plus"></i> Add New Item</button>  
-
+            <div style="margin-top: 20px; text-align: center;">
+                <button onclick="openAddModal()" style="background: var(--dlsu-green); color: white; border: none; padding: 10px 20px; border-radius: 40px; font-weight: 600;">
+                    <i class="fas fa-plus"></i> Add New Item
+                </button>  
+            </div>
 
             <!-- Add Menu Item Modal -->
             <div id="addItemModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:9999;">
-              <div style="background:white; border-radius:20px; padding:24px; width:400px; max-width:90%;">
-                <h3 style="margin-top:0;"><i class="fas fa-plus-circle"></i> Add New Menu Item</h3>
-                <form id="addItemForm">
-                  <div style="margin-bottom:12px;">
-                    <label>Item Name</label>
-                    <input type="text" name="name" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                  </div>
-                  <div style="margin-bottom:12px;">
-                    <label>Price (₱)</label>
-                    <input type="number" name="price" required min="0" step="0.01" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                  </div>
-                  <div style="margin-bottom:12px;">
-                    <label>Status</label>
-                    <select name="status" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                      <option value="available">Available</option>
-                      <option value="sold_out">Sold Out</option>
-                    </select>
-                  </div>
-                  <div style="display:flex; gap:12px; justify-content:flex-end;">
-                    <button type="button" onclick="closeAddModal()" style="padding:8px 16px; border:none; border-radius:8px; background:#ccc;">Cancel</button>
-                    <button type="submit" style="padding:8px 16px; border:none; border-radius:8px; background:var(--dlsu-green); color:white;">Add Item</button>
-                  </div>
-                </form>
-              </div>
+                <div style="background:white; border-radius:20px; padding:24px; width:400px; max-width:90%;">
+                    <h3 style="margin-top:0;"><i class="fas fa-plus-circle"></i> Add New Menu Item</h3>
+                    <form id="addItemForm">
+                        <div style="margin-bottom:12px;">
+                            <label>Item Name</label>
+                            <input type="text" name="name" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <label>Price (₱)</label>
+                            <input type="number" name="price" required min="0" step="0.01" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <label>Status</label>
+                            <select name="status" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
+                                <option value="available">Available</option>
+                                <option value="sold_out">Sold Out</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; gap:12px; justify-content:flex-end;">
+                            <button type="button" onclick="closeAddModal()" style="background: #f36868; padding:8px 16px; border:none; border-radius:8px;">Cancel</button>
+                            <button type="submit" style="padding:8px 16px; border:none; border-radius:8px; background:var(--dlsu-green); color:white;">Add Item</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-
 
             <!-- Edit Item Modal -->
-            <div id="editItemModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-                background: rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
-              <div style="background:white; padding:30px; border-radius:20px; width:400px; position:relative;">
-                <h3>Edit Menu Item</h3>
-                <form id="editItemForm">
-                  <input type="hidden" name="item_id" id="edit_item_id">
-                  <div style="margin-bottom:12px;">
-                    <label>Item Name</label>
-                    <input type="text" name="item_name" id="edit_item_name" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                  </div>
-                  <div style="margin-bottom:12px;">
-                    <label>Price</label>
-                    <input type="number" name="price" id="edit_item_price" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                  </div>
-                  <div style="margin-bottom:12px;">
-                    <label>Availability</label>
-                    <select name="availability" id="edit_item_availability" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                      <option value="1">Available</option>
-                      <option value="0">Not Available</option>
-                    </select>
-                  </div>
-                  <div style="display:flex; justify-content:space-between; margin-top:20px;">
-                    <button type="button" onclick="closeEditModal()" style="padding:10px 20px; border:none; border-radius:40px; background:#ccc; color:white; font-weight:600;">Cancel</button>
-                    <button type="submit" style="padding:10px 20px; border:none; border-radius:40px; background:var(--dlsu-green); color:white; font-weight:600;">Update Item</button>
-                  </div>
-                </form>
-              </div>
+            <div id="editItemModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+                <div style="background:white; padding:30px; border-radius:20px; width:400px; position:relative;">
+                    <h3>Edit Menu Item</h3>
+                    <form id="editItemForm">
+                        <input type="hidden" name="item_id" id="edit_item_id">
+                        <div style="margin-bottom:12px;">
+                            <label>Item Name</label>
+                            <input type="text" name="item_name" id="edit_item_name" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <label>Price</label>
+                            <input type="number" name="price" id="edit_item_price" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <label>Availability</label>
+                            <select name="availability" id="edit_item_availability" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
+                                <option value="1">Available</option>
+                                <option value="0">Not Available</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-top:20px;">
+                            <button type="button" onclick="closeEditModal()" style="padding:10px 20px; border:none; border-radius:40px; background:#ccc; color:white; font-weight:600;">Cancel</button>
+                            <button type="submit" style="padding:10px 20px; border:none; border-radius:40px; background:var(--dlsu-green); color:white; font-weight:600;">Update Item</button>
+                        </div>
+                    </form>
+                </div>
             </div>
+        </div>
 
-
-          <!-- orders dashboard with status badges -->
-          <div class="admin-card">
+          <!-- orders dashboard with wider status column -->
+        <div class="admin-card">
             <h3><i class="fas fa-clock"></i> Order Manager · Real-time Queue</h3>
-           
+
             <!-- Status filter tabs -->
             <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-              <span style="background: var(--dlsu-green); color: white; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 600;">All <?php echo $total_orders; ?></span>
-              <span style="background: #f5e6e6; color: #b13e3e; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 600;">Pending <?php echo $pending_orders; ?></span>
-              <span style="background: #fff1cf; color: #9e6d0b; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 600;">Preparing <?php echo $preparing_orders; ?></span>
-              <span style="background: #c9f0d7; color: #0c6e3a; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 600;">Ready <?php echo $ready_orders; ?></span>
-              <span style="background: #d0e3ff; color: #1f5090; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 600;">Completed <?php echo $completed_orders; ?></span>
+              <span style="background: var(--dlsu-green); color: white; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 600;">
+                All <?php echo $total_orders; ?>
+              </span>
+              <span style="background: #f5e6e6; color: #b13e3e; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 600;">
+                Pending <?php echo $pending_orders; ?>
+              </span>
+              <span style="background: #fff1cf; color: #9e6d0b; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 600;">
+                Preparing <?php echo $preparing_orders; ?>
+              </span>
+              <span style="background: #c9f0d7; color: #0c6e3a; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 600;">
+                Ready <?php echo $ready_orders; ?>
+              </span>
+              <span style="background: #d0e3ff; color: #1f5090; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 600;">
+                Completed <?php echo $completed_orders; ?>
+              </span>
             </div>
-
 
             <!-- Order Queue Header -->
-            <div class="queue-item header" style="grid-template-columns: 2fr 1.2fr 1.2fr 0.8fr 0.5fr;">
-              <span>Order Items</span><span>Customer</span><span>Time</span><span>Status</span><span></span>
+            <div class="queue-item header" style="display:grid; grid-template-columns: 2fr 1.2fr 1fr 1fr 1.5fr; gap:10px; align-items:center; font-weight:600; padding:8px 12px; border-bottom:1px solid #e0e0e0;">
+              <span>Order Items</span>
+              <span>Customer</span>
+              <span>Time</span>
+              <span>Price</span>
+              <span>Status</span>
             </div>
-           
+
+            <!-- Orders List -->
             <?php foreach ($orders as $order): ?>
-            <div class="order-card">
-                <p><strong>Queue #<?= $order['queue_number'] ?></strong></p>
-                <p>Customer: <?= htmlspecialchars($order['full_name']) ?></p>
-                <p>Total: ₱<?= number_format($order['total_amount'],2) ?></p>
+            <div class="order-card" style="display:grid; grid-template-columns: 2fr 1.2fr 1fr 1fr 1.5fr; gap:10px; align-items:center; padding:10px 12px; border-bottom:1px solid #f0f0f0;">
 
-
-                <p>Items:</p>
-                <ul>
+              <!-- Order Items -->
+              <div>
+                <ul style="margin:0; padding-left:16px;">
                   <?php foreach($order['items'] as $oi): ?>
                     <li><?= htmlspecialchars($oi['name']) ?> x<?= $oi['quantity'] ?></li>
                   <?php endforeach; ?>
                 </ul>
+              </div>
 
+              <!-- Customer -->
+              <div><?= htmlspecialchars($order['full_name']) ?></div>
 
-                <select onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)">
-                    <option value="P" <?= $order['status']=='P'?'selected':'' ?>>Pending</option>
-                    <option value="PR" <?= $order['status']=='PR'?'selected':'' ?>>Preparing</option>
-                    <option value="R" <?= $order['status']=='R'?'selected':'' ?>>Ready</option>
-                    <option value="C" <?= $order['status']=='C'?'selected':'' ?>>Completed</option>
+              <!-- Time -->
+              <div><?= date('g:i A', strtotime($order['order_date'])) ?></div>
+
+              <!-- Price -->
+              <div>₱<?= number_format($order['total_amount'],2) ?></div>
+
+              <!-- Status -->
+              <div>
+                <select onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)" 
+                        style="width:100%; min-width:120px; background:#f0f0f0; border:none; padding:6px 12px; border-radius:8px; cursor:pointer;">
+                  <option value="P" <?= $order['status']=='P'?'selected':'' ?> style="background:#f5e6e6; color:#b13e3e;">Pending</option>
+                  <option value="PR" <?= $order['status']=='PR'?'selected':'' ?> style="background:#fff1cf; color:#9e6d0b;">Preparing</option>
+                  <option value="R" <?= $order['status']=='R'?'selected':'' ?> style="background:#c9f0d7; color:#0c6e3a;">Ready</option>
+                  <option value="C" <?= $order['status']=='C'?'selected':'' ?> style="background:#d0e3ff; color:#1f5090;">Completed</option>
                 </select>
+              </div>
+
             </div>
             <?php endforeach; ?>
-            </div>
+         </div>
 
 
-        <!-- Sales Monitoring Section -->
-        <div class="admin-card" style="margin-bottom:30px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-            <h3 style="margin: 0;"><i class="fas fa-chart-simple"></i> Sales Monitoring · Performance Analytics</h3>
-            <div style="display: flex; gap: 10px;">
-              <span style="background: #e3f4ea; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 500;">Today</span>
-              <span style="background: #e3f4ea; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 500;">This Week</span>
-              <span style="background: #e3f4ea; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 500;">This Month</span>
+          <!-- Sales Monitoring Section -->
+        <div style="margin-bottom:30px;">
+          <div class="admin-card" style="margin-bottom:30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+              <h3 style="margin: 0;"><i class="fas fa-chart-simple"></i> Sales Monitoring · Performance Analytics</h3>
+              <div style="display: flex; gap: 10px;">
+                <span style="background: #e3f4ea; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 500;">Today</span>
+                <span style="background: #e3f4ea; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 500;">This Week</span>
+                <span style="background: #e3f4ea; padding: 6px 16px; border-radius: 30px; font-size: 0.8rem; font-weight: 500;">This Month</span>
+              </div>
             </div>
-          </div>
          
           <!-- Sales Summary Cards -->
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px;">
@@ -545,7 +563,6 @@ $completed_orders = $restaurant_id
       </div>
     </section>
   </div>
-
 
           <script>
 
