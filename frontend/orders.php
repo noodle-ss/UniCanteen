@@ -116,7 +116,8 @@ $orders = $stmt->get_result();
                                 <div>
                                     <h3 style="margin-bottom: 5px;">Order #<?php echo $order['queue_number']; ?></h3>
                                     <p style="color: #3b7455;"><?php echo $order['restaurant_name']; ?> ·
-                                        <?php echo date('F d, Y g:i A', strtotime($order['order_date'])); ?></p>
+                                        <?php echo date('F d, Y g:i A', strtotime($order['order_date'])); ?>
+                                    </p>
                                 </div>
                                 <div class="order-status status-<?php echo $order['status']; ?>">
                                     <?php
@@ -131,9 +132,10 @@ $orders = $stmt->get_result();
                                 <div>
                                     <p><i class="fas fa-box"></i> <?php echo $order['total_items']; ?> items</p>
                                     <p><i class="fas fa-money-bill"></i> Total:
-                                        <strong>₱<?php echo number_format($order['total_amount'], 2); ?></strong></p>
+                                        <strong>₱<?php echo number_format($order['total_amount'], 2); ?></strong>
+                                    </p>
                                 </div>
-                                <a href="order-details.php?id=<?php echo $order['ID']; ?>" class="btn-primary">
+                                <a href="index.php?page=order-details&id=<?php echo $order['ID']; ?>" class="btn-primary">
                                     View Details <i class="fas fa-arrow-right"></i>
                                 </a>
                             </div>

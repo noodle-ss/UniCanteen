@@ -117,6 +117,9 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'customer';
             case 'restaurant':
                 include 'frontend/restaurant.php';
                 break;
+            case 'order-details':
+                include 'frontend/order-details.php';
+                break;
             case 'logout':
                 include 'frontend/logout-handler.php';
                 break; // Add this line
