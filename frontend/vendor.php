@@ -7,7 +7,7 @@ $dbConn = Database::getInstance()->getConnection();
 // AUTO-LOGIN DEFAULT VENDOR FOR TESTING
 // =====================
 if (!isset($_SESSION['user_id'])) {
-    $_SESSION['user_id'] = 1; 
+    $_SESSION['user_id'] = 3; 
     $_SESSION['role'] = 'V';
 }
 
@@ -48,45 +48,50 @@ $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 // === DASHBOARD METRICS START ===
 // use the integer variable to avoid constructing invalid SQL when no restaurant exists
-$total_items = $restaurant_id
-    ? $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant_id}")->fetch_row()[0] ?? 0
-    : 0;
-$available_count = $restaurant_id
-    ? $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant_id} AND isAvailable=1")->fetch_row()[0] ?? 0
-    : 0;
+$total_items = $restaurant_id 
+    ? $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant_id}")->fetch_row()[0] ?? 0: 0;
+$available_count = $restaurant_id 
+    ? $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant_id} AND isAvailable=1")->fetch_row()[0] ?? 0: 0;
 $sold_out_count = $restaurant_id
-    ? $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant_id} AND isAvailable=0")->fetch_row()[0] ?? 0
-    : 0;
+    ? $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant_id} AND isAvailable=0")->fetch_row()[0] ?? 0: 0;
 $low_stock_count = 0;
 $preparing_orders = $restaurant_id
-    ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='PR'")->fetch_row()[0] ?? 0
-    : 0;
+    ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='PR'")->fetch_row()[0] ?? 0: 0;
 $ready_orders = $restaurant_id
-    ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='R'")->fetch_row()[0] ?? 0
-    : 0;
+    ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='R'")->fetch_row()[0] ?? 0: 0;
 $fulfilled_orders_count = $restaurant_id
-    ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C'")->fetch_row()[0] ?? 0
-    : 0;
+    ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C'")->fetch_row()[0] ?? 0: 0;
 $completed_orders_count = $fulfilled_orders_count;
 $pending_orders_count = $restaurant_id
-    ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='P'")->fetch_row()[0] ?? 0
-    : 0;
+    ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='P'")->fetch_row()[0] ?? 0: 0;
 $avg_order_value = $restaurant_id
-    ? $dbConn->query("SELECT AVG(total_amount) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C'")->fetch_row()[0] ?? 0
-    : 0;
+    ? $dbConn->query("SELECT AVG(total_amount) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C'")->fetch_row()[0] ?? 0: 0;
 $last_week_avg_order_value = $restaurant_id
-    ? $dbConn->query("SELECT AVG(total_amount) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C' AND order_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)")->fetch_row()[0] ?? 0
-    : 0;
+    ? $dbConn->query("SELECT AVG(total_amount) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C' AND order_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)")->fetch_row()[0] ?? 0: 0;
 $best_selling_items = $restaurant_id
     ? $dbConn->query("SELECT i.name AS item_name, SUM(oi.quantity) AS order_count FROM Order_ItemLine oi JOIN Items i ON oi.item_ID = i.ID JOIN Orders o ON oi.order_ID = o.ID WHERE o.restaurant_ID = {$restaurant_id} AND o.status='C' GROUP BY oi.item_ID ORDER BY order_count DESC LIMIT 6")->fetch_all(MYSQLI_ASSOC)
     : [];
+// pad to six entries so template access is safe
+$default_item = ['item_name' => '—', 'order_count' => 0];
+while (count($best_selling_items) < 6) {
+    $best_selling_items[] = $default_item;
+}
 // === DASHBOARD METRICS END ===
 
 
-$total_revenue = $dbConn->query("SELECT SUM(total_amount) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='C'")->fetch_row()[0] ?? 0;
-$total_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['ID']}")->fetch_row()[0] ?? 0;
-$pending_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='P'")->fetch_row()[0] ?? 0;
-$completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='C'")->fetch_row()[0] ?? 0;
+// redundant metrics block, now using restaurant_id variable
+$total_revenue = $restaurant_id
+    ? $dbConn->query("SELECT SUM(total_amount) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C'")->fetch_row()[0] ?? 0
+    : 0;
+$total_orders = $restaurant_id
+    ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id}")->fetch_row()[0] ?? 0
+    : 0;
+$pending_orders = $restaurant_id
+    ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='P'")->fetch_row()[0] ?? 0
+    : 0;
+$completed_orders = $restaurant_id
+    ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C'")->fetch_row()[0] ?? 0
+    : 0;
 
 
 $orderQuery = "
