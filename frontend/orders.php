@@ -37,6 +37,24 @@ $orders = $stmt->get_result();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="../assets/styles.css">
     <style>
+        /* ── Layout reset (same as customer.php) ── */
+        body {
+            display: block;
+            min-height: auto;
+            margin: 0;
+            padding: 0;
+        }
+
+        .main-content {
+            margin-left: 0;
+        }
+
+        .wrapper {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 36px;
+        }
+
         .orders-container {
             max-width: 1000px;
             margin: 40px auto;
