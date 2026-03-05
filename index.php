@@ -2,12 +2,6 @@
 session_start();
 require_once __DIR__ . '/config/config.php';
 
-/* AUTO LOGIN FOR TESTING */
-if (!isset($_SESSION['user_role'])) {
-    $_SESSION['user_id'] = 1;
-    $_SESSION['user_role'] = 'V'; // V = Vendor
-}
-
 // Route logic
 $page = isset($_GET['page']) ? $_GET['page'] : 'customer';
 ?>
