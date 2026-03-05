@@ -646,25 +646,22 @@ $completed_orders = $restaurant_id
           </div>
     </section>
   </div>
-
-  <script>
-
-
-    function updateOrderStatus(orderId, status) {
-      fetch('update_order_status.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'order_id=' + orderId + '&status=' + status
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            alert("Order updated!");
-          } else {
-            alert("Failed to update order.");
-          }
-        });
-    }
+          <script>
+            function updateOrderStatus(orderId, status) {
+                fetch('update_order_status.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: 'order_id=' + orderId + '&status=' + status
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success){
+                        alert("Order updated!");
+                    } else {
+                        alert("Failed to update order.");
+                    }
+                });
+            }
 
 
     function toggleStatus(itemId, isChecked) {
