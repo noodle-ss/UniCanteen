@@ -881,17 +881,6 @@ $grand_total = $subtotal + $service_fee;
 </div>
 
 <script>
-// Reset add-buttons when navigating back (prevents stuck "Added!" state)
-window.addEventListener('pageshow', function(e) {
-    if (e.persisted) {
-        document.querySelectorAll('.btn-add').forEach(btn => {
-            btn.innerHTML = '<i class="fas fa-plus"></i> Add';
-            btn.style.background = '';
-            btn.style.color = '';
-        });
-    }
-});
-
 // +/- quantity buttons
 function changeQty(btn, delta) {
     const input = btn.closest('.qty-control').querySelector('input[type="number"]');

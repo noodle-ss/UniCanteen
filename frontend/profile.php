@@ -144,7 +144,7 @@ $reviews = $stmt->get_result();
         href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="../assets/styles.css">
+    <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
         /* ── Layout reset (same as customer.php) ── */
         body {
@@ -343,12 +343,14 @@ $reviews = $stmt->get_result();
                 <?php endif; ?>
 
                 <div class="profile-tabs">
-                    <button class="tab-btn active" onclick="showTab('profile')"><i class="fas fa-user"></i>
+                    <button class="tab-btn active" onclick="showTab('profile', this)"><i class="fas fa-user"></i>
                         Profile</button>
-                    <button class="tab-btn" onclick="showTab('orders')"><i class="fas fa-clipboard-list"></i>
+                    <button class="tab-btn" onclick="showTab('orders', this)"><i class="fas fa-clipboard-list"></i>
                         Orders</button>
-                    <button class="tab-btn" onclick="showTab('reviews')"><i class="fas fa-star"></i> Reviews</button>
-                    <button class="tab-btn" onclick="showTab('security')"><i class="fas fa-lock"></i> Security</button>
+                    <button class="tab-btn" onclick="showTab('reviews', this)"><i class="fas fa-star"></i>
+                        Reviews</button>
+                    <button class="tab-btn" onclick="showTab('security', this)"><i class="fas fa-lock"></i>
+                        Security</button>
                 </div>
 
                 <!-- Profile Tab -->
@@ -490,7 +492,7 @@ $reviews = $stmt->get_result();
     </div>
 
     <script>
-        function showTab(tab) {
+        function showTab(tab, el) {
             // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
@@ -503,7 +505,7 @@ $reviews = $stmt->get_result();
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event.target.classList.add('active');
+            el.classList.add('active');
         }
     </script>
 </body>

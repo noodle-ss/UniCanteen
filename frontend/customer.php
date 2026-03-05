@@ -89,9 +89,7 @@ if (isLoggedIn()) {
         $activeOrders[] = $ord;
     }
 }
-// Keep backward compat
-$currentOrder = !empty($activeOrders) ? $activeOrders[0] : null;
-$orderItems = $currentOrder ? $currentOrder['items'] : [];
+// (no page-level backward-compat aliases needed)
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -176,6 +174,107 @@ $orderItems = $currentOrder ? $currentOrder['items'] : [];
             align-items: center;
             gap: 8px;
             cursor: pointer;
+        }
+
+        /* ── Search & Filter bar ── */
+        .search-filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 18px 0 22px;
+        }
+
+        .search-input-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 220px;
+            max-width: 420px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b9a7f;
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+
+        .stall-search-input {
+            width: 100%;
+            padding: 12px 42px 12px 40px;
+            border: 2px solid #cae3d6;
+            border-radius: 40px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: #1a3d28;
+            background: #fff;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .stall-search-input:focus {
+            border-color: #007a3e;
+            box-shadow: 0 0 0 3px rgba(0,122,62,0.12);
+        }
+        .stall-search-input::placeholder { color: #94b8a3; }
+
+        .search-clear-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            border: none;
+            background: #e0f0e8;
+            color: #007a3e;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            transition: background 0.15s;
+        }
+        .search-clear-btn:hover { background: #cae3d6; }
+
+        .filter-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-chip {
+            padding: 9px 18px;
+            border-radius: 40px;
+            border: 1.5px solid #cae3d6;
+            background: #f4fbf7;
+            color: #2d6347;
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.18s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .filter-chip:hover { background: #e0f0e8; border-color: #007a3e; }
+        .filter-chip.active {
+            background: #007a3e;
+            color: #fff;
+            border-color: #007a3e;
+        }
+        .filter-chip.active i { color: #fff !important; }
+
+        .search-result-count {
+            font-size: 0.85rem;
+            color: #5f8b74;
+            font-weight: 500;
+            white-space: nowrap;
+            display: none;
         }
     </style>
 </head>
@@ -264,13 +363,30 @@ $orderItems = $currentOrder ? $currentOrder['items'] : [];
                 <div class="section-header" id="menu">
                     <i class="fas fa-store"></i>
                     <h2>Today's Stalls</h2>
-                    <span
-                        style="margin-left: auto; background: #e3f4ea; padding: 6px 16px; border-radius: 40px; font-size: 0.95rem; color: #007a3e; font-weight: 500; display: flex; align-items: center; gap: 6px; border: 1px solid #cae3d6;">
-                        <i class="fas fa-filter" style="font-size: 0.8rem;"></i> Filter by: All Stalls
-                    </span>
                 </div>
 
-                <div class="stall-grid">
+                <!-- Search & Filter Bar -->
+                <div class="search-filter-bar">
+                    <div class="search-input-wrap">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="stallSearch" class="stall-search-input"
+                            placeholder="Search food or stall name…" oninput="applyStallFilter()" autocomplete="off">
+                        <button class="search-clear-btn" id="searchClearBtn" onclick="clearSearch()" title="Clear">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="filter-chips">
+                        <button class="filter-chip active" data-filter="all" onclick="setFilter('all', this)">All
+                            Stalls</button>
+                        <button class="filter-chip" data-filter="open" onclick="setFilter('open', this)">Open
+                            Now</button>
+                        <button class="filter-chip" data-filter="rated" onclick="setFilter('rated', this)"><i
+                                class="fas fa-star" style="color:#eab308; font-size:0.75rem;"></i> Top Rated</button>
+                    </div>
+                    <span class="search-result-count" id="resultCount"></span>
+                </div>
+
+                <div class="stall-grid" id="stallGrid">
                     <?php
                     $restaurantsResult->data_seek(0);
                     while ($restaurant = $restaurantsResult->fetch_assoc()):
@@ -279,8 +395,19 @@ $orderItems = $currentOrder ? $currentOrder['items'] : [];
                         $stmt->bind_param("i", $restaurant['ID']);
                         $stmt->execute();
                         $itemsResult = $stmt->get_result();
+                        // Collect item names for data attribute
+                        $itemNames = [];
+                        $itemsForAttr = $itemsResult->fetch_all(MYSQLI_ASSOC);
+                        foreach ($itemsForAttr as $i) {
+                            $itemNames[] = $i['name'];
+                        }
+                        $itemsResult->data_seek(0);
                         ?>
-                        <div class="stall-card">
+                        <div class="stall-card"
+                            data-stall-name="<?php echo htmlspecialchars(strtolower($restaurant['name'])); ?>"
+                            data-items="<?php echo htmlspecialchars(strtolower(implode(' ', $itemNames))); ?>"
+                            data-open="<?php echo $restaurant['is_open'] ? '1' : '0'; ?>"
+                            data-rating="<?php echo $restaurant['avg_rating']; ?>">
                             <div class="stall-header">
                                 <div style="display: flex; align-items: center; gap: 10px;">
                                     <span class="stall-name"><?php echo htmlspecialchars($restaurant['name']); ?></span>
@@ -297,7 +424,7 @@ $orderItems = $currentOrder ? $currentOrder['items'] : [];
                             </div>
                             <div class="menu-grid">
                                 <?php
-                                while ($item = $itemsResult->fetch_assoc()):
+                                foreach ($itemsForAttr as $item):
                                     $isAvailable = ($item['isAvailable'] == 1 || $item['isAvailable'] === '1' || $item['isAvailable'] === true);
                                     ?>
                                     <div class="menu-row" title="<?php echo htmlspecialchars($item['description'] ?? ''); ?>">
@@ -310,7 +437,7 @@ $orderItems = $currentOrder ? $currentOrder['items'] : [];
                                                 Out</span>
                                         <?php endif; ?>
                                     </div>
-                                <?php endwhile; ?>
+                                <?php endforeach; ?>
                             </div>
                             <div class="availability-summary">
                                 <span><i class="fas fa-utensils"></i> <?php echo $restaurant['available_items_count']; ?>
@@ -342,7 +469,8 @@ $orderItems = $currentOrder ? $currentOrder['items'] : [];
                                     <h3 style="margin: 0; font-size: 1.3rem;">Active Orders</h3>
                                     <p style="color: #3b7455; margin: 3px 0 0; font-size: 0.9rem;">
                                         <?php echo count($activeOrders); ?>
-                                        order<?php echo count($activeOrders) > 1 ? 's' : ''; ?> in progress</p>
+                                        order<?php echo count($activeOrders) > 1 ? 's' : ''; ?> in progress
+                                    </p>
                                 </div>
                             </div>
                             <a href="index.php?page=orders" class="btn-secondary"
@@ -498,7 +626,7 @@ $orderItems = $currentOrder ? $currentOrder['items'] : [];
                                     <?php echo htmlspecialchars($review['review']); ?>
                                 </div>
                             </div>
-                        <?php
+                            <?php
                         endwhile;
                     else:
                         ?>
@@ -553,38 +681,96 @@ $orderItems = $currentOrder ? $currentOrder['items'] : [];
         </section>
     </div>
     <script>
-        // Dropdown menu toggle function
-        function toggleDropdown(event) {
-            event.preventDefault();
-            var dropdown = document.getElementById('userDropdown');
-            if (dropdown) {
-                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-            }
-        }
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('.user-menu')) {
-                var dropdown = document.getElementById('userDropdown');
-                if (dropdown) {
-                    dropdown.style.display = 'none';
-                }
-            }
-        });
-
-        // Smooth scroll for anchor links
+        // ── Smooth scroll for anchor links ──────────────────────────────────
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         });
+
+        // ── Search & Filter ─────────────────────────────────────────────────
+        let activeFilter = 'all';
+
+        function setFilter(filter, btn) {
+            activeFilter = filter;
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            applyStallFilter();
+        }
+
+        function clearSearch() {
+            document.getElementById('stallSearch').value = '';
+            applyStallFilter();
+            document.getElementById('stallSearch').focus();
+        }
+
+        function applyStallFilter() {
+            const query = document.getElementById('stallSearch').value.trim().toLowerCase();
+            const cards = document.querySelectorAll('#stallGrid .stall-card');
+            const clearBtn = document.getElementById('searchClearBtn');
+            let visible = 0;
+
+            // Show/hide the clear button
+            clearBtn.style.display = query ? 'flex' : 'none';
+
+            cards.forEach(card => {
+                const name = card.dataset.stallName || '';
+                const items = card.dataset.items || '';
+                const isOpen = card.dataset.open === '1';
+                const rating = parseFloat(card.dataset.rating || 0);
+
+                // Text match
+                const textMatch = !query || name.includes(query) || items.includes(query);
+
+                // Chip filter
+                let chipMatch = true;
+                if (activeFilter === 'open') chipMatch = isOpen;
+                if (activeFilter === 'rated') chipMatch = rating >= 4.0;
+
+                const show = textMatch && chipMatch;
+                card.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+
+            // Result count
+            const countEl = document.getElementById('resultCount');
+            if (query || activeFilter !== 'all') {
+                countEl.textContent = visible + ' stall' + (visible !== 1 ? 's' : '') + ' found';
+                countEl.style.display = 'inline';
+            } else {
+                countEl.style.display = 'none';
+            }
+
+            // No-results placeholder
+            let noRes = document.getElementById('noStallResults');
+            if (visible === 0) {
+                if (!noRes) {
+                    noRes = document.createElement('div');
+                    noRes.id = 'noStallResults';
+                    noRes.style.cssText = 'grid-column:1/-1;text-align:center;padding:60px 20px;color:#3b7455;';
+                    noRes.innerHTML = '<i class="fas fa-search" style="font-size:2.5rem;opacity:0.3;display:block;margin-bottom:14px;"></i>' +
+                        '<strong style="font-size:1.1rem;color:#1a4d31;">No stalls found</strong>' +
+                        '<p style="margin-top:8px;">Try a different keyword or filter.</p>';
+                    document.getElementById('stallGrid').appendChild(noRes);
+                }
+                noRes.style.display = '';
+            } else if (noRes) {
+                noRes.style.display = 'none';
+            }
+        }
+
+        // Sort "Top Rated" — re-order DOM nodes
+        function sortByRating() {
+            const grid = document.getElementById('stallGrid');
+            const cards = [...grid.querySelectorAll('.stall-card')];
+            cards.sort((a, b) => parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating));
+            cards.forEach(c => grid.appendChild(c));
+        }
+
+        // On page load — hide clear btn
+        document.getElementById('searchClearBtn').style.display = 'none';
     </script>
 </body>
 
