@@ -2,12 +2,9 @@
 require_once '../config/auth_check.php';
 require_once '../config/database.php';
 
-
 requireVendorLogin();
 
-
 $user_id = $_SESSION['user_id'] ?? null;
-
 
 function requireVendorLogin() {
     session_start();
@@ -18,7 +15,6 @@ function requireVendorLogin() {
         exit();
     }
 }
-
 
 $query = "SELECT full_name FROM Users WHERE role='V'";
 $stmt = Database::getInstance()->getConnection()->prepare($query);
