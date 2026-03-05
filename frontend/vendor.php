@@ -21,10 +21,6 @@ function requireVendorLogin() {
 requireVendorLogin();
 $user_id = $_SESSION['user_id'] ?? null;
 
-function formatPrice($amount) {
-    return '₱' . number_format($amount, 2);
-}
-
 $query = "SELECT full_name FROM Users WHERE ID = ?";
 $stmt = Database::getInstance()->getConnection()->prepare($query);
 //$stmt = $dbConn->prepare($query);
