@@ -1,27 +1,24 @@
 <?php
-session_start();
-//require_once '../config/auth_check.php';
+require_once '../config/auth_check.php';
 require_once '../config/database.php';
 
 
-//requireVendorLogin();
+requireVendorLogin();
 
 
-//$user_id = $_SESSION['user_id'] ?? null;
+$user_id = $_SESSION['user_id'] ?? null;
 
 
-// function requireVendorLogin() {
-//     session_start();
+function requireVendorLogin() {
+    session_start();
 
 
-//     if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'V') {
-//         header("Location: login.php");
-//         exit();
-//     }
-// }
+    if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'V') {
+        header("Location: login.php");
+        exit();
+    }
+}
 
-
-$user_id = 3; // hardcoded for testing - replace with session user_id in production
 
 
 $query = "SELECT full_name FROM Users WHERE role='V'";
