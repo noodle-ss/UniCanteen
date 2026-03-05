@@ -3,28 +3,32 @@
 if (!function_exists('requireLogin')) {
     require_once __DIR__ . '/config.php';
 
-    function requireLogin() {
-    if (!isLoggedIn()) {
-        $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
-        redirect('index.php?page=login');
+    function requireLogin()
+    {
+        if (!isLoggedIn()) {
+            $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
+            redirect('index.php?page=login');
+        }
     }
-}
 
-    function requireCustomer() {
+    function requireCustomer()
+    {
         requireLogin();
         if (!isCustomer()) {
             redirect('index.php?error=unauthorized');
         }
     }
 
-    function requireVendor() {
+    function requireVendor()
+    {
         requireLogin();
         if (getUserRole() !== 'V') {
             redirect('index.php?error=unauthorized');
         }
     }
 
-    function requireAdmin() {
+    function requireAdmin()
+    {
         requireLogin();
         if (getUserRole() !== 'A') {
             redirect('index.php?error=unauthorized');
@@ -32,17 +36,18 @@ if (!function_exists('requireLogin')) {
     }
 
     // Validate session from database
-    function validateSession() {
+    function validateSession()
+    {
         if (isset($_SESSION['session_token']) && isset($_SESSION['user_id'])) {
             $database = Database::getInstance();
             $session = $database->validateSession($_SESSION['session_token']);
-            
+
             if (!$session) {
                 // Invalid or expired session
                 session_destroy();
-                redirect('frontend/login.php?expired=1');
+                redirect('index.php?page=login&expired=1');
             }
-            
+
             // Refresh session data
             $_SESSION['user_id'] = $session['user_id'];
             $_SESSION['user_role'] = $session['role'];
