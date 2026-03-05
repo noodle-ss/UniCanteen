@@ -2,22 +2,32 @@
 require_once '../config/auth_check.php';
 require_once '../config/database.php';
 
-requireVendorLogin();
-
-$user_id = $_SESSION['user_id'] ?? null;
+// =====================
+// AUTO-LOGIN DEFAULT VENDOR FOR TESTING
+// =====================
+if (!isset($_SESSION['user_id'])) {
+    $_SESSION['user_id'] = 1; 
+    $_SESSION['role'] = 'V';
+}
 
 function requireVendorLogin() {
-    session_start();
-
 
     if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'V') {
-        header("Location: login.php");
-        exit();
+        // header("Location: login.php");
+        // exit();
     }
 }
 
-$query = "SELECT full_name FROM Users WHERE role='V'";
+requireVendorLogin();
+$user_id = $_SESSION['user_id'] ?? null;
+
+function formatPrice($amount) {
+    return '₱' . number_format($amount, 2);
+}
+
+$query = "SELECT full_name FROM Users WHERE ID = ?";
 $stmt = Database::getInstance()->getConnection()->prepare($query);
+//$stmt = $dbConn->prepare($query);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -36,6 +46,21 @@ $stmt = Database::getInstance()->getConnection()->prepare($query);
 $stmt->bind_param("i", $restaurant['ID']);
 $stmt->execute();
 $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+// === DASHBOARD METRICS START ===
+$total_items = $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant['ID']}")->fetch_row()[0] ?? 0;
+$available_count = $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant['ID']} AND isAvailable=1")->fetch_row()[0] ?? 0;
+$sold_out_count = $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant['ID']} AND isAvailable=0")->fetch_row()[0] ?? 0;
+$low_stock_count = 0;
+$preparing_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='PR'")->fetch_row()[0] ?? 0;
+$ready_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='R'")->fetch_row()[0] ?? 0;
+$fulfilled_orders_count = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='C'")->fetch_row()[0] ?? 0;
+$completed_orders_count = $fulfilled_orders_count;
+$pending_orders_count = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='P'")->fetch_row()[0] ?? 0;
+$avg_order_value = $dbConn->query("SELECT AVG(total_amount) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='C'")->fetch_row()[0] ?? 0;
+$last_week_avg_order_value = $dbConn->query("SELECT AVG(total_amount) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='C' AND order_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)")->fetch_row()[0] ?? 0;
+$best_selling_items = $dbConn->query("SELECT i.name AS item_name, SUM(oi.quantity) AS order_count FROM Order_ItemLine oi JOIN Items i ON oi.item_ID = i.ID JOIN Orders o ON oi.order_ID = o.ID WHERE o.restaurant_ID = {$restaurant['ID']} AND o.status='C' GROUP BY oi.item_ID ORDER BY order_count DESC LIMIT 6")->fetch_all(MYSQLI_ASSOC);
+// === DASHBOARD METRICS END ===
 
 
 $dbConn = Database::getInstance()->getConnection();
@@ -58,7 +83,7 @@ ORDER BY o.order_date DESC
 
 $dbConn = Database::getInstance()->getConnection();
 $stmt = $dbConn->prepare($orderQuery);
-$stmt->bind_param("i", $restaurant['id']);
+$stmt->bind_param("i", $restaurant['ID']);
 $stmt->execute();
 $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
@@ -89,10 +114,10 @@ $restaurant = $stmt->get_result()->fetch_assoc();
 
 
 // === Dashboard metrics ===
-$total_revenue = $dbConn->query("SELECT SUM(total_amount) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='C'")->fetch_row()[0] ?? 0;
-$total_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']}")->fetch_row()[0] ?? 0;
-$pending_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='P'")->fetch_row()[0] ?? 0;
-$completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='C'")->fetch_row()[0] ?? 0;
+$total_revenue = $dbConn->query("SELECT SUM(total_amount) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='C'")->fetch_row()[0] ?? 0;
+$total_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['ID']}")->fetch_row()[0] ?? 0;
+$pending_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='P'")->fetch_row()[0] ?? 0;
+$completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='C'")->fetch_row()[0] ?? 0;
 ?>
 
 
@@ -121,8 +146,6 @@ $completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant
     }
   </style>
 </head>
-
-
 
 
 <body>
@@ -210,7 +233,7 @@ $completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant
                 <!-- Status Toggle -->
                 <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                   <input type="checkbox" <?= $item['isAvailable']?'checked':'' ?>
-                        onchange="toggleStatus(<?= $item['id'] ?>, this.checked)"
+                        onchange="toggleStatus(<?= $item['ID'] ?>, this.checked)"
                         style="accent-color: var(--dlsu-green); width:18px; height:18px;">
                   <span class="toggle-avail"><?= $item['isAvailable']?'Available':'Sold Out' ?></span>
                 </label>
@@ -228,7 +251,7 @@ $completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant
 
 
                 <!-- Delete Button -->
-                <button class="delete-btn" data-id="<?= $item['id'] ?>"
+                <button class="delete-btn" data-id="<?= $item['ID'] ?>"
                         style="background:#b13e3e; color:white; border:none; border-radius:8px; padding:4px 10px; cursor:pointer;">
                   <i class="fas fa-trash"></i> Delete
                 </button>
@@ -464,7 +487,13 @@ $completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant
                     }
                   ?>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e0f0e8;">
-                    <span><span style="font-weight: 600;">#<?php echo $txn['queue_number']; ?></span> · <?php echo htmlspecialchars(substr($txn['items'], 0, 25)); ?>...</span>
+                    <span>
+                      <span style="font-weight: 600;">#<?php echo $txn['queue_number']; ?></span> · 
+                      <?php
+                        $itemNames = array_map(fn($i)=>$i['name'], $txn['items']);
+                        echo htmlspecialchars(implode(', ', $itemNames));
+                      ?>
+                    </span>
                     <span><?php echo formatPrice($txn['total_amount']); ?></span>
                     <span style="color: <?php echo $status_color; ?>;"><?php echo $status_text; ?></span>
                   </div>
