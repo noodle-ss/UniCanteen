@@ -35,8 +35,26 @@ $orders = $stmt->get_result();
         href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="../assets/styles.css">
+    <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
+        /* ── Layout reset (same as customer.php) ── */
+        body {
+            display: block;
+            min-height: auto;
+            margin: 0;
+            padding: 0;
+        }
+
+        .main-content {
+            margin-left: 0;
+        }
+
+        .wrapper {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 36px;
+        }
+
         .orders-container {
             max-width: 1000px;
             margin: 40px auto;
@@ -102,8 +120,18 @@ $orders = $stmt->get_result();
                     <a
                         href="<?php echo url('index.php?page=profile'); ?>"><?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
                     <a href="<?php echo url('index.php?page=logout'); ?>" class="btn-outline">Logout</a>
-                    <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-primary"><i
-                            class="fas fa-bag-shopping"></i> Cart</a>
+                    <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-primary">
+                        <i class="fas fa-bag-shopping"></i> Cart
+                        <?php
+                        $cart_items_count = 0;
+                        if (isset($_SESSION['cart'])) {
+                            foreach ($_SESSION['cart'] as $ci)
+                                $cart_items_count += $ci['quantity'];
+                        }
+                        ?>
+                        <span
+                            style="background:white;color:#007a3e;border-radius:50%;padding:2px 6px;font-size:0.7rem;margin-left:5px;"><?php echo $cart_items_count; ?></span>
+                    </a>
                 </div>
             </nav>
             <div class="orders-container">

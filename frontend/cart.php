@@ -309,8 +309,28 @@ $grand_total = $subtotal + $service_fee;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 4px;
         }
+        .qty-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1.5px solid #c8e6d4;
+            background: #f4fbf7;
+            color: #007a3e;
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            padding: 0;
+            flex-shrink: 0;
+        }
+        .qty-btn:hover { background: #007a3e; color: #fff; border-color: #007a3e; }
+        .qty-btn:active { transform: scale(0.92); }
         .qty-control input[type="number"] {
             width: 52px;
             padding: 7px 6px;
@@ -515,6 +535,107 @@ $grand_total = $subtotal + $service_fee;
             gap: 8px;
         }
         .login-notice a { color: #007a3e; font-weight: 600; }
+
+        /* ── Confirmation Modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: blur(3px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: #fff;
+            border-radius: 28px;
+            padding: 36px 32px 28px;
+            max-width: 440px;
+            width: 90%;
+            box-shadow: 0 24px 64px rgba(0,80,30,0.18);
+            animation: modalIn 0.22s ease;
+        }
+        @keyframes modalIn {
+            from { transform: scale(0.92) translateY(16px); opacity: 0; }
+            to   { transform: scale(1) translateY(0);       opacity: 1; }
+        }
+        .modal-icon {
+            width: 64px; height: 64px;
+            background: #e3f4ea;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem;
+            color: #007a3e;
+            margin: 0 auto 20px;
+        }
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #0f3d24;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+        .modal-sub {
+            text-align: center;
+            color: #4a755e;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+        .modal-summary {
+            background: #f4fbf7;
+            border-radius: 16px;
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            border: 1px solid #d0eddc;
+        }
+        .modal-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #2d6347;
+            padding: 5px 0;
+            border-bottom: 1px solid #e0f0e8;
+        }
+        .modal-row:last-child { border-bottom: none; }
+        .modal-row.total { font-weight: 700; font-size: 1rem; color: #007a3e; }
+        .modal-btns {
+            display: flex;
+            gap: 12px;
+        }
+        .modal-cancel {
+            flex: 1;
+            padding: 13px;
+            border: 1.5px solid #d0eddc;
+            border-radius: 40px;
+            background: #f4fbf7;
+            color: #2d6347;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.18s;
+        }
+        .modal-cancel:hover { background: #e0f0e8; }
+        .modal-confirm {
+            flex: 2;
+            padding: 13px;
+            border: none;
+            border-radius: 40px;
+            background: #007a3e;
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: background 0.18s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .modal-confirm:hover { background: #005c2e; }
     </style>
 </head>
 <body>
@@ -631,10 +752,12 @@ $grand_total = $subtotal + $service_fee;
                             </div>
                             <div class="item-price">₱<?php echo number_format($item['price'], 0); ?></div>
                             <div class="qty-control">
+                                <button type="button" class="qty-btn" onclick="changeQty(this, -1)">&#8722;</button>
                                 <input type="number"
                                        name="quantity[<?php echo $item_id; ?>]"
                                        value="<?php echo $item['quantity']; ?>"
                                        min="0" max="20">
+                                <button type="button" class="qty-btn" onclick="changeQty(this, 1)">&#43;</button>
                             </div>
                             <div class="item-subtotal">₱<?php echo number_format($item['price'] * $item['quantity'], 0); ?></div>
                             <a href="index.php?page=cart&remove=<?php echo $item_id; ?>"
@@ -703,10 +826,11 @@ $grand_total = $subtotal + $service_fee;
                         <?php endif; ?>
 
                         <div class="checkout-wrap">
-                            <form method="POST" action="index.php?page=cart">
+                            <form method="POST" action="index.php?page=cart" id="checkoutForm">
                                 <input type="hidden" name="payment_method" value="gcash">
-                                <button type="submit" name="checkout" class="btn-checkout"
-                                    <?php echo !isLoggedIn() ? 'disabled' : ''; ?>>
+                                <button type="button" id="placeOrderBtn" class="btn-checkout"
+                                    <?php echo !isLoggedIn() ? 'disabled' : ''; ?>
+                                    onclick="openConfirmModal()">
                                     <i class="fas fa-check-circle"></i>
                                     Place Order · ₱<?php echo number_format($grand_total, 2); ?>
                                 </button>
@@ -727,29 +851,77 @@ $grand_total = $subtotal + $service_fee;
 </section>
 </div>
 
+<!-- Order Confirmation Modal -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-box">
+        <div class="modal-icon"><i class="fas fa-bag-shopping"></i></div>
+        <div class="modal-title">Confirm Your Order</div>
+        <div class="modal-sub">Please review your order before placing it.</div>
+        <div class="modal-summary">
+            <?php foreach ($_SESSION['cart'] as $item): ?>
+            <div class="modal-row">
+                <span><?php echo $item['quantity']; ?>x <?php echo htmlspecialchars($item['name']); ?></span>
+                <span>&#8369;<?php echo number_format($item['price'] * $item['quantity'], 2); ?></span>
+            </div>
+            <?php endforeach; ?>
+            <div class="modal-row">
+                <span>Service Fee</span>
+                <span>&#8369;<?php echo number_format($service_fee, 2); ?></span>
+            </div>
+            <div class="modal-row total">
+                <span>Total</span>
+                <span>&#8369;<?php echo number_format($grand_total, 2); ?></span>
+            </div>
+        </div>
+        <div class="modal-btns">
+            <button class="modal-cancel" onclick="closeConfirmModal()"><i class="fas fa-times"></i> Cancel</button>
+            <button class="modal-confirm" onclick="submitOrder()"><i class="fas fa-check-circle"></i> Confirm Order</button>
+        </div>
+    </div>
+</div>
+
 <script>
-// Reset add-buttons when navigating back (prevents stuck "Added!" state)
-window.addEventListener('pageshow', function(e) {
-    if (e.persisted) {
-        document.querySelectorAll('.btn-add').forEach(btn => {
-            btn.innerHTML = '<i class="fas fa-plus"></i> Add';
-            btn.style.background = '';
-            btn.style.color = '';
-        });
-    }
-});
+// +/- quantity buttons
+function changeQty(btn, delta) {
+    const input = btn.closest('.qty-control').querySelector('input[type="number"]');
+    const newVal = Math.max(0, Math.min(20, parseInt(input.value || 0) + delta));
+    input.value = newVal;
+    input.dispatchEvent(new Event('input'));
+}
 
 // Live subtotal update
 document.querySelectorAll('.qty-control input').forEach(input => {
     input.addEventListener('input', function() {
         const row = this.closest('.cart-row');
         if (!row) return;
-        const priceText = row.querySelector('.item-price').textContent.replace(/[₱,]/g,'');
+        const priceText = row.querySelector('.item-price').textContent.replace(/[\u20b1,]/g,'');
         const price = parseFloat(priceText);
         const qty   = parseInt(this.value) || 0;
         const sub   = row.querySelector('.item-subtotal');
-        if (sub) sub.textContent = '₱' + (price * qty).toLocaleString('en-PH', {minimumFractionDigits:0});
+        if (sub) sub.textContent = '\u20b1' + (price * qty).toLocaleString('en-PH', {minimumFractionDigits:0});
     });
+});
+
+// Confirmation modal
+function openConfirmModal() {
+    document.getElementById('confirmModal').classList.add('open');
+}
+function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.remove('open');
+}
+function submitOrder() {
+    // Add the checkout hidden input + submit the form
+    const form = document.getElementById('checkoutForm');
+    const inp = document.createElement('input');
+    inp.type = 'hidden';
+    inp.name = 'checkout';
+    inp.value = '1';
+    form.appendChild(inp);
+    form.submit();
+}
+// Close modal on overlay click
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+    if (e.target === this) closeConfirmModal();
 });
 </script>
 </body>

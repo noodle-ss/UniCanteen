@@ -144,8 +144,26 @@ $reviews = $stmt->get_result();
         href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="../assets/styles.css">
+    <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
+        /* ── Layout reset (same as customer.php) ── */
+        body {
+            display: block;
+            min-height: auto;
+            margin: 0;
+            padding: 0;
+        }
+
+        .main-content {
+            margin-left: 0;
+        }
+
+        .wrapper {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 36px;
+        }
+
         .profile-container {
             max-width: 1000px;
             margin: 40px auto;
@@ -307,7 +325,8 @@ $reviews = $stmt->get_result();
                         <h1><?php echo htmlspecialchars($user['full_name']); ?></h1>
                         <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($user['email']); ?></p>
                         <p><i class="fas fa-calendar"></i> Member since
-                            <?php echo date('F Y', strtotime($user['created_at'])); ?></p>
+                            <?php echo date('F Y', strtotime($user['created_at'])); ?>
+                        </p>
                     </div>
                 </div>
 
@@ -324,12 +343,14 @@ $reviews = $stmt->get_result();
                 <?php endif; ?>
 
                 <div class="profile-tabs">
-                    <button class="tab-btn active" onclick="showTab('profile')"><i class="fas fa-user"></i>
+                    <button class="tab-btn active" onclick="showTab('profile', this)"><i class="fas fa-user"></i>
                         Profile</button>
-                    <button class="tab-btn" onclick="showTab('orders')"><i class="fas fa-clipboard-list"></i>
+                    <button class="tab-btn" onclick="showTab('orders', this)"><i class="fas fa-clipboard-list"></i>
                         Orders</button>
-                    <button class="tab-btn" onclick="showTab('reviews')"><i class="fas fa-star"></i> Reviews</button>
-                    <button class="tab-btn" onclick="showTab('security')"><i class="fas fa-lock"></i> Security</button>
+                    <button class="tab-btn" onclick="showTab('reviews', this)"><i class="fas fa-star"></i>
+                        Reviews</button>
+                    <button class="tab-btn" onclick="showTab('security', this)"><i class="fas fa-lock"></i>
+                        Security</button>
                 </div>
 
                 <!-- Profile Tab -->
@@ -366,7 +387,8 @@ $reviews = $stmt->get_result();
                                         <div style="color: #5f8b74; font-size: 0.9rem;"><?php echo $order['restaurant_name']; ?>
                                         </div>
                                         <div style="color: #5f8b74; font-size: 0.8rem;">
-                                            <?php echo date('M d, Y g:i A', strtotime($order['order_date'])); ?></div>
+                                            <?php echo date('M d, Y g:i A', strtotime($order['order_date'])); ?>
+                                        </div>
                                     </div>
                                     <div style="text-align: center;">
                                         <div class="order-status status-<?php echo $order['status']; ?>">
@@ -408,9 +430,11 @@ $reviews = $stmt->get_result();
                                 <div class="order-history-item">
                                     <div>
                                         <div style="font-weight: 600;">
-                                            <?php echo htmlspecialchars($review['restaurant_name']); ?></div>
+                                            <?php echo htmlspecialchars($review['restaurant_name']); ?>
+                                        </div>
                                         <div style="color: #5f8b74; font-size: 0.9rem;">
-                                            <?php echo date('M d, Y', strtotime($review['timestamp'])); ?></div>
+                                            <?php echo date('M d, Y', strtotime($review['timestamp'])); ?>
+                                        </div>
                                     </div>
                                     <div>
                                         <?php for ($i = 1; $i <= 5; $i++): ?>
@@ -468,7 +492,7 @@ $reviews = $stmt->get_result();
     </div>
 
     <script>
-        function showTab(tab) {
+        function showTab(tab, el) {
             // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
@@ -481,7 +505,7 @@ $reviews = $stmt->get_result();
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event.target.classList.add('active');
+            el.classList.add('active');
         }
     </script>
 </body>

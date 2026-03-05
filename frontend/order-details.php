@@ -50,7 +50,7 @@ $orderItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
         body {
             display: block;
@@ -310,8 +310,8 @@ $orderItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                                 style="font-size: 1.8rem; font-weight: 800; color: #0f4a2f;">₱<?php echo number_format($currentOrder['total_amount'], 2); ?></span>
                         </div>
                     </div>
-                </div> <!-- closes order-details-container -->
-            </div> <!-- closes wrapper -->
+                </div> <!-- closes track-card -->
+            </div> <!-- closes order-details-container -->
 
             <footer class="footer-note" style="margin-top: 50px; padding-bottom: 40px; color: #4a755e;">
                 <i class="fas fa-clipboard-list"></i> Order History · Track Orders · Reorder Favorites
