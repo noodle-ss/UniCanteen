@@ -131,6 +131,12 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'customer';
                 include 'frontend/logout-handler.php';
                 break; // Add this line
             case 'vendor':
+                // if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'V') {
+                //     include 'frontend/vendor.php';
+                // } else {
+                //     header('Location: index.php?page=login&error=unauthorized');
+                //     exit();
+                // }
                 include 'frontend/vendor.php'; // TODO: add role check before production
                 break;
             case 'sysadmin':

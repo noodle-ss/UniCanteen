@@ -13,6 +13,9 @@ if (!isset($_SESSION['user_id'])) {
   $_SESSION['user_name'] = '';
 }
 
+// session is already started and config loaded by index.php
+// vendor view is protected in the router (index.php)
+
 $user_id = $_SESSION['user_id'] ?? null;
 
 // Get vendor info (restaurant name, etc.)
@@ -892,7 +895,7 @@ $completed_orders = $restaurant_id
 
   <script>
     function updateOrderStatus(orderId, status) {
-      fetch('update_order_status.php', {
+      fetch('frontend/update_order_status.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: 'order_id=' + orderId + '&status=' + status
@@ -923,7 +926,7 @@ $completed_orders = $restaurant_id
 
     document.getElementById('editItemForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      fetch('edit_item.php', { method: 'POST', body: new FormData(this) })
+      fetch('frontend/edit_item.php', { method: 'POST', body: new FormData(this) })
         .then(r => r.json())
         .then(d => {
           if (d.success) { alert("Item updated!"); location.reload(); }
@@ -933,18 +936,36 @@ $completed_orders = $restaurant_id
 
     document.getElementById('addItemForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      fetch('add_item.php', { method: 'POST', body: new FormData(this) })
-        .then(r => r.json())
-        .then(d => {
-          if (d.success) { alert("Item added!"); location.reload(); }
-          else alert("Failed to add item.");
+      fetch('frontend/add_item.php', { method: 'POST', body: new FormData(this) })
+        .then(r => {
+          console.log('add_item status', r.status, r.statusText);
+          return r.text();
+        })
+        .then(txt => {
+          try {
+            const d = JSON.parse(txt);
+            console.log('add_item response', d);
+            if (d.success) {
+              alert("Item added!");
+              location.reload();
+            } else {
+              alert("Failed to add item." + (d.error ? '\nError: ' + d.error : ''));
+            }
+          } catch (e) {
+            console.error('parse error, response text:', txt);
+            alert('Server returned invalid JSON, check console');
+          }
+        })
+        .catch(err => {
+          console.error('fetch error adding item', err);
+          alert('Network or server error, see console');
         });
     });
 
     document.querySelectorAll('.delete-btn').forEach(btn => {
       btn.addEventListener('click', function () {
         if (confirm("Delete this item?")) {
-          fetch('delete_item.php', {
+          fetch('frontend/delete_item.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `id=${this.dataset.id}`

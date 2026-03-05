@@ -1,26 +1,57 @@
 <?php
-require_once '../config/database.php';
-require_once '../config/auth_check.php';
+// buffer output so we can detect stray text or notices
+ob_start();
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/auth_check.php';
+require_once __DIR__ . '/../config/database.php';
 
-requireVendorLogin();
+// ensure vendor is logged in
+requireVendor();
 
 $user_id = $_SESSION['user_id'];
-
-// Get vendor ID
 $db = Database::getInstance()->getConnection();
-$stmt = $db->prepare("SELECT id FROM Restaurants WHERE user_id = ?");
+
+// look up the restaurant ID owned by this vendor
+$stmt = $db->prepare("SELECT ID FROM Restaurants WHERE owner_ID = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
-$vendor = $stmt->get_result()->fetch_assoc();
-$vendor_id = $vendor['id'];
+$restaurant = $stmt->get_result()->fetch_assoc();
+$restaurant_id = $restaurant['ID'] ?? 0;
 
-// Insert new menu item
-$name   = $_POST['name'];
-$price  = floatval($_POST['price']);
-$status = $_POST['status'];
+if (!$restaurant_id) {
+    echo json_encode(['success' => false, 'error' => 'no_restaurant']);
+    exit;
+}
 
-$stmt = $db->prepare("INSERT INTO Items (vendor_id, name, price, status) VALUES (?, ?, ?, ?)");
-$stmt->bind_param("isds", $vendor_id, $name, $price, $status);
+// read input
+$name  = $_POST['name'] ?? '';
+$price = floatval($_POST['price'] ?? 0);
+$isAvailable = (isset($_POST['status']) && $_POST['status'] === 'available') ? 1 : 0;
 
-echo json_encode(['success' => $stmt->execute()]);
+// insert using correct column names
+$stmt = $db->prepare(
+    "INSERT INTO Items (name, price, isAvailable, restaurant_ID) VALUES (?, ?, ?, ?)"
+);
+$stmt->bind_param("sdii", $name, $price, $isAvailable, $restaurant_id);
+
+$success = $stmt->execute();
+$error = $success ? null : $stmt->error;
+
+// capture any earlier output (not expected)
+$early = ob_get_clean();
+$debug = null;
+if (trim($early) !== '') {
+    // log for server-side introspection
+    error_log('add_item unexpected output: ' . $early);
+    $debug = $early;
+}
+
+// send JSON header and diagnostic info (including stray output)
+header('Content-Type: application/json');
+echo json_encode([
+    'success'       => $success,
+    'error'         => $error,
+    'restaurant_id' => $restaurant_id,
+    'debug'         => $debug,
+]);
 ?>
