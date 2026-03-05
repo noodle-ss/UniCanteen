@@ -1,15 +1,15 @@
 <?php
-require_once '../config/auth_check.php';
+// require_once '../config/auth_check.php';
 require_once '../config/database.php';
 
-requireVendorLogin();
+// requireVendorLogin();
 
-$user_id = $_SESSION['user_id'] ?? null;
+// $user_id = $_SESSION['user_id'] ?? null;
 
-if (!$user_id) {
-    header("Location: login.php");
-    exit();
-}
+// if (!$user_id) {
+//     header("Location: login.php");
+//     exit();
+// }
 
 $query = "SELECT full_name FROM Users WHERE ID = ?";
 $stmt = Database::getInstance()->getConnection()->prepare($query);

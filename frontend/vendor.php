@@ -1,19 +1,15 @@
 <?php
-require_once '../config/auth_check.php';
+// require_once '../config/auth_check.php';
 require_once '../config/database.php';
 
-requireVendorLogin();
+// requireVendorLogin();
 
-$user_id = $_SESSION['user_id'] ?? null;
+// $user_id = $_SESSION['user_id'] ?? null;
 
-function requireVendorLogin() {
-    session_start();
-
-    if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'V') {
-        header("Location: login.php");
-        exit();
-    }
-}
+// if (!$user_id) {
+//     header("Location: login.php");
+//     exit();
+// }
 
 $query = "SELECT full_name FROM Users WHERE ID = ?";
 $stmt = Database::getInstance()->getConnection()->prepare($query);
@@ -22,67 +18,18 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 // Get vendor info (restaurant name, etc.)
-$query = "SELECT * FROM Restaurants WHERE owner_id = ?";
+$query = "SELECT * FROM Restaurants WHERE user_id = ?";
 $stmt = Database::getInstance()->getConnection()->prepare($query);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $restaurant = $stmt->get_result()->fetch_assoc();
 
-$query = "SELECT * FROM Items WHERE restaurant_id = ?";
+$query = "SELECT * FROM Items WHERE vendor_id = ?";
 $stmt = Database::getInstance()->getConnection()->prepare($query);
 $stmt->bind_param("i", $restaurant['id']);
 $stmt->execute();
 $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-$dbConn = Database::getInstance()->getConnection();
-
-$total_revenue = $dbConn->query("SELECT SUM(total_amount) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='C'")->fetch_row()[0] ?? 0;
-$total_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']}")->fetch_row()[0] ?? 0;
-$pending_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='P'")->fetch_row()[0] ?? 0;
-$completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='C'")->fetch_row()[0] ?? 0;
-
-$orderQuery = "
-SELECT o.*, u.full_name 
-FROM Orders o
-JOIN Users u ON o.customer_ID = u.ID
-WHERE o.restaurant_ID = ?
-ORDER BY o.order_date DESC
-";
-
-$dbConn = Database::getInstance()->getConnection();
-$stmt = $dbConn->prepare($orderQuery);
-$stmt->bind_param("i", $restaurant['id']);
-$stmt->execute();
-$orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-
-foreach ($orders as &$order) { // use reference so we can add order items
-    $orderItemsQuery = "
-        SELECT i.name, oi.quantity
-        FROM Order_ItemLine oi
-        JOIN Items i ON oi.item_ID = i.ID
-        WHERE oi.order_ID = ?
-    ";
-    $stmtItems = $dbConn->prepare($orderItemsQuery);
-    $stmtItems->bind_param("i", $order['ID']);
-    $stmtItems->execute();
-    $order_items = $stmtItems->get_result()->fetch_all(MYSQLI_ASSOC);
-    
-    // Attach items to the order
-    $order['items'] = $order_items;
-}
-
-// Get vendor info
-$restaurantQuery = "SELECT * FROM Restaurants WHERE owner_id = ?";
-$stmt = $dbConn->prepare($restaurantQuery);
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$restaurant = $stmt->get_result()->fetch_assoc();
-
-// === Dashboard metrics ===
-$total_revenue = $dbConn->query("SELECT SUM(total_amount) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='C'")->fetch_row()[0] ?? 0;
-$total_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']}")->fetch_row()[0] ?? 0;
-$pending_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='P'")->fetch_row()[0] ?? 0;
-$completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='C'")->fetch_row()[0] ?? 0;
 ?>
 
 
@@ -108,8 +55,6 @@ $completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant
     }
   </style>
 </head>
-
-
 <body>
   <div class="main-content">
     <section id="vendor" class="page-section">
@@ -173,112 +118,75 @@ $completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant
               </div>
             </div>
 
-            <!-- Menu Items Header -->
-            <div style="display: grid; grid-template-columns: 2fr 80px 180px; ...">
-              <span>Item Name</span>
-              <span>Price</span>
-              <span style="text-align: center;">Actions</span>
-            </div>
-
-            <!-- Menu Items List -->
-            <?php foreach ($menu_items as $item): ?>
-            <div class="menu-edit-row">
-              <div class="item-info">
-                <i class="fas fa-burger"></i>
-                <span class="item-name"><?= htmlspecialchars($item['name']) ?></span>
+            <!-- Menu Items with Toggle -->
+            <div style="margin-bottom: 16px;">
+              <div style="display: grid; grid-template-columns: 2fr 80px 120px; padding: 10px 0; border-bottom: 2px solid #b1d9c4; font-weight: 600; color: #16623b; font-size: 0.9rem;">
+                <span>Item Name</span><span>Price</span><span style="text-align: center;">Status</span>
               </div>
-              <span class="item-price">₱<?= number_format($item['price'], 2) ?></span>
-              <div style="display:flex; gap:8px; justify-content:center;">
-                <!-- Status Toggle -->
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" <?= $item['isAvailable']?'checked':'' ?>
-                        onchange="toggleStatus(<?= $item['id'] ?>, this.checked)"
-                        style="accent-color: var(--dlsu-green); width:18px; height:18px;">
-                  <span class="toggle-avail"><?= $item['isAvailable']?'Available':'Sold Out' ?></span>
-                </label>
-
-                <!-- Edit Button -->
-                <button onclick="openEditModal(
-                    <?= $item['ID'] ?>, 
-                    '<?= htmlspecialchars($item['name'], ENT_QUOTES) ?>', 
-                    <?= $item['price'] ?>, 
-                    <?= $item['isAvailable'] ? 'true' : 'false' ?>
-                )" style="padding:4px 12px; border-radius:20px; border:none; background:#f0f0f0; cursor:pointer;">
-                  <i class="fas fa-pen"></i> Edit
-                </button>
-
-                <!-- Delete Button -->
-                <button class="delete-btn" data-id="<?= $item['id'] ?>"
-                        style="background:#b13e3e; color:white; border:none; border-radius:8px; padding:4px 10px; cursor:pointer;">
-                  <i class="fas fa-trash"></i> Delete
-                </button>
+              
+              <div class="menu-edit-row">
+                <div class="item-info"><i class="fas fa-burger"></i><span class="item-name">Cheeseburger</span></div>
+                <span class="item-price">₱85</span>
+                <div style="display: flex; justify-content: center;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" checked style="accent-color: var(--dlsu-green); width: 18px; height: 18px;">
+                    <span class="toggle-avail" style="padding: 4px 12px;">Available</span>
+                  </label>
+                </div>
               </div>
-            </div>
-            <?php endforeach; ?>
-
+              
+              <div class="menu-edit-row">
+                <div class="item-info"><i class="fas fa-mug-hot"></i><span class="item-name">Brewed Coffee</span></div>
+                <span class="item-price">₱45</span>
+                <div style="display: flex; justify-content: center;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" checked style="accent-color: var(--dlsu-green); width: 18px; height: 18px;">
+                    <span class="toggle-avail" style="padding: 4px 12px;">Available</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="menu-edit-row">
+                <div class="item-info"><i class="fas fa-fish"></i><span class="item-name">Tuna Pandesal</span></div>
+                <span class="item-price">₱50</span>
+                <div style="display: flex; justify-content: center;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" style="accent-color: var(--dlsu-green); width: 18px; height: 18px;">
+                    <span class="toggle-sold" style="padding: 4px 12px;">Not Available</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="menu-edit-row">
+                <div class="item-info"><i class="fas fa-cake"></i><span class="item-name">Brownie</span></div>
+                <span class="item-price">₱35</span>
+                <div style="display: flex; justify-content: center;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" checked style="accent-color: var(--dlsu-green); width: 18px; height: 18px;">
+                    <span class="toggle-avail" style="padding: 4px 12px;">Available</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="menu-edit-row">
+                <div class="item-info"><i class="fas fa-mug-saucer"></i><span class="item-name">Matcha Latte</span></div>
+                <span class="item-price">₱65</span>
+                <div style="display: flex; justify-content: center;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" style="accent-color: var(--dlsu-green); width: 18px; height: 18px;">
+                    <span class="toggle-sold" style="padding: 4px 12px;">Not Available</span>
+                  </label>
+                </div>
+              </div>
             </div>
 
             <!-- Add New Item -->
-
-            <button onclick="openAddModal()" style="background: var(--dlsu-green); color: white; border: none; padding: 10px 20px; border-radius: 40px; font-weight: 600;"><i class="fas fa-plus"></i> Add New Item</button>  
-
-            <!-- Add Menu Item Modal -->
-            <div id="addItemModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:9999;">
-              <div style="background:white; border-radius:20px; padding:24px; width:400px; max-width:90%;">
-                <h3 style="margin-top:0;"><i class="fas fa-plus-circle"></i> Add New Menu Item</h3>
-                <form id="addItemForm">
-                  <div style="margin-bottom:12px;">
-                    <label>Item Name</label>
-                    <input type="text" name="name" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                  </div>
-                  <div style="margin-bottom:12px;">
-                    <label>Price (₱)</label>
-                    <input type="number" name="price" required min="0" step="0.01" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                  </div>
-                  <div style="margin-bottom:12px;">
-                    <label>Status</label>
-                    <select name="status" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                      <option value="available">Available</option>
-                      <option value="sold_out">Sold Out</option>
-                    </select>
-                  </div>
-                  <div style="display:flex; gap:12px; justify-content:flex-end;">
-                    <button type="button" onclick="closeAddModal()" style="padding:8px 16px; border:none; border-radius:8px; background:#ccc;">Cancel</button>
-                    <button type="submit" style="padding:8px 16px; border:none; border-radius:8px; background:var(--dlsu-green); color:white;">Add Item</button>
-                  </div>
-                </form>
-              </div>
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed #b8d5c4;">
+              <button style="background: transparent; border: 1px dashed var(--dlsu-green); color: var(--dlsu-green); padding: 10px 20px; border-radius: 40px; width: 100%; font-weight: 600; cursor: pointer;">
+                <i class="fas fa-plus-circle"></i> Add New Menu Item
+              </button>
             </div>
-
-            <!-- Edit Item Modal -->
-            <div id="editItemModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
-                background: rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
-              <div style="background:white; padding:30px; border-radius:20px; width:400px; position:relative;">
-                <h3>Edit Menu Item</h3>
-                <form id="editItemForm">
-                  <input type="hidden" name="item_id" id="edit_item_id">
-                  <div style="margin-bottom:12px;">
-                    <label>Item Name</label>
-                    <input type="text" name="item_name" id="edit_item_name" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                  </div>
-                  <div style="margin-bottom:12px;">
-                    <label>Price</label>
-                    <input type="number" name="price" id="edit_item_price" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                  </div>
-                  <div style="margin-bottom:12px;">
-                    <label>Availability</label>
-                    <select name="availability" id="edit_item_availability" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                      <option value="1">Available</option>
-                      <option value="0">Not Available</option>
-                    </select>
-                  </div>
-                  <div style="display:flex; justify-content:space-between; margin-top:20px;">
-                    <button type="button" onclick="closeEditModal()" style="padding:10px 20px; border:none; border-radius:40px; background:#ccc; color:white; font-weight:600;">Cancel</button>
-                    <button type="submit" style="padding:10px 20px; border:none; border-radius:40px; background:var(--dlsu-green); color:white; font-weight:600;">Update Item</button>
-                  </div>
-                </form>
-              </div>
-            </div>
+          </div>
 
           <!-- orders dashboard with status badges -->
           <div class="admin-card">
@@ -298,36 +206,41 @@ $completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant
               <span>Order Items</span><span>Customer</span><span>Time</span><span>Status</span><span></span>
             </div>
             
-            <?php foreach ($orders as $order): ?>
-            <div class="order-card">
-                <p><strong>Queue #<?= $order['queue_number'] ?></strong></p>
-                <p>Customer: <?= htmlspecialchars($order['full_name']) ?></p>
-                <p>Total: ₱<?= number_format($order['total_amount'],2) ?></p>
-
-                <p>Items:</p>
-                <ul>
-                  <?php foreach($order['items'] as $oi): ?>
-                    <li><?= htmlspecialchars($oi['name']) ?> x<?= $oi['quantity'] ?></li>
-                  <?php endforeach; ?>
-                </ul>
-
-                <select onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)">
-                    <option value="P" <?= $order['status']=='P'?'selected':'' ?>>Pending</option>
-                    <option value="PR" <?= $order['status']=='PR'?'selected':'' ?>>Preparing</option>
-                    <option value="R" <?= $order['status']=='R'?'selected':'' ?>>Ready</option>
-                    <option value="C" <?= $order['status']=='C'?'selected':'' ?>>Completed</option>
-                </select>
+            <div class="queue-item" style="grid-template-columns: 2fr 1.2fr 1.2fr 0.8fr 0.5fr;">
+              <span><?php echo $order_items; ?></span><span><?php echo $customer_name; ?></span><span><?php echo date("g:i A"); ?></span>
+              <span><select style="background: #fff1cf; border: none; padding: 6px 12px; border-radius: 30px; font-weight: 600; color: #9e6d0b;">
+                <option>Preparing</option>
+                <option>Ready</option>
+                <option>Completed</option>
+              </select></span>
+              <span><i class="fas fa-chevron-circle-right" style="color:#007a3e; cursor: pointer;"></i></span>
             </div>
-
-                <select onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)">
-                    <option value="P" <?= $order['status']=='P'?'selected':'' ?>>Pending</option>
-                    <option value="PR" <?= $order['status']=='PR'?'selected':'' ?>>Preparing</option>
-                    <option value="R" <?= $order['status']=='R'?'selected':'' ?>>Ready</option>
-                    <option value="C" <?= $order['status']=='C'?'selected':'' ?>>Completed</option>
-                </select>
+            
+            <div class="queue-item" style="grid-template-columns: 2fr 1.2fr 1.2fr 0.8fr 0.5fr;">
+              <span>Siomai Rice, 2x Gulaman</span><span>Justin S.</span><span>10:45 AM</span>
+              <span><span class="status-badge ready" style="background: #c9f0d7; color: #0c6e3a;">Ready</span></span>
+              <span><i class="fas fa-check-circle" style="color:#007a3e; cursor: pointer;"></i></span>
             </div>
-            <?php endforeach; ?>
+            
+            <div class="queue-item" style="grid-template-columns: 2fr 1.2fr 1.2fr 0.8fr 0.5fr;">
+              <span>Iced Coffee, 1x Brownie</span><span>Adriane C.</span><span>10:58 AM</span>
+              <span><span class="status-badge pending" style="background: #f5e6e6; color: #b13e3e;">Pending</span></span>
+              <span><i class="fas fa-hourglass" style="color:#b13e3e;"></i></span>
             </div>
+            
+            <div class="queue-item" style="grid-template-columns: 2fr 1.2fr 1.2fr 0.8fr 0.5fr;">
+              <span>Club Sandwich, Fries</span><span>Mikaela L.</span><span>11:15 AM</span>
+              <span><span class="status-badge completed" style="background: #d0e3ff; color: #1f5090;">Completed</span></span>
+              <span><i class="fas fa-check-double" style="color:#16623b;"></i></span>
+            </div>
+            
+            <div class="queue-item" style="grid-template-columns: 2fr 1.2fr 1.2fr 0.8fr 0.5fr;">
+              <span>Beef Tapa, 2x Rice</span><span>Charles B.</span><span>11:22 AM</span>
+              <span><span class="status-badge preparing" style="background: #fff1cf; color: #9e6d0b;">Preparing</span></span>
+              <span><i class="fas fa-chevron-circle-right" style="color:#007a3e; cursor: pointer;"></i></span>
+            </div>
+          </div>
+        </div>
 
         <!-- Sales Monitoring Section -->
         <div class="admin-card" style="margin-bottom:30px;">
@@ -461,128 +374,5 @@ $completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant
       </div>
     </section>
   </div>
-
-          <script>
-
-            function updateOrderStatus(orderId, status) {
-                fetch('update_order_status.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: 'order_id=' + orderId + '&status=' + status
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if(data.success){
-                        alert("Order updated!");
-                    } else {
-                        alert("Failed to update order.");
-                    }
-                });
-            }
-
-            function toggleStatus(itemId, isChecked) {
-              let status = isChecked ? 'available' : 'sold_out';
-
-              fetch('toggle_item_status.php', {
-                  method: 'POST',
-                  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                  body: `item_id=${itemId}&status=${status}`
-              })
-              .then(res => res.json())
-              .then(data => {
-                  if(!data.success){
-                    alert("Failed to update status");
-                  } else {
-                    location.reload(); // refresh UI
-                }
-             });
-            }
-
-            function deleteItem(id) {
-              if(confirm("Delete this item?")) {
-                fetch('delete_item.php', {
-                  method: 'POST',
-                  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                  body: `id=${id}`
-                })
-                .then(res => res.json())
-                .then(data => {
-                  if(data.success){
-                    location.reload();
-                  } else {
-                    alert("Delete failed");
-                  }
-                });
-              }
-            }
-              
-              // Open the Add Item modal
-              function openAddModal() {
-                  document.getElementById('addItemModal').style.display = 'flex';
-              }
-
-              // Close the Add Item modal
-              function closeAddModal() {
-                  document.getElementById('addItemModal').style.display = 'none';
-              }
-
-              // Open the Edit Item modal and populate the fields
-              function openEditModal(id, name, price, isAvailable) {
-                  document.getElementById('editItemModal').style.display = 'flex';
-                  document.getElementById('edit_item_id').value = id;
-                  document.getElementById('edit_item_name').value = name;
-                  document.getElementById('edit_item_price').value = price;
-                  document.getElementById('edit_item_availability').value = isAvailable ? '1' : '0';
-              }
-
-              // Close the Edit Item modal
-              function closeEditModal() {
-                  document.getElementById('editItemModal').style.display = 'none';
-              }
-
-              // Handle form submission
-              document.getElementById('editItemForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                let formData = new FormData(this);
-
-                fetch('edit_item.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if(data.success){
-                        alert("Item updated successfully!");
-                        location.reload(); // reload to show updated item
-                    } else {
-                        alert("Failed to update item.");
-                    }
-                });
-              });
-
-              document.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                  if(confirm("Are you sure you want to delete this item?")) {
-                    let itemId = this.dataset.id;
-
-                    fetch('delete_item.php', {
-                      method: 'POST',
-                      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                      body: `id=${itemId}`
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                      if(data.success){
-                        alert("Item deleted successfully!");
-                        location.reload(); // refresh menu
-                      } else {
-                        alert("Failed to delete item.");
-                      }
-                    });
-                  }
-                });
-              });
-              </script>
-
 </body>
 </html>
