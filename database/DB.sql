@@ -140,14 +140,14 @@ INSERT INTO Categories (name, description) VALUES
 ('Snacks', 'Light snacks and sides'),
 ('Desserts', 'Sweet treats');
 
--- Insert sample users with placeholder passwords
--- IMPORTANT: These passwords need to be hashed in PHP
+-- Insert sample users (password for all accounts: 'password123')
+-- Hash generated with: password_hash('password123', PASSWORD_DEFAULT)
 INSERT INTO Users (email, password, full_name, role, is_active, login_attempts) VALUES
-('customer1@dlsu.edu', '$2y$10$YourHashHere1234567890ABCDEFGHIJKLMNOPQRSTU', 'Juan Dela Cruz', 'U', TRUE, 0),
-('customer2@dlsu.edu', '$2y$10$YourHashHere1234567890ABCDEFGHIJKLMNOPQRSTU', 'Maria Santos', 'U', TRUE, 0),
-('vendor1@dlsu.edu', '$2y$10$YourHashHere1234567890ABCDEFGHIJKLMNOPQRSTU', 'Bloemen Hall Manager', 'V', TRUE, 0),
-('vendor2@dlsu.edu', '$2y$10$YourHashHere1234567890ABCDEFGHIJKLMNOPQRSTU', 'Agno Eatery Owner', 'V', TRUE, 0),
-('admin@dlsu.edu', '$2y$10$YourHashHere1234567890ABCDEFGHIJKLMNOPQRSTU', 'System Administrator', 'A', TRUE, 0);
+('customer1@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Juan Dela Cruz', 'U', TRUE, 0),
+('customer2@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Maria Santos', 'U', TRUE, 0),
+('vendor1@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Bloemen Hall Manager', 'V', TRUE, 0),
+('vendor2@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Agno Eatery Owner', 'V', TRUE, 0),
+('admin@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'System Administrator', 'A', TRUE, 0);
 
 -- Insert restaurants
 INSERT INTO Restaurants (name, address, description, owner_ID, is_open) VALUES
