@@ -1,7 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/auth_check.php';
-require_once '../config/database.php';
-
+global $dbConn;
 // =====================
 // AUTO-LOGIN DEFAULT VENDOR FOR TESTING
 // =====================
