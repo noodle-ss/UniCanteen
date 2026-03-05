@@ -89,7 +89,7 @@ if (isLoggedIn()) {
         $activeOrders[] = $ord;
     }
 }
-// (no page-level backward-compat aliases needed)
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -215,18 +215,23 @@ if (isLoggedIn()) {
             box-sizing: border-box;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
+
         .stall-search-input:focus {
             border-color: #007a3e;
-            box-shadow: 0 0 0 3px rgba(0,122,62,0.12);
+            box-shadow: 0 0 0 3px rgba(0, 122, 62, 0.12);
         }
-        .stall-search-input::placeholder { color: #94b8a3; }
+
+        .stall-search-input::placeholder {
+            color: #94b8a3;
+        }
 
         .search-clear-btn {
             position: absolute;
             right: 10px;
             top: 50%;
             transform: translateY(-50%);
-            width: 26px; height: 26px;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
             border: none;
             background: #e0f0e8;
@@ -238,7 +243,10 @@ if (isLoggedIn()) {
             font-size: 0.75rem;
             transition: background 0.15s;
         }
-        .search-clear-btn:hover { background: #cae3d6; }
+
+        .search-clear-btn:hover {
+            background: #cae3d6;
+        }
 
         .filter-chips {
             display: flex;
@@ -261,13 +269,21 @@ if (isLoggedIn()) {
             align-items: center;
             gap: 5px;
         }
-        .filter-chip:hover { background: #e0f0e8; border-color: #007a3e; }
+
+        .filter-chip:hover {
+            background: #e0f0e8;
+            border-color: #007a3e;
+        }
+
         .filter-chip.active {
             background: #007a3e;
             color: #fff;
             border-color: #007a3e;
         }
-        .filter-chip.active i { color: #fff !important; }
+
+        .filter-chip.active i {
+            color: #fff !important;
+        }
 
         .search-result-count {
             font-size: 0.85rem;

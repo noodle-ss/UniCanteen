@@ -13,24 +13,7 @@ if (!isset($_SESSION['user_id'])) {
   $_SESSION['user_name'] = '';      // placeholder so customer page session reads don't error
 }
 
-// function requireVendorLogin() {
-
-//     if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'V') {
-//         // redirect via index router to preserve query format
-//         header("Location: ../index.php?page=login&error=unauthorized");
-//         exit();
-//     }
-// }
-
-//requireVendorLogin();
 $user_id = $_SESSION['user_id'] ?? null;
-
-$query = "SELECT full_name FROM Users WHERE ID = ?";
-$stmt = Database::getInstance()->getConnection()->prepare($query);
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-
 
 // Get vendor info (restaurant name, etc.)
 $query = "SELECT * FROM Restaurants WHERE owner_id = ?";
@@ -80,8 +63,6 @@ while (count($best_selling_items) < 6) {
 }
 // === DASHBOARD METRICS END ===
 
-
-// (duplicate metrics block removed — see final metrics block below)
 
 
 $orderQuery = "
@@ -181,7 +162,8 @@ $completed_orders = $restaurant_id
           <div style="background: white; border-radius: 20px; padding: 20px; border: 1px solid var(--border-soft);">
             <div style="color: #5f8b74; font-size: 0.9rem; margin-bottom: 8px;">Today's Revenue</div>
             <div style="font-size: 2rem; font-weight: 700; color: var(--dlsu-green);">
-              <?php echo formatPrice($total_revenue); ?></div>
+              <?php echo formatPrice($total_revenue); ?>
+            </div>
             <div style="color: #3b7455; font-size: 0.8rem; margin-top: 8px;"><i class="fas fa-arrow-up"
                 style="color: #28a745;"></i> Updated live</div>
           </div>
@@ -189,20 +171,24 @@ $completed_orders = $restaurant_id
             <div style="color: #5f8b74; font-size: 0.9rem; margin-bottom: 8px;">Total Orders</div>
             <div style="font-size: 2rem; font-weight: 700; color: var(--dlsu-green);"><?php echo $total_orders; ?></div>
             <div style="color: #3b7455; font-size: 0.8rem; margin-top: 8px;"><?php echo $pending_orders; ?> pending ·
-              <?php echo $completed_orders; ?> completed</div>
+              <?php echo $completed_orders; ?> completed
+            </div>
           </div>
           <div style="background: white; border-radius: 20px; padding: 20px; border: 1px solid var(--border-soft);">
             <div style="color: #5f8b74; font-size: 0.9rem; margin-bottom: 8px;">Queue Status</div>
             <div style="font-size: 2rem; font-weight: 700; color: var(--dlsu-green);">Active</div>
             <div style="color: #3b7455; font-size: 0.8rem; margin-top: 8px;">Serving customers ·
-              <?php echo $pending_orders; ?> pending</div>
+              <?php echo $pending_orders; ?> pending
+            </div>
           </div>
           <div style="background: white; border-radius: 20px; padding: 20px; border: 1px solid var(--border-soft);">
             <div style="color: #5f8b74; font-size: 0.9rem; margin-bottom: 8px;">Inventory Health</div>
             <div style="font-size: 2rem; font-weight: 700; color: var(--dlsu-green);">
-              <?php echo $available_count; ?>/<?php echo $total_items; ?></div>
+              <?php echo $available_count; ?>/<?php echo $total_items; ?>
+            </div>
             <div style="color: #3b7455; font-size: 0.8rem; margin-top: 8px;"><?php echo $sold_out_count; ?> sold out ·
-              <?php echo $low_stock_count; ?> low stock</div>
+              <?php echo $low_stock_count; ?> low stock
+            </div>
           </div>
         </div>
 
@@ -471,7 +457,8 @@ $completed_orders = $restaurant_id
                   style="background: linear-gradient(135deg, #f0faf4, #ffffff); border-radius: 20px; padding: 20px; border: 1px solid var(--border-soft);">
                   <div style="color: #5f8b74; font-size: 0.9rem; margin-bottom: 8px;">Total Revenue</div>
                   <div style="font-size: 2.2rem; font-weight: 700; color: var(--dlsu-green);">
-                    <?php echo "₱" . number_format($total_revenue, 2); ?></div>
+                    <?php echo "₱" . number_format($total_revenue, 2); ?>
+                  </div>
                   <div style="color: #28a745; font-size: 0.8rem; margin-top: 8px;"><i class="fas fa-arrow-up"></i> 8.2%
                     from yesterday</div>
                 </div>
@@ -479,7 +466,8 @@ $completed_orders = $restaurant_id
                   style="background: linear-gradient(135deg, #f0faf4, #ffffff); border-radius: 20px; padding: 20px; border: 1px solid var(--border-soft);">
                   <div style="color: #5f8b74; font-size: 0.9rem; margin-bottom: 8px;">Fulfilled Orders</div>
                   <div style="font-size: 2.2rem; font-weight: 700; color: var(--dlsu-green);">
-                    <?php echo $fulfilled_orders_count; ?></div>
+                    <?php echo $fulfilled_orders_count; ?>
+                  </div>
                   <div style="color: #3b7455; font-size: 0.8rem; margin-top: 8px;">
                     <?php echo $completed_orders_count; ?> completed · <?php echo $pending_orders_count; ?> pending
                   </div>
@@ -488,7 +476,8 @@ $completed_orders = $restaurant_id
                   style="background: linear-gradient(135deg, #f0faf4, #ffffff); border-radius: 20px; padding: 20px; border: 1px solid var(--border-soft);">
                   <div style="color: #5f8b74; font-size: 0.9rem; margin-bottom: 8px;">Avg. Order Value</div>
                   <div style="font-size: 2.2rem; font-weight: 700; color: var(--dlsu-green);">
-                    <?php echo "₱" . number_format($avg_order_value, 2); ?></div>
+                    <?php echo "₱" . number_format($avg_order_value, 2); ?>
+                  </div>
                   <div style="color: #3b7455; font-size: 0.8rem; margin-top: 8px;">
                     +<?php echo number_format($avg_order_value - $last_week_avg_order_value, 2); ?> from last week</div>
                 </div>
@@ -514,7 +503,8 @@ $completed_orders = $restaurant_id
                     <div>
                       <div style="font-weight: 600;"><?php echo $best_selling_items[0]['item_name']; ?></div>
                       <div style="color: #5f8b74; font-size: 0.8rem;">
-                        <?php echo $best_selling_items[0]['order_count']; ?> orders</div>
+                        <?php echo $best_selling_items[0]['order_count']; ?> orders
+                      </div>
                     </div>
                   </div>
                   <div
@@ -525,7 +515,8 @@ $completed_orders = $restaurant_id
                     <div>
                       <div style="font-weight: 600;"><?php echo $best_selling_items[1]['item_name']; ?></div>
                       <div style="color: #5f8b74; font-size: 0.8rem;">
-                        <?php echo $best_selling_items[1]['order_count']; ?> orders</div>
+                        <?php echo $best_selling_items[1]['order_count']; ?> orders
+                      </div>
                     </div>
                   </div>
                   <div
@@ -536,7 +527,8 @@ $completed_orders = $restaurant_id
                     <div>
                       <div style="font-weight: 600;"><?php echo $best_selling_items[2]['item_name']; ?></div>
                       <div style="color: #5f8b74; font-size: 0.8rem;">
-                        <?php echo $best_selling_items[2]['order_count']; ?> orders</div>
+                        <?php echo $best_selling_items[2]['order_count']; ?> orders
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -573,7 +565,8 @@ $completed_orders = $restaurant_id
                     <div style="font-weight: 600; font-size: 1.2rem;">Current Queue Number</div>
                     <div style="color: #3b7455;">Next:
                       <?php echo !empty($orders) && isset($orders[1]) ? $orders[1]['queue_number'] : 'N/A'; ?> ·
-                      Waiting: <?php echo $pending_orders; ?> orders</div>
+                      Waiting: <?php echo $pending_orders; ?> orders
+                    </div>
                   </div>
                 </div>
                 <div style="display: flex; gap: 12px;">
@@ -646,60 +639,21 @@ $completed_orders = $restaurant_id
           </div>
     </section>
   </div>
-          <script>
-            function updateOrderStatus(orderId, status) {
-                fetch('update_order_status.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: 'order_id=' + orderId + '&status=' + status
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if(data.success){
-                        alert("Order updated!");
-                    } else {
-                        alert("Failed to update order.");
-                    }
-                });
-            }
-
-
-    function toggleStatus(itemId, isChecked) {
-      let status = isChecked ? 'available' : 'sold_out';
-
-
-      fetch('toggle_item_status.php', {
+  <script>
+    function updateOrderStatus(orderId, status) {
+      fetch('update_order_status.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `item_id=${itemId}&status=${status}`
+        body: 'order_id=' + orderId + '&status=' + status
       })
         .then(res => res.json())
         .then(data => {
-          if (!data.success) {
-            alert("Failed to update status");
+          if (data.success) {
+            alert("Order updated!");
           } else {
-            location.reload(); // refresh UI
+            alert("Failed to update order.");
           }
         });
-    }
-
-
-    function deleteItem(id) {
-      if (confirm("Delete this item?")) {
-        fetch('delete_item.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: `id=${id}`
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              location.reload();
-            } else {
-              alert("Delete failed");
-            }
-          });
-      }
     }
 
     // Open the Add Item modal
