@@ -6,16 +6,19 @@ $dbConn = Database::getInstance()->getConnection();
 // =====================
 // AUTO-LOGIN DEFAULT VENDOR FOR TESTING
 // =====================
-// if (!isset($_SESSION['user_id'])) {
-//     $_SESSION['user_id'] = 3; 
-//     $_SESSION['role'] = 'V';
-// }
+if (!isset($_SESSION['user_id'])) {
+    $_SESSION['user_id'] = 3;
+    // keep consistency with index.php checks
+    $_SESSION['role'] = 'V';
+    $_SESSION['user_role'] = 'V';
+}
 
 function requireVendorLogin() {
 
     if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'V') {
-        // header("Location: login.php");
-        // exit();
+        // redirect via index router to preserve query format
+        header("Location: ../index.php?page=login&error=unauthorized");
+        exit();
     }
 }
 
