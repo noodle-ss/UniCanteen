@@ -291,7 +291,7 @@ if (isLoggedIn()) {
                         <a href="index.php?page=reviews">Reviews</a>
                         <?php if (isset($_SESSION['user_id'])): ?>
                             <a
-                                href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'])[0]); ?></a>
+                                href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>
                             <a href="frontend/logout.php" class="btn-outline">Logout</a>
                         <?php else: ?>
                             <a href="index.php?page=login">Sign In</a>

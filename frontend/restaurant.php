@@ -633,7 +633,7 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
                         <a href="index.php?page=reviews">Reviews</a>
                         <?php if (isset($_SESSION['user_id'])): ?>
                             <a
-                                href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'])[0]); ?></a>
+                                href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>
                             <a href="frontend/logout.php" class="btn-outline">Logout</a>
                         <?php else: ?>
                             <a href="index.php?page=login">Sign In</a>
@@ -750,7 +750,8 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
                             ?>
                             <div class="menu-card <?php echo !$isAvailable ? 'sold-out-card' : ''; ?>">
                                 <?php if (!empty($item['image_url'])): ?>
-                                    <img src="<?php echo htmlspecialchars(url($item['image_url'])); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="menu-card-img">
+                                    <img src="<?php echo htmlspecialchars(url($item['image_url'])); ?>"
+                                        alt="<?php echo htmlspecialchars($item['name']); ?>" class="menu-card-img">
                                 <?php else: ?>
                                     <div class="menu-card-icon">
                                         <i class="fas fa-<?php echo $isAvailable ? 'bowl-food' : 'ban'; ?>"></i>
@@ -760,7 +761,8 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
                                     <div class="menu-card-body">
                                         <div class="menu-card-name"><?php echo htmlspecialchars($item['name']); ?></div>
                                         <?php if ($item['description']): ?>
-                                            <div class="menu-card-desc"><?php echo htmlspecialchars($item['description']); ?></div>
+                                            <div class="menu-card-desc"><?php echo htmlspecialchars($item['description']); ?>
+                                            </div>
                                         <?php endif; ?>
                                         <div class="menu-card-price" style="margin-top:6px;">
                                             ₱<?php echo number_format($item['price'], 0); ?></div>

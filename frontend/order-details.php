@@ -192,7 +192,7 @@ $orderItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                     <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
                     <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
                     <a href="<?php echo url('index.php?page=profile'); ?>">
-                        <?php echo htmlspecialchars($_SESSION['user_name']); ?>
+                        <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Profile'); ?>
                     </a>
                     <a href="<?php echo url('index.php?page=logout'); ?>" class="btn-outline">Logout</a>
                     <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-primary">

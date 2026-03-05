@@ -118,7 +118,7 @@ $orders = $stmt->get_result();
                     <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
                     <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
                     <a
-                        href="<?php echo url('index.php?page=profile'); ?>"><?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
+                        href="<?php echo url('index.php?page=profile'); ?>"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Profile'); ?></a>
                     <a href="<?php echo url('index.php?page=logout'); ?>" class="btn-outline">Logout</a>
                     <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-primary">
                         <i class="fas fa-bag-shopping"></i> Cart
