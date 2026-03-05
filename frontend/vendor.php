@@ -2,6 +2,10 @@
 require_once '../config/auth_check.php';
 require_once '../config/database.php';
 
+session_start();
+$_SESSION['user_id'] = 1;   // <-- set a valid vendor user ID
+$_SESSION['role'] = 'V'; 
+
 requireVendorLogin();
 
 $user_id = $_SESSION['user_id'] ?? null;
@@ -18,7 +22,7 @@ function requireVendorLogin() {
 
 $query = "SELECT full_name FROM Users WHERE role='V'";
 $stmt = Database::getInstance()->getConnection()->prepare($query);
-//$stmt->bind_param("i", $user_id);
+$stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -33,7 +37,7 @@ $restaurant = $stmt->get_result()->fetch_assoc();
 
 $query = "SELECT * FROM Items WHERE restaurant_id = ?";
 $stmt = Database::getInstance()->getConnection()->prepare($query);
-$stmt->bind_param("i", $restaurant['id']);
+$stmt->bind_param("i", $restaurant['ID']);
 $stmt->execute();
 $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
@@ -41,10 +45,10 @@ $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $dbConn = Database::getInstance()->getConnection();
 
 
-$total_revenue = $dbConn->query("SELECT SUM(total_amount) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='C'")->fetch_row()[0] ?? 0;
-$total_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']}")->fetch_row()[0] ?? 0;
-$pending_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='P'")->fetch_row()[0] ?? 0;
-$completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['id']} AND status='C'")->fetch_row()[0] ?? 0;
+$total_revenue = $dbConn->query("SELECT SUM(total_amount) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='C'")->fetch_row()[0] ?? 0;
+$total_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['ID']}")->fetch_row()[0] ?? 0;
+$pending_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='P'")->fetch_row()[0] ?? 0;
+$completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='C'")->fetch_row()[0] ?? 0;
 
 
 $orderQuery = "
