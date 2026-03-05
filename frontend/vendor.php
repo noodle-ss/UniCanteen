@@ -2,7 +2,6 @@
 require_once '../config/auth_check.php';
 require_once '../config/database.php';
 
-session_start();
 $_SESSION['user_id'] = 1;   // <-- set a valid vendor user ID
 $_SESSION['role'] = 'V'; 
 
