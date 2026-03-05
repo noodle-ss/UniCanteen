@@ -6,10 +6,10 @@ $dbConn = Database::getInstance()->getConnection();
 // =====================
 // AUTO-LOGIN DEFAULT VENDOR FOR TESTING
 // =====================
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['user_id'] = 3; 
-    $_SESSION['role'] = 'V';
-}
+// if (!isset($_SESSION['user_id'])) {
+//     $_SESSION['user_id'] = 3; 
+//     $_SESSION['role'] = 'V';
+// }
 
 function requireVendorLogin() {
 
