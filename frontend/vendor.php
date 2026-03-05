@@ -13,14 +13,14 @@ if (!isset($_SESSION['user_id'])) {
     $_SESSION['user_role'] = 'V';
 }
 
-function requireVendorLogin() {
+// function requireVendorLogin() {
 
-    if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'V') {
-        // redirect via index router to preserve query format
-        header("Location: ../index.php?page=login&error=unauthorized");
-        exit();
-    }
-}
+//     if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'V') {
+//         // redirect via index router to preserve query format
+//         header("Location: ../index.php?page=login&error=unauthorized");
+//         exit();
+//     }
+// }
 
 requireVendorLogin();
 $user_id = $_SESSION['user_id'] ?? null;
