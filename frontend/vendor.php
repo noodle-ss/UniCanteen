@@ -311,13 +311,13 @@ $completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant
                   <?php endforeach; ?>
                 </ul>
 
-    <select onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)">
-        <option value="P" <?= $order['status']=='P'?'selected':'' ?>>Pending</option>
-        <option value="PR" <?= $order['status']=='PR'?'selected':'' ?>>Preparing</option>
-        <option value="R" <?= $order['status']=='R'?'selected':'' ?>>Ready</option>
-        <option value="C" <?= $order['status']=='C'?'selected':'' ?>>Completed</option>
-    </select>
-</div>
+                <select onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)">
+                    <option value="P" <?= $order['status']=='P'?'selected':'' ?>>Pending</option>
+                    <option value="PR" <?= $order['status']=='PR'?'selected':'' ?>>Preparing</option>
+                    <option value="R" <?= $order['status']=='R'?'selected':'' ?>>Ready</option>
+                    <option value="C" <?= $order['status']=='C'?'selected':'' ?>>Completed</option>
+                </select>
+            </div>
 
                 <select onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)">
                     <option value="P" <?= $order['status']=='P'?'selected':'' ?>>Pending</option>
