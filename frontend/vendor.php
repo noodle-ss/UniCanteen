@@ -1,5 +1,8 @@
 <?php
 global $dbConn;
+
+$dbConn = Database::getInstance()->getConnection();
+
 // =====================
 // AUTO-LOGIN DEFAULT VENDOR FOR TESTING
 // =====================
@@ -55,9 +58,6 @@ $avg_order_value = $dbConn->query("SELECT AVG(total_amount) FROM Orders WHERE re
 $last_week_avg_order_value = $dbConn->query("SELECT AVG(total_amount) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='C' AND order_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)")->fetch_row()[0] ?? 0;
 $best_selling_items = $dbConn->query("SELECT i.name AS item_name, SUM(oi.quantity) AS order_count FROM Order_ItemLine oi JOIN Items i ON oi.item_ID = i.ID JOIN Orders o ON oi.order_ID = o.ID WHERE o.restaurant_ID = {$restaurant['ID']} AND o.status='C' GROUP BY oi.item_ID ORDER BY order_count DESC LIMIT 6")->fetch_all(MYSQLI_ASSOC);
 // === DASHBOARD METRICS END ===
-
-
-$dbConn = Database::getInstance()->getConnection();
 
 
 $total_revenue = $dbConn->query("SELECT SUM(total_amount) FROM Orders WHERE restaurant_ID={$restaurant['ID']} AND status='C'")->fetch_row()[0] ?? 0;
