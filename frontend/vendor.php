@@ -622,7 +622,5 @@ $completed_orders = $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant
                 });
               });
               </script>
-
-
 </body>
 </html>
