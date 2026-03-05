@@ -2,8 +2,6 @@
 require_once '../config/auth_check.php';
 require_once '../config/database.php';
 
-requireVendorLogin();
-
 $user_id = $_SESSION['user_id'] ?? null;
 
 if (!$user_id) {
