@@ -862,7 +862,7 @@ $completed_orders = $restaurant_id
                 <div style="text-align:center; padding:30px; color:#999;">No transactions yet</div>
               <?php endif; ?>
             </div>
-            <button class="btn-outline" style="width:100%; margin-top:8px; font-size:0.9rem;">
+            <button class="btn-outline" style="width:100%; margin-top:8px; font-size:0.9rem;" onclick="openAllTransactionsModal()">
               <i class="fas fa-receipt"></i> View All Transactions
             </button>
           </div>
@@ -933,6 +933,50 @@ $completed_orders = $restaurant_id
           <button type="submit" class="btn-modal-submit"><i class="fas fa-check"></i> Update Item</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ── All Transactions Modal ── -->
+  <div id="allTransactionsModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3><i class="fas fa-receipt"></i> All Transactions</h3>
+        <button type="button" class="btn-modal-cancel" onclick="closeAllTransactionsModal()" style="padding: 5px 10px; font-size: 0.9rem;">Close</button>
+      </div>
+      <div class="all-transactions-list" style="border: 1px solid #e0e0e0; border-radius: 8px;">
+        <?php if (!empty($orders)): ?>
+          <?php 
+            $statusClasses = ['C' => 'status-completed', 'PR' => 'status-pending', 'P' => 'status-pending', 'R' => 'status-completed'];
+            $statusNames = ['C' => 'Completed', 'PR' => 'Preparing', 'P' => 'Pending', 'R' => 'Ready'];
+          ?>
+          <?php foreach ($orders as $txn):
+            $itemNames = array_map(fn($i) => $i['name'], $txn['items']);
+          ?>
+            <div style="display: grid; grid-template-columns: 1fr 1.5fr 1fr 1fr; gap: 12px; padding: 12px; border-bottom: 1px solid #f0f0f0; align-items: center;">
+              <div>
+                <span style="font-weight: 600; color: #0f4a2f; font-size: 0.95rem;">#<?php echo $txn['queue_number']; ?></span>
+                <div style="font-size: 0.8rem; color: #5f8b74; margin-top: 4px;"><?php echo date('M d, g:i A', strtotime($txn['order_date'])); ?></div>
+              </div>
+              <div style="font-size: 0.85rem; color: #333;">
+                <?php echo htmlspecialchars(implode(', ', $itemNames)); ?>
+              </div>
+              <div style="font-weight: 600; color: var(--dlsu-green); text-align: right;">
+                <?php echo formatPrice($txn['total_amount']); ?>
+              </div>
+              <div style="text-align: right;">
+                <span style="padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;" class="<?php echo $statusClasses[$txn['status']] ?? ''; ?>">
+                  <?php echo $statusNames[$txn['status']] ?? $txn['status']; ?>
+                </span>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div style="text-align: center; padding: 40px; color: #999;">
+            <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+            No transactions yet
+          </div>
+        <?php endif; ?>
+      </div>
     </div>
   </div>
 
@@ -1110,9 +1154,11 @@ $completed_orders = $restaurant_id
       document.getElementById('edit_item_availability').value = isAvailable ? '1' : '0';
     }
     function closeEditModal() { document.getElementById('editItemModal').style.display = 'none'; }
+    function openAllTransactionsModal() { document.getElementById('allTransactionsModal').style.display = 'flex'; }
+    function closeAllTransactionsModal() { document.getElementById('allTransactionsModal').style.display = 'none'; }
 
     // Close modals on overlay click
-    ['addItemModal', 'editItemModal'].forEach(id => {
+    ['addItemModal', 'editItemModal', 'allTransactionsModal'].forEach(id => {
       document.getElementById(id).addEventListener('click', function (e) {
         if (e.target === this) this.style.display = 'none';
       });
