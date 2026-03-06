@@ -8,7 +8,7 @@ $dbConn = Database::getInstance()->getConnection();
 // =====================
 
 if (!isset($_SESSION['user_id'])) {
-  $_SESSION['user_id'] = 3;
+  $_SESSION['user_id'] = 4;
   $_SESSION['user_role'] = 'V';
   $_SESSION['user_name'] = '';
 }
