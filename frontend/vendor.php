@@ -8,7 +8,7 @@ $dbConn = Database::getInstance()->getConnection();
 // =====================
 
 if (!isset($_SESSION['user_id'])) {
-  $_SESSION['user_id'] = 4;
+  $_SESSION['user_id'] = 3;
   $_SESSION['user_role'] = 'V';
   $_SESSION['user_name'] = '';
 }
@@ -824,10 +824,10 @@ $completed_orders = $restaurant_id
               </div>
             </div>
             <div class="queue-actions">
-              <button class="btn-primary" style="font-size:0.9rem; padding:12px 20px; flex:1;">
+              <button class="btn-primary" style="font-size:0.9rem; padding:12px 20px; flex:1;" onclick="nextCustomer()">
                 <i class="fas fa-forward"></i> Next Customer
               </button>
-              <button class="btn-secondary" style="font-size:0.9rem; padding:12px 20px; flex:1;">
+              <button class="btn-secondary" style="font-size:0.9rem; padding:12px 20px; flex:1;" onclick="resetCounter()">
                 <i class="fas fa-rotate-right"></i> Reset Counter
               </button>
             </div>
@@ -1156,6 +1156,52 @@ $completed_orders = $restaurant_id
     function closeEditModal() { document.getElementById('editItemModal').style.display = 'none'; }
     function openAllTransactionsModal() { document.getElementById('allTransactionsModal').style.display = 'flex'; }
     function closeAllTransactionsModal() { document.getElementById('allTransactionsModal').style.display = 'none'; }
+
+    // Queue Management Functions
+    function nextCustomer() {
+      if (confirm("Mark current customer as completed and move to next customer?")) {
+        // Find the first pending or preparing order
+        const orderSelects = document.querySelectorAll('.order-status-select');
+        let currentOrderId = null;
+
+        for (let select of orderSelects) {
+          if (select.value === 'P' || select.value === 'PR') {
+            currentOrderId = select.getAttribute('onchange').match(/updateOrderStatus\((\d+)/)[1];
+            break;
+          }
+        }
+
+        if (currentOrderId) {
+          // Mark current order as completed
+          updateOrderStatus(currentOrderId, 'C');
+        } else {
+          showStatusNotification('No pending orders in queue', 'error');
+        }
+      }
+    }
+
+    function resetCounter() {
+      if (confirm("Reset the queue counter? This will restart queue numbering from 1.")) {
+        fetch('frontend/reset_queue.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'action=reset_counter'
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showStatusNotification('Queue counter reset successfully', 'success');
+            setTimeout(() => location.reload(), 1000);
+          } else {
+            showStatusNotification(`Error: ${data.error || 'Failed to reset counter'}`, 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Reset error:', error);
+          showStatusNotification('Network error. Please try again.', 'error');
+        });
+      }
+    }
 
     // Close modals on overlay click
     ['addItemModal', 'editItemModal', 'allTransactionsModal'].forEach(id => {
