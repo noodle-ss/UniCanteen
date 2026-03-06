@@ -622,7 +622,11 @@ $completed_orders = $restaurant_id
               <?php foreach ($menu_items as $item): ?>
                 <div class="menu-edit-row" style="grid-template-columns: 1fr 90px 90px 80px 80px;">
                   <div class="item-info">
-                    <i class="fas fa-burger"></i>
+                    <?php if (!empty($item['image_url'])): ?>
+                      <img src="<?= htmlspecialchars($item['image_url']) ?>" alt="<?= htmlspecialchars($item['name']) ?>" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; margin-right: 12px;">
+                    <?php else: ?>
+                      <i class="fas fa-burger" style="margin-right: 12px;"></i>
+                    <?php endif; ?>
                     <span class="item-name"><?= htmlspecialchars($item['name']) ?></span>
                   </div>
                   <span class="item-price">₱<?= number_format($item['price'], 2) ?></span>
@@ -899,7 +903,13 @@ $completed_orders = $restaurant_id
             <option value="sold_out">Sold Out</option>
           </select>
         </div>
-        <div class="modal-actions">
+        <div class="modal-field">
+          <label>Item Image</label>
+          <input type="file" name="image" accept="image/*" onchange="previewImage(this)">
+          <div id="image-preview" style="margin-top: 10px; display: none;">
+            <img id="preview-img" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 1px solid #ddd;">
+          </div>
+        </div>
           <button type="button" class="btn-modal-cancel" onclick="closeAddModal()">Cancel</button>
           <button type="submit" class="btn-modal-submit"><i class="fas fa-plus"></i> Add Item</button>
         </div>
@@ -928,7 +938,14 @@ $completed_orders = $restaurant_id
             <option value="0">Sold Out</option>
           </select>
         </div>
-        <div class="modal-actions">
+        <div class="modal-field">
+          <label>Item Image (Optional)</label>
+          <input type="file" name="image" accept="image/*" onchange="previewEditImage(this)">
+          <div id="edit-image-preview" style="margin-top: 10px; display: none;">
+            <img id="edit-preview-img" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 1px solid #ddd;">
+          </div>
+          <small style="color: #666; font-size: 0.85rem;">Leave empty to keep current image</small>
+        </div>
           <button type="button" class="btn-modal-cancel" onclick="closeEditModal()">Cancel</button>
           <button type="submit" class="btn-modal-submit"><i class="fas fa-check"></i> Update Item</button>
         </div>
@@ -1146,6 +1163,22 @@ $completed_orders = $restaurant_id
 
     function openAddModal() { document.getElementById('addItemModal').style.display = 'flex'; }
     function closeAddModal() { document.getElementById('addItemModal').style.display = 'none'; }
+
+    function previewEditImage(input) {
+      const preview = document.getElementById('edit-image-preview');
+      const previewImg = document.getElementById('edit-preview-img');
+
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewImg.src = e.target.result;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+      } else {
+        preview.style.display = 'none';
+      }
+    }
     function openEditModal(id, name, price, isAvailable) {
       document.getElementById('editItemModal').style.display = 'flex';
       document.getElementById('edit_item_id').value = id;

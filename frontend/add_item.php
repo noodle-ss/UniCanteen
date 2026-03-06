@@ -28,11 +28,50 @@ $name  = $_POST['name'] ?? '';
 $price = floatval($_POST['price'] ?? 0);
 $isAvailable = (isset($_POST['status']) && $_POST['status'] === 'available') ? 1 : 0;
 
+// Handle image upload
+$image_url = null;
+if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+    $uploadDir = __DIR__ . '/../assets/uploads/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+
+    $fileName = $_FILES['image']['name'];
+    $fileTmp = $_FILES['image']['tmp_name'];
+    $fileSize = $_FILES['image']['size'];
+    $fileType = $_FILES['image']['type'];
+
+    // Validate file type
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!in_array($fileType, $allowedTypes)) {
+        echo json_encode(['success' => false, 'error' => 'Invalid image type. Only JPEG, PNG, GIF, and WebP are allowed.']);
+        exit;
+    }
+
+    // Validate file size (max 5MB)
+    if ($fileSize > 5 * 1024 * 1024) {
+        echo json_encode(['success' => false, 'error' => 'Image file is too large. Maximum size is 5MB.']);
+        exit;
+    }
+
+    // Generate unique filename
+    $fileExt = pathinfo($fileName, PATHINFO_EXTENSION);
+    $uniqueName = uniqid('item_', true) . '.' . $fileExt;
+    $uploadPath = $uploadDir . $uniqueName;
+
+    if (move_uploaded_file($fileTmp, $uploadPath)) {
+        $image_url = 'assets/uploads/' . $uniqueName;
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Failed to upload image.']);
+        exit;
+    }
+}
+
 // insert using correct column names
 $stmt = $db->prepare(
-    "INSERT INTO Items (name, price, isAvailable, restaurant_ID) VALUES (?, ?, ?, ?)"
+    "INSERT INTO Items (name, price, isAvailable, restaurant_ID, image_url) VALUES (?, ?, ?, ?, ?)"
 );
-$stmt->bind_param("sdii", $name, $price, $isAvailable, $restaurant_id);
+$stmt->bind_param("sdiis", $name, $price, $isAvailable, $restaurant_id, $image_url);
 
 $success = $stmt->execute();
 $error = $success ? null : $stmt->error;
