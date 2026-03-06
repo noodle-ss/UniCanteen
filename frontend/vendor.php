@@ -424,20 +424,54 @@ $completed_orders = $restaurant_id
     /* Order status select */
     .order-status-select {
       background: #f5f9f6;
-      border: 1.5px solid #cae3d6;
-      padding: 7px 12px;
+      border: 2px solid #cae3d6;
+      padding: 8px 14px;
       border-radius: 30px;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 0.8rem;
       cursor: pointer;
       outline: none;
       width: 100%;
       min-width: 110px;
-      transition: border-color 0.2s;
+      transition: all 0.25s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .order-status-select:hover {
+      border-color: var(--dlsu-green);
+      box-shadow: 0 4px 12px rgba(0, 122, 62, 0.15);
     }
 
     .order-status-select:focus {
       border-color: var(--dlsu-green);
+      box-shadow: 0 0 0 4px rgba(0, 122, 62, 0.2);
+      outline: none;
+    }
+
+    /* Color-coded status options */
+    .order-status-select option[value="P"],
+    .order-status-select[value="P"] {
+      background-color: #fee9e9;
+      color: #b13e3e;
+    }
+
+    .order-status-select option[value="PR"],
+    .order-status-select[value="PR"] {
+      background-color: #fff1cf;
+      color: #9e6d0b;
+    }
+
+    .order-status-select option[value="R"],
+    .order-status-select[value="R"] {
+      background-color: #c9f0d7;
+      color: #0c6e3a;
+    }
+
+    .order-status-select option[value="C"],
+    .order-status-select[value="C"] {
+      background-color: #d0e3ff;
+      color: #1f5090;
     }
 
     /* Items availability badge in menu list */
@@ -627,14 +661,14 @@ $completed_orders = $restaurant_id
 
             <!-- Status filter tabs -->
             <div class="status-filters">
-              <span class="filter-tab active">All <strong><?php echo $total_orders; ?></strong></span>
-              <span class="filter-tab" style="background:#f5e6e6; color:#b13e3e;">Pending
+              <span class="filter-tab active" onclick="filterOrdersByStatus('')">All <strong><?php echo $total_orders; ?></strong></span>
+              <span class="filter-tab" style="background:#f5e6e6; color:#b13e3e; cursor:pointer;" onclick="filterOrdersByStatus('P')">Pending
                 <strong><?php echo $pending_orders; ?></strong></span>
-              <span class="filter-tab" style="background:#fff1cf; color:#9e6d0b;">Preparing
+              <span class="filter-tab" style="background:#fff1cf; color:#9e6d0b; cursor:pointer;" onclick="filterOrdersByStatus('PR')">Preparing
                 <strong><?php echo $preparing_orders; ?></strong></span>
-              <span class="filter-tab" style="background:#c9f0d7; color:#0c6e3a;">Ready
+              <span class="filter-tab" style="background:#c9f0d7; color:#0c6e3a; cursor:pointer;" onclick="filterOrdersByStatus('R')">Ready
                 <strong><?php echo $ready_orders; ?></strong></span>
-              <span class="filter-tab" style="background:#d0e3ff; color:#1f5090;">Done
+              <span class="filter-tab" style="background:#d0e3ff; color:#1f5090; cursor:pointer;" onclick="filterOrdersByStatus('C')">Completed
                 <strong><?php echo $completed_orders; ?></strong></span>
             </div>
 
@@ -670,7 +704,16 @@ $completed_orders = $restaurant_id
                   <div style="font-weight:600; color:var(--dlsu-green);">₱<?= number_format($order['total_amount'], 2) ?>
                   </div>
                   <div>
-                    <select class="order-status-select" onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)">
+                    <select class="order-status-select" onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)" 
+                            style="<?php
+                              $status_styles = [
+                                'P' => 'background: #fee9e9; color: #b13e3e; border-color: #f5c6cb;',
+                                'PR' => 'background: #fff1cf; color: #9e6d0b; border-color: #ffeeba;',
+                                'R' => 'background: #c9f0d7; color: #0c6e3a; border-color: #a3dfc9;',
+                                'C' => 'background: #d0e3ff; color: #1f5090; border-color: #a8d4f0;'
+                              ];
+                              echo $status_styles[$order['status']] ?? '';
+                            ?>">
                       <option value="P" <?= $order['status'] == 'P' ? 'selected' : '' ?>>Pending</option>
                       <option value="PR" <?= $order['status'] == 'PR' ? 'selected' : '' ?>>Preparing</option>
                       <option value="R" <?= $order['status'] == 'R' ? 'selected' : '' ?>>Ready</option>
@@ -894,7 +937,32 @@ $completed_orders = $restaurant_id
   </div>
 
   <script>
+    // Filter orders by status
+    function filterOrdersByStatus(status) {
+      const rows = document.querySelectorAll('.queue-item:not(.header)');
+      const filterTabs = document.querySelectorAll('.filter-tab');
+      
+      // Update active tab styling
+      filterTabs.forEach(tab => tab.classList.remove('active'));
+      event.target.closest('.filter-tab')?.classList.add('active');
+
+      // Filter and display rows
+      rows.forEach(row => {
+        if (!status) {
+          row.style.display = '';
+        } else {
+          const selectElement = row.querySelector('.order-status-select');
+          row.style.display = selectElement?.value === status ? '' : 'none';
+        }
+      });
+    }
+
     function updateOrderStatus(orderId, status) {
+      // Disable the select temporarily
+      const selectElement = event.target;
+      selectElement.disabled = true;
+      const originalStatus = selectElement.dataset.originalStatus || selectElement.value;
+
       fetch('frontend/update_order_status.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -902,8 +970,134 @@ $completed_orders = $restaurant_id
       })
         .then(res => res.json())
         .then(data => {
-          if (!data.success) alert("Failed to update order.");
+          selectElement.disabled = false;
+          
+          if (data.success) {
+            // Update the dropdown styling based on new status
+            updateStatusDisplay(selectElement, status);
+            
+            // Show success message
+            showStatusNotification(`Order #${orderId} status changed to ${data.status_name}`, 'success');
+            
+            // Store the original status for potential rollback
+            selectElement.dataset.originalStatus = status;
+            
+            // Optionally refresh the page after 1 second to reflect all changes
+            setTimeout(() => {
+              location.reload();
+            }, 1000);
+          } else {
+            // Revert to original status on error
+            selectElement.value = originalStatus;
+            showStatusNotification(`Error: ${data.error || 'Failed to update order status'}`, 'error');
+          }
+        })
+        .catch(error => {
+          selectElement.disabled = false;
+          selectElement.value = originalStatus;
+          console.error('Update error:', error);
+          showStatusNotification('Network error. Please try again.', 'error');
         });
+    }
+
+    function updateStatusDisplay(selectElement, status) {
+      // Update the styling of the select based on status
+      const statusColors = {
+        'P': '#fee9e9',    // light red for pending
+        'PR': '#fff1cf',   // light yellow for preparing
+        'R': '#c9f0d7',    // light green for ready
+        'C': '#d0e3ff'     // light blue for completed
+      };
+
+      const statusTextColors = {
+        'P': '#b13e3e',
+        'PR': '#9e6d0b',
+        'R': '#0c6e3a',
+        'C': '#1f5090'
+      };
+
+      const statusBorderColors = {
+        'P': '#f5c6cb',
+        'PR': '#ffeeba',
+        'R': '#a3dfc9',
+        'C': '#a8d4f0'
+      };
+
+      if (statusColors[status]) {
+        selectElement.style.background = statusColors[status];
+        selectElement.style.color = statusTextColors[status];
+        selectElement.style.borderColor = statusBorderColors[status];
+      }
+    }
+
+    function showStatusNotification(message, type) {
+      // Create a temporary notification element
+      const notification = document.createElement('div');
+      notification.textContent = message;
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+        ${type === 'success' ? 'background: #d4edda; color: #155724; border: 1px solid #c3e6cb;' : 'background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;'}
+      `;
+
+      document.body.appendChild(notification);
+
+      // Auto-remove after 3 seconds
+      setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
+    // Add CSS animations if not already in stylesheet
+    if (!document.querySelector('style[data-notification-styles]')) {
+      const style = document.createElement('style');
+      style.setAttribute('data-notification-styles', '');
+      style.textContent = `
+        @keyframes slideIn {
+          from {
+            transform: translateX(400px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        @keyframes slideOut {
+          from {
+            transform: translateX(0);
+            opacity: 1;
+          }
+          to {
+            transform: translateX(400px);
+            opacity: 0;
+          }
+        }
+
+        .filter-tab {
+          cursor: pointer;
+          transition: all 0.25s ease;
+        }
+
+        .filter-tab:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-tab.active {
+          box-shadow: 0 4px 16px rgba(0, 122, 62, 0.25);
+          border-bottom: 3px solid var(--dlsu-green);
+        }
+      `;
+      document.head.appendChild(style);
     }
 
     function openAddModal() { document.getElementById('addItemModal').style.display = 'flex'; }
