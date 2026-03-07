@@ -4,14 +4,8 @@ global $dbConn;
 $dbConn = Database::getInstance()->getConnection();
 
 // =====================
-// AUTO-LOGIN DEFAULT VENDOR FOR TESTING
+// AUTO-LOGIN DEFAULT VENDOR FOR TESTING Removed
 // =====================
-
-if (!isset($_SESSION['user_id'])) {
-  $_SESSION['user_id'] = 3;
-  $_SESSION['user_role'] = 'V';
-  $_SESSION['user_name'] = '';
-}
 
 // session is already started and config loaded by index.php
 // vendor view is protected in the router (index.php)
@@ -494,6 +488,89 @@ $completed_orders = $restaurant_id
       background: #fee9e9;
       color: #b13e3e;
     }
+
+    /* Drag and Drop Zone */
+    .file-drop-zone {
+      border: 2px dashed #cae3d6;
+      border-radius: 14px;
+      padding: 30px 20px;
+      text-align: center;
+      background: #f9fffc;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .file-drop-zone:hover, .file-drop-zone.dragover {
+      background: #f0f7f2;
+      border-color: var(--dlsu-green);
+    }
+
+    .file-drop-zone i {
+      font-size: 2rem;
+      color: var(--dlsu-green);
+      margin-bottom: 10px;
+      opacity: 0.7;
+    }
+
+    .file-drop-zone p {
+      margin: 0 0 8px 0;
+      color: #1a4d31;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .file-drop-zone span {
+      font-size: 0.8rem;
+      color: #5f8b74;
+      display: block;
+    }
+
+    .file-drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .img-preview-container {
+      margin-top: 16px;
+      position: relative;
+      display: inline-block;
+    }
+
+    .img-preview-container img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .remove-preview-btn {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: #fee9e9;
+      color: #b13e3e;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+
+    .remove-preview-btn:hover {
+      transform: scale(1.1);
+      background: #f5c9c9;
+    }
   </style>
 </head>
 
@@ -623,7 +700,8 @@ $completed_orders = $restaurant_id
                 <div class="menu-edit-row" style="grid-template-columns: 1fr 90px 90px 80px 80px;">
                   <div class="item-info">
                     <?php if (!empty($item['image_url'])): ?>
-                      <img src="<?= htmlspecialchars($item['image_url']) ?>" alt="<?= htmlspecialchars($item['name']) ?>" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; margin-right: 12px;">
+                      <img src="<?= htmlspecialchars($item['image_url']) ?>" alt="<?= htmlspecialchars($item['name']) ?>"
+                        style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; margin-right: 12px;">
                     <?php else: ?>
                       <i class="fas fa-burger" style="margin-right: 12px;"></i>
                     <?php endif; ?>
@@ -665,14 +743,19 @@ $completed_orders = $restaurant_id
 
             <!-- Status filter tabs -->
             <div class="status-filters">
-              <span class="filter-tab active" onclick="filterOrdersByStatus('')">All <strong><?php echo $total_orders; ?></strong></span>
-              <span class="filter-tab" style="background:#f5e6e6; color:#b13e3e; cursor:pointer;" onclick="filterOrdersByStatus('P')">Pending
+              <span class="filter-tab active" onclick="filterOrdersByStatus('')">All
+                <strong><?php echo $total_orders; ?></strong></span>
+              <span class="filter-tab" style="background:#f5e6e6; color:#b13e3e; cursor:pointer;"
+                onclick="filterOrdersByStatus('P')">Pending
                 <strong><?php echo $pending_orders; ?></strong></span>
-              <span class="filter-tab" style="background:#fff1cf; color:#9e6d0b; cursor:pointer;" onclick="filterOrdersByStatus('PR')">Preparing
+              <span class="filter-tab" style="background:#fff1cf; color:#9e6d0b; cursor:pointer;"
+                onclick="filterOrdersByStatus('PR')">Preparing
                 <strong><?php echo $preparing_orders; ?></strong></span>
-              <span class="filter-tab" style="background:#c9f0d7; color:#0c6e3a; cursor:pointer;" onclick="filterOrdersByStatus('R')">Ready
+              <span class="filter-tab" style="background:#c9f0d7; color:#0c6e3a; cursor:pointer;"
+                onclick="filterOrdersByStatus('R')">Ready
                 <strong><?php echo $ready_orders; ?></strong></span>
-              <span class="filter-tab" style="background:#d0e3ff; color:#1f5090; cursor:pointer;" onclick="filterOrdersByStatus('C')">Completed
+              <span class="filter-tab" style="background:#d0e3ff; color:#1f5090; cursor:pointer;"
+                onclick="filterOrdersByStatus('C')">Completed
                 <strong><?php echo $completed_orders; ?></strong></span>
             </div>
 
@@ -708,16 +791,15 @@ $completed_orders = $restaurant_id
                   <div style="font-weight:600; color:var(--dlsu-green);">₱<?= number_format($order['total_amount'], 2) ?>
                   </div>
                   <div>
-                    <select class="order-status-select" onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)" 
-                            style="<?php
-                              $status_styles = [
-                                'P' => 'background: #fee9e9; color: #b13e3e; border-color: #f5c6cb;',
-                                'PR' => 'background: #fff1cf; color: #9e6d0b; border-color: #ffeeba;',
-                                'R' => 'background: #c9f0d7; color: #0c6e3a; border-color: #a3dfc9;',
-                                'C' => 'background: #d0e3ff; color: #1f5090; border-color: #a8d4f0;'
-                              ];
-                              echo $status_styles[$order['status']] ?? '';
-                            ?>">
+                    <select class="order-status-select" onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)" style="<?php
+                      $status_styles = [
+                        'P' => 'background: #fee9e9; color: #b13e3e; border-color: #f5c6cb;',
+                        'PR' => 'background: #fff1cf; color: #9e6d0b; border-color: #ffeeba;',
+                        'R' => 'background: #c9f0d7; color: #0c6e3a; border-color: #a3dfc9;',
+                        'C' => 'background: #d0e3ff; color: #1f5090; border-color: #a8d4f0;'
+                      ];
+                      echo $status_styles[$order['status']] ?? '';
+                      ?>">
                       <option value="P" <?= $order['status'] == 'P' ? 'selected' : '' ?>>Pending</option>
                       <option value="PR" <?= $order['status'] == 'PR' ? 'selected' : '' ?>>Preparing</option>
                       <option value="R" <?= $order['status'] == 'R' ? 'selected' : '' ?>>Ready</option>
@@ -831,7 +913,8 @@ $completed_orders = $restaurant_id
               <button class="btn-primary" style="font-size:0.9rem; padding:12px 20px; flex:1;" onclick="nextCustomer()">
                 <i class="fas fa-forward"></i> Next Customer
               </button>
-              <button class="btn-secondary" style="font-size:0.9rem; padding:12px 20px; flex:1;" onclick="resetCounter()">
+              <button class="btn-secondary" style="font-size:0.9rem; padding:12px 20px; flex:1;"
+                onclick="resetCounter()">
                 <i class="fas fa-rotate-right"></i> Reset Counter
               </button>
             </div>
@@ -866,7 +949,8 @@ $completed_orders = $restaurant_id
                 <div style="text-align:center; padding:30px; color:#999;">No transactions yet</div>
               <?php endif; ?>
             </div>
-            <button class="btn-outline" style="width:100%; margin-top:8px; font-size:0.9rem;" onclick="openAllTransactionsModal()">
+            <button class="btn-outline" style="width:100%; margin-top:8px; font-size:0.9rem;"
+              onclick="openAllTransactionsModal()">
               <i class="fas fa-receipt"></i> View All Transactions
             </button>
           </div>
@@ -905,16 +989,24 @@ $completed_orders = $restaurant_id
         </div>
         <div class="modal-field">
           <label>Item Image</label>
-          <input type="file" name="image" accept="image/*" onchange="previewImage(this)">
-          <div id="image-preview" style="margin-top: 10px; display: none;">
-            <img id="preview-img" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 1px solid #ddd;">
+          <div class="file-drop-zone" id="addDropZone">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Drag & Drop your image here</p>
+            <span>or click to browse files</span>
+            <input type="file" name="image" id="addFileInput" accept="image/*" onchange="previewImage(this, 'addDropZone', 'preview-img', 'image-preview')">
+          </div>
+          <div id="image-preview" class="img-preview-container" style="display: none;">
+            <button type="button" class="remove-preview-btn" onclick="removePreview('addFileInput', 'preview-img', 'image-preview', 'addDropZone')" title="Remove Image">
+              <i class="fas fa-times"></i>
+            </button>
+            <img id="preview-img" src="" alt="Preview">
           </div>
         </div>
-          <button type="button" class="btn-modal-cancel" onclick="closeAddModal()">Cancel</button>
-          <button type="submit" class="btn-modal-submit"><i class="fas fa-plus"></i> Add Item</button>
-        </div>
-      </form>
+        <button type="button" class="btn-modal-cancel" onclick="closeAddModal()">Cancel</button>
+        <button type="submit" class="btn-modal-submit"><i class="fas fa-plus"></i> Add Item</button>
     </div>
+    </form>
+  </div>
   </div>
 
   <!-- ── Edit Item Modal ── -->
@@ -940,17 +1032,25 @@ $completed_orders = $restaurant_id
         </div>
         <div class="modal-field">
           <label>Item Image (Optional)</label>
-          <input type="file" name="image" accept="image/*" onchange="previewEditImage(this)">
-          <div id="edit-image-preview" style="margin-top: 10px; display: none;">
-            <img id="edit-preview-img" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 1px solid #ddd;">
+          <div class="file-drop-zone" id="editDropZone">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Drag & Drop a new image here</p>
+            <span>or click to browse files</span>
+            <input type="file" name="image" id="editFileInput" accept="image/*" onchange="previewImage(this, 'editDropZone', 'edit-preview-img', 'edit-image-preview')">
           </div>
-          <small style="color: #666; font-size: 0.85rem;">Leave empty to keep current image</small>
+          <div id="edit-image-preview" class="img-preview-container" style="display: none;">
+            <button type="button" class="remove-preview-btn" onclick="removePreview('editFileInput', 'edit-preview-img', 'edit-image-preview', 'editDropZone')" title="Remove Image">
+              <i class="fas fa-times"></i>
+            </button>
+            <img id="edit-preview-img" src="" alt="Preview">
+          </div>
+          <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 8px;">Leave empty to keep current image</small>
         </div>
-          <button type="button" class="btn-modal-cancel" onclick="closeEditModal()">Cancel</button>
-          <button type="submit" class="btn-modal-submit"><i class="fas fa-check"></i> Update Item</button>
-        </div>
-      </form>
+        <button type="button" class="btn-modal-cancel" onclick="closeEditModal()">Cancel</button>
+        <button type="submit" class="btn-modal-submit"><i class="fas fa-check"></i> Update Item</button>
     </div>
+    </form>
+  </div>
   </div>
 
   <!-- ── All Transactions Modal ── -->
@@ -958,21 +1058,25 @@ $completed_orders = $restaurant_id
     <div class="modal-card" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h3><i class="fas fa-receipt"></i> All Transactions</h3>
-        <button type="button" class="btn-modal-cancel" onclick="closeAllTransactionsModal()" style="padding: 5px 10px; font-size: 0.9rem;">Close</button>
+        <button type="button" class="btn-modal-cancel" onclick="closeAllTransactionsModal()"
+          style="padding: 5px 10px; font-size: 0.9rem;">Close</button>
       </div>
       <div class="all-transactions-list" style="border: 1px solid #e0e0e0; border-radius: 8px;">
         <?php if (!empty($orders)): ?>
-          <?php 
-            $statusClasses = ['C' => 'status-completed', 'PR' => 'status-pending', 'P' => 'status-pending', 'R' => 'status-completed'];
-            $statusNames = ['C' => 'Completed', 'PR' => 'Preparing', 'P' => 'Pending', 'R' => 'Ready'];
+          <?php
+          $statusClasses = ['C' => 'status-completed', 'PR' => 'status-pending', 'P' => 'status-pending', 'R' => 'status-completed'];
+          $statusNames = ['C' => 'Completed', 'PR' => 'Preparing', 'P' => 'Pending', 'R' => 'Ready'];
           ?>
           <?php foreach ($orders as $txn):
             $itemNames = array_map(fn($i) => $i['name'], $txn['items']);
-          ?>
-            <div style="display: grid; grid-template-columns: 1fr 1.5fr 1fr 1fr; gap: 12px; padding: 12px; border-bottom: 1px solid #f0f0f0; align-items: center;">
+            ?>
+            <div
+              style="display: grid; grid-template-columns: 1fr 1.5fr 1fr 1fr; gap: 12px; padding: 12px; border-bottom: 1px solid #f0f0f0; align-items: center;">
               <div>
-                <span style="font-weight: 600; color: #0f4a2f; font-size: 0.95rem;">#<?php echo $txn['queue_number']; ?></span>
-                <div style="font-size: 0.8rem; color: #5f8b74; margin-top: 4px;"><?php echo date('M d, g:i A', strtotime($txn['order_date'])); ?></div>
+                <span
+                  style="font-weight: 600; color: #0f4a2f; font-size: 0.95rem;">#<?php echo $txn['queue_number']; ?></span>
+                <div style="font-size: 0.8rem; color: #5f8b74; margin-top: 4px;">
+                  <?php echo date('M d, g:i A', strtotime($txn['order_date'])); ?></div>
               </div>
               <div style="font-size: 0.85rem; color: #333;">
                 <?php echo htmlspecialchars(implode(', ', $itemNames)); ?>
@@ -981,7 +1085,8 @@ $completed_orders = $restaurant_id
                 <?php echo formatPrice($txn['total_amount']); ?>
               </div>
               <div style="text-align: right;">
-                <span style="padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;" class="<?php echo $statusClasses[$txn['status']] ?? ''; ?>">
+                <span style="padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;"
+                  class="<?php echo $statusClasses[$txn['status']] ?? ''; ?>">
                   <?php echo $statusNames[$txn['status']] ?? $txn['status']; ?>
                 </span>
               </div>
@@ -1002,7 +1107,7 @@ $completed_orders = $restaurant_id
     function filterOrdersByStatus(status) {
       const rows = document.querySelectorAll('.queue-item:not(.header)');
       const filterTabs = document.querySelectorAll('.filter-tab');
-      
+
       // Update active tab styling
       filterTabs.forEach(tab => tab.classList.remove('active'));
       event.target.closest('.filter-tab')?.classList.add('active');
@@ -1032,17 +1137,17 @@ $completed_orders = $restaurant_id
         .then(res => res.json())
         .then(data => {
           selectElement.disabled = false;
-          
+
           if (data.success) {
             // Update the dropdown styling based on new status
             updateStatusDisplay(selectElement, status);
-            
+
             // Show success message
             showStatusNotification(`Order #${orderId} status changed to ${data.status_name}`, 'success');
-            
+
             // Store the original status for potential rollback
             selectElement.dataset.originalStatus = status;
-            
+
             // Optionally refresh the page after 1 second to reflect all changes
             setTimeout(() => {
               location.reload();
@@ -1161,30 +1266,93 @@ $completed_orders = $restaurant_id
       document.head.appendChild(style);
     }
 
-    function openAddModal() { document.getElementById('addItemModal').style.display = 'flex'; }
-    function closeAddModal() { document.getElementById('addItemModal').style.display = 'none'; }
-
-    function previewEditImage(input) {
-      const preview = document.getElementById('edit-image-preview');
-      const previewImg = document.getElementById('edit-preview-img');
+    // File Drag and Drop & Preview Functions
+    function previewImage(input, dropZoneId, previewImgId, previewContainerId) {
+      const previewCont = document.getElementById(previewContainerId);
+      const previewImg = document.getElementById(previewImgId);
+      const dropZone = document.getElementById(dropZoneId);
 
       if (input.files && input.files[0]) {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
           previewImg.src = e.target.result;
-          preview.style.display = 'block';
+          previewCont.style.display = 'inline-block';
+          if(dropZone) dropZone.style.display = 'none';
         };
         reader.readAsDataURL(input.files[0]);
       } else {
-        preview.style.display = 'none';
+        previewCont.style.display = 'none';
+        if(dropZone) dropZone.style.display = 'block';
       }
     }
+
+    function removePreview(inputId, previewImgId, previewContainerId, dropZoneId) {
+       document.getElementById(inputId).value = '';
+       document.getElementById(previewImgId).src = '';
+       document.getElementById(previewContainerId).style.display = 'none';
+       document.getElementById(dropZoneId).style.display = 'block';
+    }
+
+    // Setup drag and drop for a specific zone
+    function setupDragAndDrop(dropZoneId, inputId) {
+      const dropZone = document.getElementById(dropZoneId);
+      const input = document.getElementById(inputId);
+
+      if(!dropZone || !input) return;
+
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+      });
+
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+      });
+
+      dropZone.addEventListener('drop', handleDrop, false);
+
+      function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files && files.length > 0) {
+          input.files = files;
+          // Trigger change event to load preview
+          const event = new Event('change');
+          input.dispatchEvent(event);
+        }
+      }
+    }
+
+    // Initialize drag and drop on load
+    document.addEventListener('DOMContentLoaded', () => {
+      setupDragAndDrop('addDropZone', 'addFileInput');
+      setupDragAndDrop('editDropZone', 'editFileInput');
+    });
+
+
+    function openAddModal() { 
+      document.getElementById('addItemModal').style.display = 'flex'; 
+      removePreview('addFileInput', 'preview-img', 'image-preview', 'addDropZone');
+      document.getElementById('addItemForm').reset();
+    }
+    function closeAddModal() { document.getElementById('addItemModal').style.display = 'none'; }
+
     function openEditModal(id, name, price, isAvailable) {
       document.getElementById('editItemModal').style.display = 'flex';
       document.getElementById('edit_item_id').value = id;
       document.getElementById('edit_item_name').value = name;
       document.getElementById('edit_item_price').value = price;
       document.getElementById('edit_item_availability').value = isAvailable ? '1' : '0';
+      removePreview('editFileInput', 'edit-preview-img', 'edit-image-preview', 'editDropZone');
     }
     function closeEditModal() { document.getElementById('editItemModal').style.display = 'none'; }
     function openAllTransactionsModal() { document.getElementById('allTransactionsModal').style.display = 'flex'; }
@@ -1220,19 +1388,19 @@ $completed_orders = $restaurant_id
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: 'action=reset_counter'
         })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            showStatusNotification('Queue counter reset successfully', 'success');
-            setTimeout(() => location.reload(), 1000);
-          } else {
-            showStatusNotification(`Error: ${data.error || 'Failed to reset counter'}`, 'error');
-          }
-        })
-        .catch(error => {
-          console.error('Reset error:', error);
-          showStatusNotification('Network error. Please try again.', 'error');
-        });
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              showStatusNotification('Queue counter reset successfully', 'success');
+              setTimeout(() => location.reload(), 1000);
+            } else {
+              showStatusNotification(`Error: ${data.error || 'Failed to reset counter'}`, 'error');
+            }
+          })
+          .catch(error => {
+            console.error('Reset error:', error);
+            showStatusNotification('Network error. Please try again.', 'error');
+          });
       }
     }
 
