@@ -106,6 +106,7 @@ foreach ($orders as &$order) {
   $stmtItems->execute();
   $order['items'] = $stmtItems->get_result()->fetch_all(MYSQLI_ASSOC);
 }
+unset($order);
 ?>
 <!DOCTYPE html>
 <html lang="en">
