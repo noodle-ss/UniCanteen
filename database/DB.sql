@@ -168,8 +168,8 @@ INSERT INTO Items (name, description, price, isAvailable, restaurant_ID) VALUES
 ('Breakfast Meal', 'Eggs, rice, and choice of meat', 120.00, TRUE, 1);
 
 -- Set image URLs for uploaded item images (images committed to assets/uploads/)
-UPDATE Items SET image_url = 'assets/uploads/food_69ac41acf056a8.54984326.jpg' WHERE name = 'Chicken Bowl' AND restaurant_ID = 1;
-UPDATE Items SET image_url = 'assets/uploads/food_69ac419b9d49a5.98156890.jpg' WHERE name = 'Iced Latte' AND restaurant_ID = 1;
+UPDATE Items SET image_url = 'assets/uploads/food_69ac419b9d49a5.98156890.jpg' WHERE name = 'Chicken Bowl' AND restaurant_ID = 1;
+UPDATE Items SET image_url = 'assets/uploads/food_69ac41acf056a8.54984326.jpg' WHERE name = 'Iced Latte' AND restaurant_ID = 1;
 -- Insert items for Agno Eatery (restaurant_ID = 2)
 INSERT INTO Items (name, description, price, isAvailable, restaurant_ID) VALUES
 ('Beef Tapa', 'Marinated beef with garlic rice and egg', 99.00, TRUE, 2),

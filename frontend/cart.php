@@ -91,12 +91,14 @@ if (isset($_POST['checkout'])) {
         header("Location: index.php?page=login");
         exit();
     } else {
-        $total         = 0;
+        $subtotal      = 0;
         $restaurant_id = null;
         foreach ($_SESSION['cart'] as $item) {
-            $total += $item['price'] * $item['quantity'];
+            $subtotal += $item['price'] * $item['quantity'];
             $restaurant_id = $item['restaurant_id'];
         }
+        $service_fee_checkout = 20;
+        $total = $subtotal + $service_fee_checkout;
 
         $queueQuery = "SELECT COALESCE(MAX(queue_number), 2400) + 1 as next_queue
                        FROM Orders WHERE restaurant_ID = ? AND DATE(order_date) = CURDATE()";
@@ -910,7 +912,20 @@ function closeConfirmModal() {
     document.getElementById('confirmModal').classList.remove('open');
 }
 function submitOrder() {
-    // Add the checkout hidden input + submit the form
+    const btn = document.getElementById('placeOrderBtn');
+    const confirmBtn = document.querySelector('.modal-confirm');
+    // Guard against double-submit on both the place-order button and the confirm button
+    if (btn.disabled || btn.dataset.submitting === '1') return;
+    if (confirmBtn && confirmBtn.dataset.submitting === '1') return;
+    btn.dataset.submitting = '1';
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Placing Order…';
+    if (confirmBtn) {
+        confirmBtn.dataset.submitting = '1';
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing…';
+    }
+
     const form = document.getElementById('checkoutForm');
     const inp = document.createElement('input');
     inp.type = 'hidden';
