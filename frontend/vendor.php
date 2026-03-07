@@ -28,27 +28,50 @@ $stmt->bind_param("i", $restaurant_id);
 $stmt->execute();
 $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-// === DASHBOARD METRICS START ===
+// === DASHBOARD METRICS ===
 $total_items = $restaurant_id
   ? $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant_id}")->fetch_row()[0] ?? 0 : 0;
 $available_count = $restaurant_id
   ? $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant_id} AND isAvailable=1")->fetch_row()[0] ?? 0 : 0;
 $sold_out_count = $restaurant_id
   ? $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant_id} AND isAvailable=0")->fetch_row()[0] ?? 0 : 0;
-$low_stock_count = 0;
 $preparing_orders = $restaurant_id
   ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='PR'")->fetch_row()[0] ?? 0 : 0;
 $ready_orders = $restaurant_id
   ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='R'")->fetch_row()[0] ?? 0 : 0;
 $fulfilled_orders_count = $restaurant_id
   ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C'")->fetch_row()[0] ?? 0 : 0;
-$completed_orders_count = $fulfilled_orders_count;
-$pending_orders_count = $restaurant_id
+$pending_orders = $restaurant_id
   ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='P'")->fetch_row()[0] ?? 0 : 0;
 $avg_order_value = $restaurant_id
   ? $dbConn->query("SELECT AVG(total_amount) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C'")->fetch_row()[0] ?? 0 : 0;
 $last_week_avg_order_value = $restaurant_id
   ? $dbConn->query("SELECT AVG(total_amount) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C' AND order_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)")->fetch_row()[0] ?? 0 : 0;
+$total_revenue = $restaurant_id
+  ? $dbConn->query("SELECT SUM(total_amount) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C'")->fetch_row()[0] ?? 0
+  : 0;
+$total_orders = $restaurant_id
+  ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id}")->fetch_row()[0] ?? 0
+  : 0;
+$completed_orders = $fulfilled_orders_count;
+
+// === TIME-FILTERED ANALYTICS (Today / This Week / This Month) ===
+$analytics = [];
+$periods = [
+  'today' => "DATE(order_date) = CURDATE()",
+  'this_week' => "YEARWEEK(order_date, 1) = YEARWEEK(CURDATE(), 1)",
+  'this_month' => "YEAR(order_date) = YEAR(CURDATE()) AND MONTH(order_date) = MONTH(CURDATE())",
+  'all' => "1=1",
+];
+foreach ($periods as $key => $where) {
+  $base = "FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C' AND {$where}";
+  $analytics[$key] = [
+    'revenue' => $restaurant_id ? ($dbConn->query("SELECT COALESCE(SUM(total_amount),0) {$base}")->fetch_row()[0] ?? 0) : 0,
+    'orders' => $restaurant_id ? ($dbConn->query("SELECT COUNT(*) {$base}")->fetch_row()[0] ?? 0) : 0,
+    'avg' => $restaurant_id ? ($dbConn->query("SELECT COALESCE(AVG(total_amount),0) {$base}")->fetch_row()[0] ?? 0) : 0,
+  ];
+}
+
 $best_selling_items = $restaurant_id
   ? $dbConn->query("SELECT i.name AS item_name, SUM(oi.quantity) AS order_count FROM Order_ItemLine oi JOIN Items i ON oi.item_ID = i.ID JOIN Orders o ON oi.order_ID = o.ID WHERE o.restaurant_ID = {$restaurant_id} AND o.status='C' GROUP BY oi.item_ID ORDER BY order_count DESC LIMIT 6")->fetch_all(MYSQLI_ASSOC)
   : [];
@@ -56,7 +79,7 @@ $default_item = ['item_name' => '—', 'order_count' => 0];
 while (count($best_selling_items) < 6) {
   $best_selling_items[] = $default_item;
 }
-// === DASHBOARD METRICS END ===
+// === END METRICS ===
 
 $orderQuery = "
 SELECT o.*, u.full_name
@@ -66,7 +89,6 @@ WHERE o.restaurant_ID = ?
 ORDER BY o.order_date DESC
 ";
 
-$dbConn = Database::getInstance()->getConnection();
 $stmt = $dbConn->prepare($orderQuery);
 $stmt->bind_param("i", $restaurant['ID']);
 $stmt->execute();
@@ -84,20 +106,6 @@ foreach ($orders as &$order) {
   $stmtItems->execute();
   $order['items'] = $stmtItems->get_result()->fetch_all(MYSQLI_ASSOC);
 }
-
-// === Dashboard metrics ===
-$total_revenue = $restaurant_id
-  ? $dbConn->query("SELECT SUM(total_amount) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C'")->fetch_row()[0] ?? 0
-  : 0;
-$total_orders = $restaurant_id
-  ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id}")->fetch_row()[0] ?? 0
-  : 0;
-$pending_orders = $restaurant_id
-  ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='P'")->fetch_row()[0] ?? 0
-  : 0;
-$completed_orders = $restaurant_id
-  ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C'")->fetch_row()[0] ?? 0
-  : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -501,7 +509,8 @@ $completed_orders = $restaurant_id
       position: relative;
     }
 
-    .file-drop-zone:hover, .file-drop-zone.dragover {
+    .file-drop-zone:hover,
+    .file-drop-zone.dragover {
       background: #f0f7f2;
       border-color: var(--dlsu-green);
     }
@@ -546,7 +555,7 @@ $completed_orders = $restaurant_id
       max-height: 200px;
       border-radius: 8px;
       border: 1px solid #ddd;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
     .remove-preview-btn {
@@ -563,13 +572,40 @@ $completed_orders = $restaurant_id
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       transition: transform 0.2s;
     }
 
     .remove-preview-btn:hover {
       transform: scale(1.1);
       background: #f5c9c9;
+    }
+
+    /* Period filter buttons in Analytics */
+    .period-btn {
+      background: none;
+      border: 1.5px solid #cae3d6;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #3b7455;
+      padding: 5px 14px;
+      border-radius: 20px;
+      transition: all 0.18s;
+    }
+
+    .period-btn:hover {
+      background: #e3f4ea;
+      border-color: var(--dlsu-green);
+      color: var(--dlsu-green);
+    }
+
+    .period-btn.active-period {
+      background: var(--dlsu-green);
+      border-color: var(--dlsu-green);
+      color: white;
+      box-shadow: 0 2px 8px rgba(0, 122, 62, 0.25);
     }
   </style>
 </head>
@@ -661,9 +697,9 @@ $completed_orders = $restaurant_id
             </div>
 
             <!-- Inventory summary mini-cards -->
-            <div class="inventory-grid" style="margin-bottom:20px;">
+            <div class="inventory-grid" style="margin-bottom:20px; grid-template-columns: repeat(3, 1fr);">
               <div class="inventory-stat total">
-                <div class="stat-label total">Total</div>
+                <div class="stat-label total">Total Items</div>
                 <div class="stat-number total"><?php echo $total_items; ?></div>
               </div>
               <div class="inventory-stat available">
@@ -673,10 +709,6 @@ $completed_orders = $restaurant_id
               <div class="inventory-stat soldout">
                 <div class="stat-label soldout">Sold Out</div>
                 <div class="stat-number soldout"><?php echo $sold_out_count; ?></div>
-              </div>
-              <div class="inventory-stat lowstock">
-                <div class="stat-label lowstock">Low Stock</div>
-                <div class="stat-number lowstock"><?php echo $low_stock_count; ?></div>
               </div>
             </div>
 
@@ -818,31 +850,44 @@ $completed_orders = $restaurant_id
           <div class="vendor-section-header" style="margin-top:0;">
             <h2><i class="fas fa-chart-simple"></i> Sales · Performance Analytics</h2>
             <div style="display:flex; gap:8px;">
-              <span class="sync-badge">Today</span>
-              <span class="sync-badge">This Week</span>
-              <span class="sync-badge">This Month</span>
+              <button class="sync-badge period-btn active-period"
+                onclick="setAnalyticsPeriod('today', this)">Today</button>
+              <button class="sync-badge period-btn" onclick="setAnalyticsPeriod('this_week', this)">This Week</button>
+              <button class="sync-badge period-btn" onclick="setAnalyticsPeriod('this_month', this)">This Month</button>
+              <button class="sync-badge period-btn" onclick="setAnalyticsPeriod('all', this)">All Time</button>
             </div>
           </div>
+
+          <!-- Analytics data embedded for JS -->
+          <script id="analytics-data" type="application/json">
+            <?php echo json_encode($analytics); ?>
+          </script>
 
           <!-- Sales cards -->
           <div class="sales-grid">
             <div class="sales-card">
               <div class="sales-label">Total Revenue</div>
-              <div class="sales-number"><?php echo "₱" . number_format($total_revenue, 2); ?></div>
-              <div class="sales-change"><i class="fas fa-arrow-up"></i> Updated live</div>
+              <div class="sales-number" id="analytics-revenue">
+                ₱<?php echo number_format($analytics['today']['revenue'], 2); ?></div>
+              <div class="sales-change" id="analytics-revenue-sub"><i class="fas fa-calendar-day"></i> Today</div>
             </div>
             <div class="sales-card">
               <div class="sales-label">Fulfilled Orders</div>
-              <div class="sales-number"><?php echo $fulfilled_orders_count; ?></div>
-              <div class="sales-change" style="color:#5f8b74;">
-                <?php echo $completed_orders_count; ?> completed · <?php echo $pending_orders_count; ?> pending
+              <div class="sales-number" id="analytics-orders"><?php echo $analytics['today']['orders']; ?></div>
+              <div class="sales-change" style="color:#5f8b74;" id="analytics-orders-sub">
+                <?php echo $fulfilled_orders_count; ?> total completed · <?php echo $pending_orders; ?> pending
               </div>
             </div>
             <div class="sales-card">
               <div class="sales-label">Avg. Order Value</div>
-              <div class="sales-number"><?php echo "₱" . number_format($avg_order_value, 2); ?></div>
-              <div class="sales-change" style="color:#5f8b74;">
-                +<?php echo number_format($avg_order_value - $last_week_avg_order_value, 2); ?> vs last week
+              <div class="sales-number" id="analytics-avg">₱<?php echo number_format($analytics['today']['avg'], 2); ?>
+              </div>
+              <div class="sales-change" style="color:#5f8b74;" id="analytics-avg-sub">
+                <?php
+                $diff = $avg_order_value - $last_week_avg_order_value;
+                $sign = $diff >= 0 ? '+' : '';
+                echo $sign . number_format($diff, 2);
+                ?> vs last week
               </div>
             </div>
           </div>
@@ -993,20 +1038,24 @@ $completed_orders = $restaurant_id
             <i class="fas fa-cloud-upload-alt"></i>
             <p>Drag & Drop your image here</p>
             <span>or click to browse files</span>
-            <input type="file" name="image" id="addFileInput" accept="image/*" onchange="previewImage(this, 'addDropZone', 'preview-img', 'image-preview')">
+            <input type="file" name="image" id="addFileInput" accept="image/*"
+              onchange="previewImage(this, 'addDropZone', 'preview-img', 'image-preview')">
           </div>
           <div id="image-preview" class="img-preview-container" style="display: none;">
-            <button type="button" class="remove-preview-btn" onclick="removePreview('addFileInput', 'preview-img', 'image-preview', 'addDropZone')" title="Remove Image">
+            <button type="button" class="remove-preview-btn"
+              onclick="removePreview('addFileInput', 'preview-img', 'image-preview', 'addDropZone')"
+              title="Remove Image">
               <i class="fas fa-times"></i>
             </button>
             <img id="preview-img" src="" alt="Preview">
           </div>
         </div>
-        <button type="button" class="btn-modal-cancel" onclick="closeAddModal()">Cancel</button>
-        <button type="submit" class="btn-modal-submit"><i class="fas fa-plus"></i> Add Item</button>
+        <div class="modal-actions">
+          <button type="button" class="btn-modal-cancel" onclick="closeAddModal()">Cancel</button>
+          <button type="submit" class="btn-modal-submit"><i class="fas fa-plus"></i> Add Item</button>
+        </div>
+      </form>
     </div>
-    </form>
-  </div>
   </div>
 
   <!-- ── Edit Item Modal ── -->
@@ -1036,21 +1085,26 @@ $completed_orders = $restaurant_id
             <i class="fas fa-cloud-upload-alt"></i>
             <p>Drag & Drop a new image here</p>
             <span>or click to browse files</span>
-            <input type="file" name="image" id="editFileInput" accept="image/*" onchange="previewImage(this, 'editDropZone', 'edit-preview-img', 'edit-image-preview')">
+            <input type="file" name="image" id="editFileInput" accept="image/*"
+              onchange="previewImage(this, 'editDropZone', 'edit-preview-img', 'edit-image-preview')">
           </div>
           <div id="edit-image-preview" class="img-preview-container" style="display: none;">
-            <button type="button" class="remove-preview-btn" onclick="removePreview('editFileInput', 'edit-preview-img', 'edit-image-preview', 'editDropZone')" title="Remove Image">
+            <button type="button" class="remove-preview-btn"
+              onclick="removePreview('editFileInput', 'edit-preview-img', 'edit-image-preview', 'editDropZone')"
+              title="Remove Image">
               <i class="fas fa-times"></i>
             </button>
             <img id="edit-preview-img" src="" alt="Preview">
           </div>
-          <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 8px;">Leave empty to keep current image</small>
+          <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 8px;">Leave empty to keep current
+            image</small>
         </div>
-        <button type="button" class="btn-modal-cancel" onclick="closeEditModal()">Cancel</button>
-        <button type="submit" class="btn-modal-submit"><i class="fas fa-check"></i> Update Item</button>
+        <div class="modal-actions">
+          <button type="button" class="btn-modal-cancel" onclick="closeEditModal()">Cancel</button>
+          <button type="submit" class="btn-modal-submit"><i class="fas fa-check"></i> Update Item</button>
+        </div>
+      </form>
     </div>
-    </form>
-  </div>
   </div>
 
   <!-- ── All Transactions Modal ── -->
@@ -1076,7 +1130,8 @@ $completed_orders = $restaurant_id
                 <span
                   style="font-weight: 600; color: #0f4a2f; font-size: 0.95rem;">#<?php echo $txn['queue_number']; ?></span>
                 <div style="font-size: 0.8rem; color: #5f8b74; margin-top: 4px;">
-                  <?php echo date('M d, g:i A', strtotime($txn['order_date'])); ?></div>
+                  <?php echo date('M d, g:i A', strtotime($txn['order_date'])); ?>
+                </div>
               </div>
               <div style="font-size: 0.85rem; color: #333;">
                 <?php echo htmlspecialchars(implode(', ', $itemNames)); ?>
@@ -1277,20 +1332,20 @@ $completed_orders = $restaurant_id
         reader.onload = function (e) {
           previewImg.src = e.target.result;
           previewCont.style.display = 'inline-block';
-          if(dropZone) dropZone.style.display = 'none';
+          if (dropZone) dropZone.style.display = 'none';
         };
         reader.readAsDataURL(input.files[0]);
       } else {
         previewCont.style.display = 'none';
-        if(dropZone) dropZone.style.display = 'block';
+        if (dropZone) dropZone.style.display = 'block';
       }
     }
 
     function removePreview(inputId, previewImgId, previewContainerId, dropZoneId) {
-       document.getElementById(inputId).value = '';
-       document.getElementById(previewImgId).src = '';
-       document.getElementById(previewContainerId).style.display = 'none';
-       document.getElementById(dropZoneId).style.display = 'block';
+      document.getElementById(inputId).value = '';
+      document.getElementById(previewImgId).src = '';
+      document.getElementById(previewContainerId).style.display = 'none';
+      document.getElementById(dropZoneId).style.display = 'block';
     }
 
     // Setup drag and drop for a specific zone
@@ -1298,7 +1353,7 @@ $completed_orders = $restaurant_id
       const dropZone = document.getElementById(dropZoneId);
       const input = document.getElementById(inputId);
 
-      if(!dropZone || !input) return;
+      if (!dropZone || !input) return;
 
       ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropZone.addEventListener(eventName, preventDefaults, false);
@@ -1322,7 +1377,7 @@ $completed_orders = $restaurant_id
       function handleDrop(e) {
         const dt = e.dataTransfer;
         const files = dt.files;
-        
+
         if (files && files.length > 0) {
           input.files = files;
           // Trigger change event to load preview
@@ -1339,8 +1394,8 @@ $completed_orders = $restaurant_id
     });
 
 
-    function openAddModal() { 
-      document.getElementById('addItemModal').style.display = 'flex'; 
+    function openAddModal() {
+      document.getElementById('addItemModal').style.display = 'flex';
       removePreview('addFileInput', 'preview-img', 'image-preview', 'addDropZone');
       document.getElementById('addItemForm').reset();
     }
@@ -1363,18 +1418,44 @@ $completed_orders = $restaurant_id
       if (confirm("Mark current customer as completed and move to next customer?")) {
         // Find the first pending or preparing order
         const orderSelects = document.querySelectorAll('.order-status-select');
+        let foundSelect = null;
         let currentOrderId = null;
 
         for (let select of orderSelects) {
           if (select.value === 'P' || select.value === 'PR') {
-            currentOrderId = select.getAttribute('onchange').match(/updateOrderStatus\((\d+)/)[1];
+            const match = select.getAttribute('onchange').match(/updateOrderStatus\((\d+)/);
+            if (match) {
+              currentOrderId = match[1];
+              foundSelect = select;
+            }
             break;
           }
         }
 
-        if (currentOrderId) {
-          // Mark current order as completed
-          updateOrderStatus(currentOrderId, 'C');
+        if (currentOrderId && foundSelect) {
+          // Directly call the status update without relying on event.target
+          foundSelect.disabled = true;
+          fetch('frontend/update_order_status.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'order_id=' + currentOrderId + '&status=C'
+          })
+            .then(res => res.json())
+            .then(data => {
+              foundSelect.disabled = false;
+              if (data.success) {
+                updateStatusDisplay(foundSelect, 'C');
+                foundSelect.value = 'C';
+                showStatusNotification('Order #' + currentOrderId + ' marked as completed', 'success');
+                setTimeout(() => location.reload(), 1000);
+              } else {
+                showStatusNotification('Error: ' + (data.error || 'Failed to update order'), 'error');
+              }
+            })
+            .catch(() => {
+              foundSelect.disabled = false;
+              showStatusNotification('Network error. Please try again.', 'error');
+            });
         } else {
           showStatusNotification('No pending orders in queue', 'error');
         }
@@ -1465,6 +1546,22 @@ $completed_orders = $restaurant_id
         }
       });
     });
+
+    // ── Analytics Period Filter ──
+    const analyticsData = JSON.parse(document.getElementById('analytics-data').textContent);
+    const periodLabels = { today: 'Today', this_week: 'This Week', this_month: 'This Month', all: 'All Time' };
+
+    function setAnalyticsPeriod(period, btn) {
+      // Update active button
+      document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active-period'));
+      btn.classList.add('active-period');
+
+      const d = analyticsData[period];
+      document.getElementById('analytics-revenue').textContent = '₱' + parseFloat(d.revenue).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('analytics-orders').textContent = d.orders;
+      document.getElementById('analytics-avg').textContent = '₱' + parseFloat(d.avg).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('analytics-revenue-sub').innerHTML = '<i class="fas fa-calendar-day"></i> ' + periodLabels[period];
+    }
   </script>
 </body>
 

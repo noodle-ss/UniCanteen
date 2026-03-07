@@ -109,6 +109,9 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'customer';
             case 'register':
                 include 'frontend/register.php';
                 break;
+            case 'forgot-password':
+                include 'frontend/forgot-password.php';
+                break;
             case 'cart':
                 include 'frontend/cart.php';
                 break;

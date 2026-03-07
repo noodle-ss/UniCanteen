@@ -20,6 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $password = $_POST['password'];
         $confirm_password = $_POST['confirm_password'];
         $agree_terms = isset($_POST['agree_terms']);
+        $security_question = sanitizeInput($_POST['security_question'] ?? '');
+        $security_answer = sanitizeInput($_POST['security_answer'] ?? '');
 
         $errors = [];
 
@@ -55,6 +57,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $errors[] = 'You must agree to the Terms and Conditions';
         }
 
+        if (empty($security_question)) {
+            $errors[] = 'Please select a security question';
+        }
+        if (empty($security_answer)) {
+            $errors[] = 'Please provide an answer to your security question';
+        } elseif (strlen($security_answer) < 2) {
+            $errors[] = 'Security answer must be at least 2 characters';
+        }
+
         if (empty($errors)) {
             $checkStmt = $db->prepare("SELECT ID FROM Users WHERE email = ?");
             $checkStmt->bind_param("s", $email);
@@ -65,15 +76,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $errors[] = 'Email already registered. Please use a different email or <a href="' . url('index.php?page=login') . '" style="color:#007a3e;font-weight:600;">login here</a>.';
             } else {
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT, ['cost' => BCRYPT_COST]);
+                $hashed_answer = password_hash(strtolower(trim($security_answer)), PASSWORD_DEFAULT, ['cost' => BCRYPT_COST]);
 
                 $db->begin_transaction();
 
                 try {
                     $insertStmt = $db->prepare(
-                        "INSERT INTO Users (email, password, full_name, role, is_active, login_attempts) 
-                         VALUES (?, ?, ?, 'U', TRUE, 0)"
+                        "INSERT INTO Users (email, password, full_name, role, is_active, login_attempts, security_question, security_answer)
+                         VALUES (?, ?, ?, 'U', TRUE, 0, ?, ?)"
                     );
-                    $insertStmt->bind_param("sss", $email, $hashed_password, $full_name);
+                    $insertStmt->bind_param("sssss", $email, $hashed_password, $full_name, $security_question, $hashed_answer);
 
                     if ($insertStmt->execute()) {
                         $user_id = $db->insert_id;
@@ -130,6 +142,29 @@ $csrf_token = generateCSRFToken();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
+        body {
+            display: block;
+            min-height: auto;
+            margin: 0;
+            padding: 0;
+            background: #f0f7f0;
+        }
+
+        .main-content {
+            margin-left: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wrapper {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 36px;
+            width: 100%;
+        }
+
         .auth-container {
             max-width: 450px;
             margin: 50px auto;
@@ -497,6 +532,50 @@ $csrf_token = generateCSRFToken();
                                     <span class="privacy-link" onclick="openModal('privacy')">Privacy Policy</span>
                                 </span>
                             </label>
+                        </div>
+
+                        <!-- Security Question -->
+                        <div style="margin-bottom: 20px; border-top: 1px solid #e0f0e8; padding-top: 20px;">
+                            <p style="font-size: 0.85rem; font-weight: 600; color: #1a4d31; margin: 0 0 14px;">
+                                <i class="fas fa-shield-alt" style="color: var(--dlsu-green);"></i>
+                                Account Recovery — Security Question
+                            </p>
+                            <div style="margin-bottom: 14px;">
+                                <label
+                                    style="display: block; margin-bottom: 7px; font-size: 0.85rem; font-weight: 600; color: #1a4d31;">
+                                    <i class="fas fa-question-circle"></i> Select a Security Question
+                                </label>
+                                <select name="security_question" required
+                                    style="width: 100%; padding: 13px 16px; border: 1.5px solid #cae3d6; border-radius: 14px; font-family: 'Inter', sans-serif; font-size: 0.92rem; color: #1e3a2f; background: #f9fffc; outline: none; box-sizing: border-box;">
+                                    <option value="" disabled selected>Choose a question…</option>
+                                    <option value="What is the name of your childhood pet?">What is the name of your
+                                        childhood pet?</option>
+                                    <option value="What city were you born in?">What city were you born in?</option>
+                                    <option value="What is your mother's maiden name?">What is your mother's maiden name?
+                                    </option>
+                                    <option value="What was the name of your first school?">What was the name of your first
+                                        school?</option>
+                                    <option value="What is your favorite book?">What is your favorite book?</option>
+                                    <option value="What is the name of your oldest sibling?">What is the name of your oldest
+                                        sibling?</option>
+                                    <option value="What street did you grow up on?">What street did you grow up on?</option>
+                                    <option value="What was your childhood nickname?">What was your childhood nickname?
+                                    </option>
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    style="display: block; margin-bottom: 7px; font-size: 0.85rem; font-weight: 600; color: #1a4d31;">
+                                    <i class="fas fa-key"></i> Your Answer
+                                </label>
+                                <input type="text" name="security_answer" required
+                                    style="width: 100%; padding: 13px 16px; border: 1.5px solid #cae3d6; border-radius: 14px; font-family: 'Inter', sans-serif; font-size: 0.92rem; color: #1e3a2f; background: #f9fffc; outline: none; box-sizing: border-box;"
+                                    placeholder="Your answer (not case-sensitive)" autocomplete="off">
+                                <small style="color:#8faa9a; font-size:0.78rem; margin-top:4px; display:block;">
+                                    <i class="fas fa-info-circle"></i> Used to recover your account if you forget your
+                                    password.
+                                </small>
+                            </div>
                         </div>
 
                         <button type="submit" class="btn-primary" style="width: 100%; padding: 16px; font-size: 1.1rem;">

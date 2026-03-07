@@ -24,7 +24,9 @@ CREATE TABLE Users (
     is_banned BOOLEAN DEFAULT FALSE,
     last_login TIMESTAMP NULL,
     login_attempts INT DEFAULT 0,
-    locked_until TIMESTAMP NULL
+    locked_until TIMESTAMP NULL,
+    security_question VARCHAR(255) NULL,
+    security_answer VARCHAR(255) NULL
 );
 
 -- ==================== SESSIONS TABLE ====================
@@ -141,13 +143,15 @@ INSERT INTO Categories (name, description) VALUES
 ('Desserts', 'Sweet treats');
 
 -- Insert sample users (password for all accounts: 'password123')
+-- Security answer for all sample accounts: 'answer123'
 -- Hash generated with: password_hash('password123', PASSWORD_DEFAULT)
-INSERT INTO Users (email, password, full_name, role, is_active, login_attempts) VALUES
-('customer1@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Juan Dela Cruz', 'U', TRUE, 0),
-('customer2@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Maria Santos', 'U', TRUE, 0),
-('vendor1@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Bloemen Hall Manager', 'V', TRUE, 0),
-('vendor2@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Agno Eatery Owner', 'V', TRUE, 0),
-('admin@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'System Administrator', 'A', TRUE, 0);
+-- Answer hash generated with: password_hash('answer123', PASSWORD_DEFAULT)
+INSERT INTO Users (email, password, full_name, role, is_active, login_attempts, security_question, security_answer) VALUES
+('customer1@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Juan Dela Cruz', 'U', TRUE, 0, 'What is the name of your childhood pet?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
+('customer2@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Maria Santos', 'U', TRUE, 0, 'What city were you born in?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
+('vendor1@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Bloemen Hall Manager', 'V', TRUE, 0, 'What is your mother\'s maiden name?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
+('vendor2@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Agno Eatery Owner', 'V', TRUE, 0, 'What was the name of your first school?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
+('admin@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'System Administrator', 'A', TRUE, 0, 'What is your favorite book?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.');
 
 -- Insert restaurants
 INSERT INTO Restaurants (name, address, description, owner_ID, is_open) VALUES
