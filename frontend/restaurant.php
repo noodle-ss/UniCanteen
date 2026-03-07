@@ -634,7 +634,7 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
                         <?php if (isset($_SESSION['user_id'])): ?>
                             <a
                                 href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>
-                            <a href="frontend/logout.php" class="btn-outline">Logout</a>
+                            <a href="index.php?page=logout" class="btn-outline">Logout</a>
                         <?php else: ?>
                             <a href="index.php?page=login">Sign In</a>
                             <a href="index.php?page=register" class="btn-outline">Register</a>
