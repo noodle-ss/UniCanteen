@@ -6,9 +6,9 @@ require_once __DIR__ . '/../config/database.php';
 requireVendor();
 
 $item_id = $_POST['item_id'] ?? null;
-$name    = $_POST['item_name'] ?? '';
-$price   = floatval($_POST['price'] ?? 0);
-$avail   = isset($_POST['availability']) ? intval($_POST['availability']) : 1;
+$name = $_POST['item_name'] ?? '';
+$price = floatval($_POST['price'] ?? 0);
+$avail = isset($_POST['availability']) ? intval($_POST['availability']) : 1;
 
 // Handle image upload
 $image_url = null;

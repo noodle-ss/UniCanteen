@@ -24,7 +24,7 @@ if (!$restaurant_id) {
 }
 
 // read input
-$name  = $_POST['name'] ?? '';
+$name = $_POST['name'] ?? '';
 $price = floatval($_POST['price'] ?? 0);
 $isAvailable = (isset($_POST['status']) && $_POST['status'] === 'available') ? 1 : 0;
 
@@ -88,9 +88,9 @@ if (trim($early) !== '') {
 // send JSON header and diagnostic info (including stray output)
 header('Content-Type: application/json');
 echo json_encode([
-    'success'       => $success,
-    'error'         => $error,
+    'success' => $success,
+    'error' => $error,
     'restaurant_id' => $restaurant_id,
-    'debug'         => $debug,
+    'debug' => $debug,
 ]);
 ?>
