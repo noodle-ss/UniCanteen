@@ -191,6 +191,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_action'])) {
             $action_type = 'success';
         }
     }
+
+    //  Toggle Maintenance Mode 
+    if ($_POST['admin_action'] === 'toggle_maintenance') {
+        $index_path = dirname(__DIR__) . '/index.php';
+        if (file_exists($index_path)) {
+            $contents = file_get_contents($index_path);
+            if ($contents !== false) {
+                // Detect current state and flip it
+                if (preg_match("/define\('MAINTENANCE_MODE',\s*(true|false)\)/", $contents, $matches)) {
+                    $current = $matches[1];
+                    $new_val = ($current === 'true') ? 'false' : 'true';
+                    $new_contents = preg_replace(
+                        "/define\('MAINTENANCE_MODE',\s*(true|false)\)/",
+                        "define('MAINTENANCE_MODE', {$new_val})",
+                        $contents
+                    );
+                    if (file_put_contents($index_path, $new_contents) !== false) {
+                        $admin_id = $_SESSION['user_id'];
+                        $log = $db->prepare("INSERT INTO UserLogs (user_id, action, ip_address, user_agent) VALUES (?, ?, ?, ?)");
+                        $action_str = "ADMIN_MAINTENANCE_MODE_" . strtoupper($new_val);
+                        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+                        $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+                        $log->bind_param("isss", $admin_id, $action_str, $ip, $ua);
+                        $log->execute();
+                        $action_message = 'Maintenance mode ' . ($new_val === 'true' ? 'ENABLED' : 'DISABLED') . ' successfully.';
+                        $action_type = 'success';
+                    } else {
+                        $action_message = 'Failed to write to index.php. Check file permissions.';
+                        $action_type = 'error';
+                    }
+                } else {
+                    $action_message = 'Could not find MAINTENANCE_MODE constant in index.php.';
+                    $action_type = 'error';
+                }
+            } else {
+                $action_message = 'Failed to read index.php.';
+                $action_type = 'error';
+            }
+        } else {
+            $action_message = 'index.php not found at expected path.';
+            $action_type = 'error';
+        }
+    }
 }
 
 // FETCH DATA FOR DASHBOARD
@@ -250,6 +293,16 @@ $admin_logs = $db->query($logs_query)->fetch_all(MYSQLI_ASSOC);
 
 // All restaurants for review filter dropdown
 $restaurants_list = $db->query("SELECT ID, name FROM Restaurants ORDER BY name")->fetch_all(MYSQLI_ASSOC);
+
+// Read current maintenance mode from index.php
+$maintenance_mode_current = false;
+$index_path = dirname(__DIR__) . '/index.php';
+if (file_exists($index_path)) {
+    $index_contents = file_get_contents($index_path);
+    if ($index_contents !== false && preg_match("/define\('MAINTENANCE_MODE',\s*(true|false)\)/", $index_contents, $mm_matches)) {
+        $maintenance_mode_current = ($mm_matches[1] === 'true');
+    }
+}
 
 // Reviews — filter by restaurant if selected
 $filter_restaurant_id = intval($_GET['review_restaurant'] ?? 0);
@@ -580,6 +633,12 @@ $total_reviews = count($reviews);
         <div class="admin-tab" onclick="switchTab('reviews', this)">
           <i class="fas fa-comments"></i> Comment Moderation
           <span class="tab-count"><?php echo $total_reviews; ?></span>
+        </div>
+        <div class="admin-tab" onclick="switchTab('maintenance', this)" style="<?php echo $maintenance_mode_current ? 'border-color:#b13e3e; color:#b13e3e;' : ''; ?>">
+          <i class="fas fa-tools"></i> Maintenance
+          <?php if ($maintenance_mode_current): ?>
+            <span class="tab-count" style="background:#b13e3e; color:#fff;">ON</span>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -1070,6 +1129,230 @@ $total_reviews = count($reviews);
           <?php endif; ?>
         </div>
       </div>
+
+      <!-- TAB 7: MAINTENANCE                          -->
+
+      <div id="tab-maintenance" class="tab-panel">
+        <div class="info-card" style="max-width:68%; margin:0 auto 30px; padding:20px 24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+            <h3 style="margin:0;"><i class="fas fa-tools"></i> Maintenance Mode</h3>
+          </div>
+
+          <!-- Status indicator card -->
+          <div style="
+            background: <?php echo $maintenance_mode_current ? '#fff5f5' : '#f0f9f4'; ?>;
+            border: 2px solid <?php echo $maintenance_mode_current ? '#f5c6cb' : '#b7dfc8'; ?>;
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin: 0 0 18px;
+            text-align: center;
+          ">
+            <div style="margin-bottom: 16px;">
+              <span style="
+                display: inline-flex; align-items: center; gap: 10px;
+                background: <?php echo $maintenance_mode_current ? '#b13e3e' : '#007a3e'; ?>;
+                color: white; border-radius: 40px;
+                padding: 6px 18px; font-size: 0.88rem; font-weight: 700;
+              ">
+                <i class="fas <?php echo $maintenance_mode_current ? 'fa-hard-hat' : 'fa-check-circle'; ?>"></i>
+                Maintenance Mode is currently <?php echo $maintenance_mode_current ? 'ENABLED' : 'DISABLED'; ?>
+              </span>
+            </div>
+
+            <p style="color: #4a6858; font-size: 0.88rem; margin: 0 0 16px; line-height: 1.5;">
+              <?php if ($maintenance_mode_current): ?>
+                <i class="fas fa-exclamation-triangle" style="color:#b13e3e;"></i>
+                The site is currently in maintenance mode. Regular users and vendors <strong>cannot access</strong> the platform.
+                Only administrators can log in. Click the button below to bring the site back online.
+              <?php else: ?>
+                <i class="fas fa-info-circle" style="color:#007a3e;"></i>
+                The site is running normally. Enabling maintenance mode will prevent regular users and vendors from accessing the platform.
+                Administrators will still be able to log in.
+              <?php endif; ?>
+            </p>
+
+            <!-- Confirmation toggle slider -->
+            <?php if (!$maintenance_mode_current): ?>
+            <div style="margin-bottom: 14px;">
+              <label id="maintenance-confirm-label" style="
+                display: inline-flex; align-items: center; gap: 14px;
+                cursor: pointer; user-select: none;
+                background: #fff8f8; border: 1.5px solid #f5c6cb;
+                border-radius: 40px; padding: 10px 20px 10px 14px;
+                font-size: 0.88rem; font-weight: 600; color: #7a2c2c;
+                transition: all 0.2s;
+              ">
+                <!-- Toggle track -->
+                <span id="maintenance-toggle-track" style="
+                  position: relative; display: inline-block;
+                  width: 48px; height: 26px; border-radius: 13px;
+                  background: #e0c4c4; transition: background 0.3s;
+                  flex-shrink: 0;
+                ">
+                  <span id="maintenance-toggle-thumb" style="
+                    position: absolute; top: 3px; left: 3px;
+                    width: 20px; height: 20px; border-radius: 50%;
+                    background: white; transition: left 0.3s;
+                    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+                  "></span>
+                </span>
+                <span id="maintenance-confirm-text">
+                  <i class="fas fa-exclamation-triangle"></i> I understand this will lock out all users — confirm to proceed
+                </span>
+                <input type="checkbox" id="maintenance-confirm-check" style="display:none;" onchange="handleMaintenanceToggle(this)">
+              </label>
+            </div>
+            <?php endif; ?>
+
+            <form method="POST" action="index.php?page=sysadmin&tab=maintenance" id="maintenance-form">
+              <input type="hidden" name="admin_action" value="toggle_maintenance">
+              <button type="button" id="maintenance-btn"
+                <?php echo !$maintenance_mode_current ? 'disabled' : ''; ?>
+                onclick="submitMaintenanceForm()"
+                style="
+                display: inline-flex; align-items: center; gap: 10px;
+                background: <?php echo $maintenance_mode_current ? '#007a3e' : '#b13e3e'; ?>;
+                color: white; border: none; border-radius: 40px;
+                padding: 10px 26px; font-size: 0.9rem; font-weight: 700;
+                font-family: 'Inter', sans-serif; transition: all 0.3s;
+                box-shadow: 0 4px 14px <?php echo $maintenance_mode_current ? 'rgba(0,122,62,0.25)' : 'rgba(177,62,62,0.25)'; ?>;
+                <?php echo !$maintenance_mode_current ? 'opacity:0.38; cursor:not-allowed;' : 'cursor:pointer;' ?>
+              ">
+                <i class="fas <?php echo $maintenance_mode_current ? 'fa-toggle-on' : 'fa-hard-hat'; ?>" id="maintenance-btn-icon"></i>
+                <span id="maintenance-btn-text"><?php echo $maintenance_mode_current ? 'Disable Maintenance Mode' : 'Enable Maintenance Mode'; ?></span>
+              </button>
+            </form>
+
+            <style>
+              #maintenance-confirm-label:has(#maintenance-confirm-check:checked) {
+                background: #fff0f0; border-color: #e57373;
+              }
+              #maintenance-btn:not([disabled]):hover {
+                transform: translateY(-2px);
+              }
+              @keyframes countdown-pulse {
+                0%, 100% { box-shadow: 0 4px 14px rgba(177,62,62,0.25); }
+                50%       { box-shadow: 0 4px 24px rgba(177,62,62,0.55); }
+              }
+              .counting-down { animation: countdown-pulse 1s ease-in-out infinite; }
+            </style>
+
+            <script>
+              var maintenanceRAF = null;
+              var maintenanceStartTime = null;
+              var maintenanceDuration = 5000; // ms
+              var maintenanceCancelled = false;
+
+              function handleMaintenanceToggle(checkbox) {
+                var track  = document.getElementById('maintenance-toggle-track');
+                var thumb  = document.getElementById('maintenance-toggle-thumb');
+                var btn    = document.getElementById('maintenance-btn');
+                var label  = document.getElementById('maintenance-confirm-label');
+
+                if (checkbox.checked) {
+                  // Visually activate the slider
+                  track.style.background = '#b13e3e';
+                  thumb.style.left = '25px';
+                  label.style.borderColor = '#b13e3e';
+                  label.style.color = '#b13e3e';
+
+                  // Start accurate countdown using Date.now() + rAF
+                  maintenanceCancelled = false;
+                  maintenanceStartTime = Date.now();
+                  btn.classList.add('counting-down');
+                  runCountdown();
+
+                } else {
+                  // Reset slider
+                  track.style.background = '#e0c4c4';
+                  thumb.style.left = '3px';
+                  label.style.borderColor = '#f5c6cb';
+                  label.style.color = '#7a2c2c';
+
+                  // Cancel the rAF loop and re-disable button
+                  maintenanceCancelled = true;
+                  if (maintenanceRAF) cancelAnimationFrame(maintenanceRAF);
+                  btn.disabled = true;
+                  btn.style.opacity = '0.38';
+                  btn.style.cursor = 'not-allowed';
+                  btn.classList.remove('counting-down');
+                  document.getElementById('maintenance-btn-text').textContent = '<?php echo $maintenance_mode_current ? 'Disable Maintenance Mode' : 'Enable Maintenance Mode'; ?>';
+                  document.getElementById('maintenance-btn-icon').className = 'fas <?php echo $maintenance_mode_current ? 'fa-toggle-on' : 'fa-hard-hat'; ?>';
+                }
+              }
+
+              function runCountdown() {
+                if (maintenanceCancelled) return;
+
+                var elapsed = Date.now() - maintenanceStartTime;
+                var remaining = Math.ceil((maintenanceDuration - elapsed) / 1000);
+
+                if (elapsed >= maintenanceDuration) {
+                  // Done — enable button
+                  var btn = document.getElementById('maintenance-btn');
+                  btn.disabled = false;
+                  btn.style.opacity = '1';
+                  btn.style.cursor = 'pointer';
+                  btn.classList.remove('counting-down');
+                  document.getElementById('maintenance-btn-text').textContent = '<?php echo $maintenance_mode_current ? 'Disable Maintenance Mode' : 'Enable Maintenance Mode'; ?>';
+                  document.getElementById('maintenance-btn-icon').className = 'fas <?php echo $maintenance_mode_current ? 'fa-toggle-on' : 'fa-hard-hat'; ?>';
+                } else {
+                  // Still counting — update display and schedule next frame
+                  updateCountdownBtn(remaining);
+                  maintenanceRAF = requestAnimationFrame(runCountdown);
+                }
+              }
+
+              // Clicking the label area also toggles checkbox (since input is hidden)
+              document.addEventListener('DOMContentLoaded', function() {
+                var label = document.getElementById('maintenance-confirm-label');
+                if (label) {
+                  label.addEventListener('click', function() {
+                    var cb = document.getElementById('maintenance-confirm-check');
+                    cb.checked = !cb.checked;
+                    handleMaintenanceToggle(cb);
+                  });
+                }
+              });
+
+              function updateCountdownBtn(remaining) {
+                var btn = document.getElementById('maintenance-btn');
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+                btn.style.cursor = 'not-allowed';
+                document.getElementById('maintenance-btn-icon').className = 'fas fa-clock';
+                document.getElementById('maintenance-btn-text').textContent =
+                  '<?php echo $maintenance_mode_current ? 'Disabling' : 'Enabling'; ?> in ' + remaining + 's…';
+              }
+
+              function submitMaintenanceForm() {
+                var btn = document.getElementById('maintenance-btn');
+                if (btn.disabled) return;
+                var msg = '<?php echo $maintenance_mode_current
+                  ? 'Disable maintenance mode? The site will become publicly accessible.'
+                  : 'Enable maintenance mode? Regular users will be locked out until you disable it.'; ?>';
+                if (confirm(msg)) {
+                  document.getElementById('maintenance-form').submit();
+                }
+              }
+            </script>
+          </div>
+
+          <!-- What maintenance mode does info box -->
+          <div style="background:#f8fbff; border:1px solid #d0e4f7; border-radius:12px; padding:14px 18px; margin-top:4px;">
+            <div style="font-weight:700; color:#1a4d7c; margin-bottom:12px; font-size:0.9rem;">
+              <i class="fas fa-info-circle" style="color:#3b82f6;"></i> What does maintenance mode do?
+            </div>
+            <ul style="margin:0; padding-left:20px; color:#3a5a7a; font-size:0.88rem; line-height:1.8;">
+              <li>Displays a maintenance page to all non-admin visitors</li>
+              <li>Prevents customers and vendors from logging in or placing orders</li>
+              <li>Allows administrators to continue accessing the system</li>
+              <li>Changes the <code style="background:#e8f0fe; padding:1px 6px; border-radius:4px;">MAINTENANCE_MODE</code> constant in <code style="background:#e8f0fe; padding:1px 6px; border-radius:4px;">index.php</code></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
 
       <footer class="footer-note">
       <i class="fas fa-user-shield"></i>
