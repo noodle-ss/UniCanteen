@@ -76,6 +76,23 @@
             font-size: 1.4rem;
         }
 
+        /* ── Sysadmin button – active ── */
+        .switch-btn.active {
+            opacity: 1;
+            pointer-events: auto;
+            cursor: pointer;
+            color: var(--green-dark);
+            background: var(--green-pale);
+            border: 1px solid var(--green-light);
+            transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+        }
+
+        .switch-btn.active:hover {
+            background: var(--green-light);
+            box-shadow: 0 4px 16px var(--shadow);
+            color: var(--text-dark);
+        }
+
         /* ── Main content area ── */
         .main-content {
             flex: 1;
@@ -129,8 +146,6 @@
             margin: 0 auto 28px;
             animation: pulse-ring 2.4s ease-in-out infinite;
         }
-
-        
 
         .icon-wrap i {
             font-size: 2.4rem;
@@ -216,17 +231,15 @@
             color: var(--green-light);
             white-space: nowrap;
         }
-
-
     </style>
 </head>
 <body>
 
-    <!-- Sidebar (greyed out — not interactive during maintenance) -->
+    <!-- Sidebar -->
     <div class="left-switcher">
         <a class="switch-btn"><i class="fas fa-user-graduate"></i><span>CUSTOMER</span></a>
         <a class="switch-btn"><i class="fas fa-store"></i><span>VENDOR</span></a>
-        <a class="switch-btn"><i class="fas fa-user-tie"></i><span>SYSADMIN</span></a>
+        <a class="switch-btn active" href="index.php?page=sysadmin"><i class="fas fa-user-tie"></i><span>SYSADMIN</span></a>
     </div>
 
     <div class="main-content">

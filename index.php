@@ -1,10 +1,30 @@
 <?php
 require_once __DIR__ . '/config/config.php';
-define('MAINTENANCE_MODE', false);
+define('MAINTENANCE_MODE', true);
+
+// Allow sysadmin access during maintenance mode
+$page = isset($_GET['page']) ? $_GET['page'] : 'customer';
+$is_sysadmin_access = ($page === 'sysadmin');
+$is_logged_in_admin = isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'A';
 
 if (MAINTENANCE_MODE) {
-    include __DIR__ . '/frontend/maintenance.php';
-    exit();
+    // If trying to access sysadmin during maintenance
+    if ($is_sysadmin_access) {
+        // If not logged in as admin, redirect to login
+        if (!$is_logged_in_admin) {
+            $_SESSION['redirect_after_login'] = 'index.php?page=sysadmin';
+            header('Location: index.php?page=login');
+            exit();
+        }
+        // If logged in as admin, continue to load sysadmin page (skip maintenance page)
+    } elseif ($page === 'login') {
+        // Allow login page to load during maintenance (needed for sysadmin access)
+        // falls through to normal routing below
+    } else {
+        // For all other pages, show maintenance page
+        include __DIR__ . '/frontend/maintenance.php';
+        exit();
+    }
 }
 
 //this is a simple router/controller pattern where we include different frontend PHP files based on the 'page' query parameter. Each frontend file is responsible for rendering a specific view (customer, vendor, sysadmin) and handling its own logic. The left sidebar allows switching between these views, and the main content area displays the selected view's content.
@@ -14,9 +34,6 @@ if (isset($_GET['dev']) && $_GET['dev'] === 'vendor') {
     $_SESSION['user_role'] = 'V';        // matches the checks below
     $_SESSION['user_name'] = 'Test Vendor';
 } // this is temporary to allow quick access during development, but should be protected by proper authentication checks in production
-
-// Route logic
-$page = isset($_GET['page']) ? $_GET['page'] : 'customer';
 ?>
 <!DOCTYPE html>
 <html lang="en">
