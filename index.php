@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/config/config.php';
-define('MAINTENANCE_MODE', true);
+define('MAINTENANCE_MODE', false);
 
 // Allow sysadmin access during maintenance mode
 $page = isset($_GET['page']) ? $_GET['page'] : 'customer';
