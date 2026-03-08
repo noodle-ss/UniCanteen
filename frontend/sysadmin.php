@@ -1,3 +1,232 @@
+<?php
+// include mo ung sa index.php — config + session already loaded
+
+$db = Database::getInstance()->getConnection();
+
+// HANDLE POST ACTIONS (create vendor, ban/unban)
+
+$action_message = '';
+$action_type = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_action'])) {
+
+    // ── Create Vendor Account ──
+    if ($_POST['admin_action'] === 'create_vendor') {
+        $v_name     = sanitizeInput($_POST['vendor_name'] ?? '');
+        $v_email    = sanitizeInput($_POST['vendor_email'] ?? '');
+        $v_password = $_POST['vendor_password'] ?? '';
+        $r_name     = sanitizeInput($_POST['restaurant_name'] ?? '');
+        $r_address  = sanitizeInput($_POST['restaurant_address'] ?? '');
+        $r_desc     = sanitizeInput($_POST['restaurant_description'] ?? '');
+
+        $errors = [];
+        if (empty($v_name))     $errors[] = 'Vendor name is required.';
+        if (empty($v_email))    $errors[] = 'Email is required.';
+        if (empty($v_password)) $errors[] = 'Password is required.';
+        if (strlen($v_password) < 8) $errors[] = 'Password must be at least 8 characters.';
+        if (empty($r_name))     $errors[] = 'Restaurant name is required.';
+
+        // Check duplicate email
+        if (empty($errors)) {
+            $chk = $db->prepare("SELECT ID FROM Users WHERE email = ?");
+            $chk->bind_param("s", $v_email);
+            $chk->execute();
+            if ($chk->get_result()->num_rows > 0) {
+                $errors[] = 'Email is already registered.';
+            }
+        }
+
+        if (empty($errors)) {
+            $db->begin_transaction();
+            try {
+                $hashed = password_hash($v_password, PASSWORD_DEFAULT, ['cost' => BCRYPT_COST]);
+                $role = 'V';
+                $sq = 'What is your favorite book?';
+                $sa = password_hash('vendor', PASSWORD_DEFAULT, ['cost' => BCRYPT_COST]);
+
+                $ins = $db->prepare(
+                    "INSERT INTO Users (email, password, full_name, role, is_active, login_attempts, security_question, security_answer)
+                     VALUES (?, ?, ?, ?, TRUE, 0, ?, ?)"
+                );
+                $ins->bind_param("ssssss", $v_email, $hashed, $v_name, $role, $sq, $sa);
+                $ins->execute();
+                $vendor_id = $db->insert_id;
+
+                $ins2 = $db->prepare(
+                    "INSERT INTO Restaurants (name, address, description, owner_ID, is_open)
+                     VALUES (?, ?, ?, ?, TRUE)"
+                );
+                $ins2->bind_param("sssi", $r_name, $r_address, $r_desc, $vendor_id);
+                $ins2->execute();
+
+                // Log the action
+                $admin_id = $_SESSION['user_id'];
+                $log = $db->prepare("INSERT INTO UserLogs (user_id, action, ip_address, user_agent) VALUES (?, 'ADMIN_CREATE_VENDOR', ?, ?)");
+                $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+                $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+                $log->bind_param("iss", $admin_id, $ip, $ua);
+                $log->execute();
+
+                $db->commit();
+                $action_message = "Vendor account created successfully! ({$v_name} — {$r_name})";
+                $action_type = 'success';
+            } catch (Exception $e) {
+                $db->rollback();
+                $action_message = 'Failed to create vendor: ' . $e->getMessage();
+                $action_type = 'error';
+            }
+        } else {
+            $action_message = implode(' ', $errors);
+            $action_type = 'error';
+        }
+    }
+
+    //  Ban User
+    if ($_POST['admin_action'] === 'ban_user') {
+        $target_id = intval($_POST['user_id'] ?? 0);
+        if ($target_id && $target_id !== intval($_SESSION['user_id'])) {
+            $stmt = $db->prepare("UPDATE Users SET is_banned = TRUE, is_active = FALSE WHERE ID = ?");
+            $stmt->bind_param("i", $target_id);
+            if ($stmt->execute()) {
+                // Delete active sessions for banned user
+                $del = $db->prepare("DELETE FROM Sessions WHERE user_id = ?");
+                $del->bind_param("i", $target_id);
+                $del->execute();
+
+                $admin_id = $_SESSION['user_id'];
+                $log = $db->prepare("INSERT INTO UserLogs (user_id, action, ip_address, user_agent) VALUES (?, ?, ?, ?)");
+                $action_str = "ADMIN_BAN_USER_" . $target_id;
+                $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+                $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+                $log->bind_param("isss", $admin_id, $action_str, $ip, $ua);
+                $log->execute();
+
+                $action_message = 'User has been banned successfully.';
+                $action_type = 'success';
+            }
+        } else {
+            $action_message = 'Invalid user or you cannot ban yourself.';
+            $action_type = 'error';
+        }
+    }
+
+    //  Unban User (Whitelist) 
+    if ($_POST['admin_action'] === 'unban_user') {
+        $target_id = intval($_POST['user_id'] ?? 0);
+        if ($target_id) {
+            $stmt = $db->prepare("UPDATE Users SET is_banned = FALSE, is_active = TRUE, login_attempts = 0, locked_until = NULL WHERE ID = ?");
+            $stmt->bind_param("i", $target_id);
+            if ($stmt->execute()) {
+                $admin_id = $_SESSION['user_id'];
+                $log = $db->prepare("INSERT INTO UserLogs (user_id, action, ip_address, user_agent) VALUES (?, ?, ?, ?)");
+                $action_str = "ADMIN_UNBAN_USER_" . $target_id;
+                $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+                $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+                $log->bind_param("isss", $admin_id, $action_str, $ip, $ua);
+                $log->execute();
+
+                $action_message = 'User has been unbanned and whitelisted.';
+                $action_type = 'success';
+            }
+        }
+    }
+
+    //  Deactivate User (Blacklist) 
+    if ($_POST['admin_action'] === 'blacklist_user') {
+        $target_id = intval($_POST['user_id'] ?? 0);
+        if ($target_id && $target_id !== intval($_SESSION['user_id'])) {
+            $stmt = $db->prepare("UPDATE Users SET is_active = FALSE WHERE ID = ?");
+            $stmt->bind_param("i", $target_id);
+            if ($stmt->execute()) {
+                $del = $db->prepare("DELETE FROM Sessions WHERE user_id = ?");
+                $del->bind_param("i", $target_id);
+                $del->execute();
+
+                $admin_id = $_SESSION['user_id'];
+                $log = $db->prepare("INSERT INTO UserLogs (user_id, action, ip_address, user_agent) VALUES (?, ?, ?, ?)");
+                $action_str = "ADMIN_BLACKLIST_USER_" . $target_id;
+                $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+                $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+                $log->bind_param("isss", $admin_id, $action_str, $ip, $ua);
+                $log->execute();
+
+                $action_message = 'User has been blacklisted (deactivated).';
+                $action_type = 'success';
+            }
+        }
+    }
+
+    //  Toggle Restaurant Status 
+    if ($_POST['admin_action'] === 'toggle_restaurant') {
+        $rest_id = intval($_POST['restaurant_id'] ?? 0);
+        $new_status = intval($_POST['new_status'] ?? 0);
+        if ($rest_id) {
+            $stmt = $db->prepare("UPDATE Restaurants SET is_open = ? WHERE ID = ?");
+            $stmt->bind_param("ii", $new_status, $rest_id);
+            $stmt->execute();
+            $action_message = $new_status ? 'Restaurant enabled.' : 'Restaurant disabled.';
+            $action_type = 'success';
+        }
+    }
+}
+
+// FETCH DATA FOR DASHBOARD
+
+// Dashboard stats
+$total_users    = $db->query("SELECT COUNT(*) FROM Users WHERE role = 'U'")->fetch_row()[0];
+$total_vendors  = $db->query("SELECT COUNT(*) FROM Users WHERE role = 'V'")->fetch_row()[0];
+$total_orders   = $db->query("SELECT COUNT(*) FROM Orders")->fetch_row()[0];
+$banned_users   = $db->query("SELECT COUNT(*) FROM Users WHERE is_banned = TRUE")->fetch_row()[0];
+$active_stalls  = $db->query("SELECT COUNT(*) FROM Restaurants WHERE is_open = TRUE")->fetch_row()[0];
+$today_revenue  = $db->query("SELECT COALESCE(SUM(total_amount), 0) FROM Orders WHERE status='C' AND DATE(order_date) = CURDATE()")->fetch_row()[0];
+$today_orders   = $db->query("SELECT COUNT(*) FROM Orders WHERE DATE(order_date) = CURDATE()")->fetch_row()[0];
+
+// Vendors + their restaurants
+$vendors_query = "SELECT u.ID, u.full_name, u.email, u.is_active, u.is_banned, u.created_at, u.last_login,
+                         r.ID as restaurant_id, r.name as restaurant_name, r.address, r.is_open,
+                         (SELECT COUNT(*) FROM Items WHERE restaurant_ID = r.ID) as item_count,
+                         (SELECT COUNT(*) FROM Orders WHERE restaurant_ID = r.ID) as order_count,
+                         (SELECT COALESCE(SUM(total_amount), 0) FROM Orders WHERE restaurant_ID = r.ID AND status='C') as revenue
+                  FROM Users u
+                  LEFT JOIN Restaurants r ON u.ID = r.owner_ID
+                  WHERE u.role = 'V'
+                  ORDER BY u.created_at DESC";
+$vendors = $db->query($vendors_query)->fetch_all(MYSQLI_ASSOC);
+
+// All customers/staff users
+$users_query = "SELECT u.ID, u.full_name, u.email, u.role, u.is_active, u.is_banned, u.created_at, u.last_login, u.login_attempts,
+                       (SELECT COUNT(*) FROM Orders WHERE customer_ID = u.ID) as order_count,
+                       (SELECT COALESCE(SUM(total_amount), 0) FROM Orders WHERE customer_ID = u.ID) as total_spent
+                FROM Users u
+                WHERE u.role = 'U'
+                ORDER BY u.created_at DESC";
+$users = $db->query($users_query)->fetch_all(MYSQLI_ASSOC);
+
+// Banned users list
+$banned_query = "SELECT u.ID, u.full_name, u.email, u.role, u.is_active, u.is_banned, u.created_at
+                 FROM Users u
+                 WHERE u.is_banned = TRUE
+                 ORDER BY u.full_name";
+$banned_list = $db->query($banned_query)->fetch_all(MYSQLI_ASSOC);
+
+// Blacklisted (inactive but not banned) users
+$blacklisted_query = "SELECT u.ID, u.full_name, u.email, u.role, u.is_active, u.is_banned, u.created_at
+                      FROM Users u
+                      WHERE u.is_active = FALSE AND u.is_banned = FALSE
+                      ORDER BY u.full_name";
+$blacklisted_list = $db->query($blacklisted_query)->fetch_all(MYSQLI_ASSOC);
+
+// Recent admin activity logs
+$logs_query = "SELECT ul.*, u.full_name
+               FROM UserLogs ul
+               LEFT JOIN Users u ON ul.user_id = u.ID
+               WHERE ul.action LIKE 'ADMIN%'
+               ORDER BY ul.timestamp DESC
+               LIMIT 10";
+$admin_logs = $db->query($logs_query)->fetch_all(MYSQLI_ASSOC);
+
+$csrf_token = generateCSRFToken();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,70 +237,799 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
   <style>
-    body {
-      display: block;
-      min-height: auto;
+    body { display: block; min-height: auto; margin: 0; padding: 0; }
+    .main-content { margin-left: 0; }
+    .wrapper { max-width: 1300px; margin: 0 auto; padding: 0 36px; }
+
+    /* Admin Hero */
+    .admin-hero {
+      background: linear-gradient(135deg, #1a4d31 0%, #0d2e1d 100%);
+      padding: 28px 0 32px;
+      color: white;
     }
-    .main-content {
-      margin-left: 0;
+    .admin-hero h1 { font-size: 1.9rem; font-weight: 700; margin: 0 0 6px; }
+    .admin-hero p { opacity: 0.85; font-size: 0.95rem; margin: 0; }
+    .admin-hero-inner {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .admin-hero-actions { display: flex; gap: 12px; align-items: center; }
+    .btn-admin-action {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.4);
+      color: white; padding: 10px 22px; border-radius: 40px;
+      font-weight: 600; font-size: 0.9rem; text-decoration: none;
+      transition: all 0.2s; cursor: pointer; font-family: 'Inter', sans-serif;
+      backdrop-filter: blur(4px);
+    }
+    .btn-admin-action:hover {
+      background: rgba(255,255,255,0.28); border-color: white; transform: translateY(-1px);
+    }
+
+    /* Stats bar */
+    .admin-stats-bar {
+      background: white; border-radius: 60px; padding: 16px 28px;
+      margin: -22px 0 32px; display: flex; justify-content: space-between;
+      align-items: center; border: 1px solid var(--border-soft);
+      box-shadow: 0 8px 20px rgba(0,70,30,0.06); flex-wrap: wrap; gap: 10px;
+    }
+    .astat { display: flex; align-items: center; gap: 8px; }
+    .astat-num { font-weight: 700; font-size: 1.3rem; color: var(--dlsu-green); }
+    .astat-lbl { color: #3b7455; font-size: 0.85rem; }
+    .adivider { width: 1px; height: 28px; background: #d0eadb; }
+
+    /* Tab navigation */
+    .admin-tabs {
+      display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap;
+    }
+    .admin-tab {
+      padding: 10px 24px; border-radius: 40px; font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; background: white;
+      border: 1.5px solid var(--border-soft); color: #3b7455;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .admin-tab:hover { background: #e3f4ea; border-color: var(--dlsu-green); color: var(--dlsu-green); }
+    .admin-tab.active {
+      background: var(--dlsu-green); color: white; border-color: var(--dlsu-green);
+      box-shadow: 0 4px 12px rgba(0,122,62,0.25);
+    }
+    .admin-tab .tab-count {
+      background: rgba(255,255,255,0.25); padding: 2px 8px; border-radius: 20px; font-size: 0.75rem;
+    }
+    .admin-tab.active .tab-count { background: rgba(255,255,255,0.3); }
+
+    /* Tab panels */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Data table styles */
+    .data-table {
+      width: 100%; border-collapse: separate; border-spacing: 0;
+      background: white; border-radius: 20px; overflow: hidden;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 4px 12px rgba(0,70,30,0.04);
+    }
+    .data-table thead th {
+      background: #f0f7f2; padding: 14px 18px; text-align: left;
+      font-size: 0.8rem; font-weight: 700; color: #16623b;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 2px solid #cae3d6;
+    }
+    .data-table tbody td {
+      padding: 14px 18px; border-bottom: 1px solid #e8f3ec;
+      font-size: 0.9rem; color: #1e3a2f; vertical-align: middle;
+    }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:hover { background: #f9fffc; }
+
+    /* Status pills */
+    .pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 14px; border-radius: 30px; font-size: 0.78rem; font-weight: 700;
+    }
+    .pill-active { background: #daf1e2; color: #0b6d38; }
+    .pill-banned { background: #fee9e9; color: #b13e3e; }
+    .pill-inactive { background: #f5e6e6; color: #8c3333; }
+    .pill-open { background: #daf1e2; color: #0b6d38; }
+    .pill-closed { background: #fff1cf; color: #9e6d0b; }
+    .pill-vendor { background: #e8e0ff; color: #5b3fb5; }
+    .pill-customer { background: #e2f0e8; color: #1a5e36; }
+
+    /* Action buttons */
+    .btn-sm {
+      padding: 6px 14px; border-radius: 30px; font-size: 0.78rem; font-weight: 600;
+      border: none; cursor: pointer; transition: all 0.18s;
+      display: inline-flex; align-items: center; gap: 4px; font-family: 'Inter', sans-serif;
+    }
+    .btn-sm:hover { transform: translateY(-1px); }
+    .btn-ban { background: #fee9e9; color: #b13e3e; }
+    .btn-ban:hover { background: #f5c9c9; }
+    .btn-unban { background: #daf1e2; color: #0b6d38; }
+    .btn-unban:hover { background: #c2e8ce; }
+    .btn-blacklist { background: #fff1cf; color: #9e6d0b; }
+    .btn-blacklist:hover { background: #ffe8a8; }
+    .btn-toggle { background: #e3f4ea; color: var(--dlsu-green); }
+    .btn-toggle:hover { background: #c8e9d4; }
+
+    /* Cards */
+    .info-card {
+      background: white; border-radius: 24px; padding: 24px;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 4px 12px rgba(0,70,30,0.04);
+    }
+    .info-card h3 {
+      font-size: 1.2rem; color: #0f4a2f; margin: 0 0 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .info-card h3 i { color: var(--dlsu-green); }
+
+    /* Log entries */
+    .log-entry {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid #e8f3ec;
+      font-size: 0.88rem;
+    }
+    .log-entry:last-child { border-bottom: none; }
+    .log-action { font-weight: 600; color: #1a4d31; }
+    .log-time { color: #5f8b74; font-size: 0.8rem; }
+    .log-user { color: var(--dlsu-green); font-weight: 500; }
+
+    /* Modal styles (reusing from vendor) */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,30,12,0.45); backdrop-filter: blur(3px);
+      align-items: center; justify-content: center; z-index: 9999;
+    }
+    .modal-card {
+      background: white; border-radius: 28px; padding: 32px;
+      width: 520px; max-width: 92%;
+      box-shadow: 0 24px 60px rgba(0,60,20,0.18);
+      border: 1px solid var(--border-soft);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-card h3 {
+      font-size: 1.3rem; color: #0f4a2f; margin: 0 0 24px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .modal-card h3 i { color: var(--dlsu-green); }
+    .modal-field { margin-bottom: 16px; }
+    .modal-field label {
+      display: block; font-size: 0.85rem; font-weight: 600;
+      color: #1a4d31; margin-bottom: 6px;
+    }
+    .modal-field input, .modal-field select, .modal-field textarea {
+      width: 100%; padding: 11px 16px; border: 1.5px solid #cae3d6;
+      border-radius: 14px; font-family: 'Inter', sans-serif;
+      font-size: 0.95rem; color: #1e3a2f; background: #f9fffc;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
+    }
+    .modal-field input:focus, .modal-field select:focus, .modal-field textarea:focus {
+      border-color: var(--dlsu-green);
+      box-shadow: 0 0 0 3px rgba(0,122,62,0.1); background: white;
+    }
+    .modal-field textarea { resize: vertical; min-height: 80px; }
+    .modal-actions {
+      display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;
+    }
+    .btn-modal-cancel {
+      background: #f0f7f2; color: #2d6347; border: none;
+      padding: 11px 24px; border-radius: 40px; font-weight: 600;
+      cursor: pointer; transition: background 0.18s; font-family: 'Inter', sans-serif;
+    }
+    .btn-modal-cancel:hover { background: #dceee4; }
+    .btn-modal-submit {
+      background: var(--dlsu-green); color: white; border: none;
+      padding: 11px 28px; border-radius: 40px; font-weight: 600;
+      cursor: pointer; transition: all 0.18s; font-family: 'Inter', sans-serif;
+    }
+    .btn-modal-submit:hover { background: var(--dlsu-darkgreen); transform: translateY(-1px); }
+
+    /* Notification toast */
+    .toast {
+      position: fixed; top: 20px; right: 20px; padding: 16px 24px;
+      border-radius: 16px; font-weight: 600; font-size: 0.95rem;
+      z-index: 10000; animation: slideIn 0.3s ease-out;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .toast-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .toast-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    @keyframes slideIn {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(400px); opacity: 0; }
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center; padding: 50px 20px; color: #5f8b74;
+    }
+    .empty-state i { font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 16px; }
+    .empty-state p { font-size: 1rem; margin: 0; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .data-table { display: block; overflow-x: auto; }
+      .admin-stats-bar { flex-direction: column; align-items: flex-start; border-radius: 20px; }
+      .adivider { display: none; }
+      .sys-grid, .admin-grid { grid-template-columns: 1fr !important; }
     }
   </style>
 </head>
 <body>
-  <div class="main-content">
-    <section id="sysadmin" class="page-section">
-      <div class="admin-header">
-        <div class="admin-logo"><i class="fas fa-user-shield"></i> UniCanteen · System Admin</div>
-        <div class="role-badge"><i class="fas fa-university"></i> Oversight & Compliance</div>
-      </div>
-      <div class="server-container">
-        <div class="sys-grid">
-          <!-- vendor accounts (full list) -->
-          <div class="sys-card">
-            <h3><i class="fas fa-truck"></i> Food vendors / stalls</h3>
-            <div class="vendor-row"><span><i class="fas fa-store"></i> Bloemen Hall</span><div class="vendor-meta"><span class="status-active">Active</span><span class="reset-btn">Reset</span></div></div>
-            <div class="vendor-row"><span><i class="fas fa-store"></i> Agno Eatery</span><div class="vendor-meta"><span class="status-active">Active</span><span class="reset-btn">Reset</span></div></div>
-            <div class="vendor-row"><span><i class="fas fa-store"></i> Kitchen SJ</span><div class="vendor-meta"><span class="status-inactive">Inactive</span><span class="ban-btn">Disable</span></div></div>
-            <div class="vendor-row"><span><i class="fas fa-store"></i> St. La Salle Deli</span><div class="vendor-meta"><span class="status-active">Active</span><span class="reset-btn">Reset</span></div></div>
-            <div class="vendor-row"><span><i class="fas fa-store"></i> Agno Food Court</span><div class="vendor-meta"><span class="status-active">Active</span><span class="reset-btn">Reset</span></div></div>
-            <p class="text-small" style="margin-top:16px;"><i class="fas fa-plus-circle"></i> Create new vendor account</p>
-          </div>
-          <!-- user oversight + ban capabilities -->
-          <div class="sys-card">
-            <h3><i class="fas fa-users"></i> User oversight (students/staff)</h3>
-            <div class="user-oversight-row"><span><i class="fas fa-user-graduate"></i> Charles B.</span><span class="user-role-tag">student</span><span class="ban-action"><i class="fas fa-ban"></i> restrict</span></div>
-            <div class="user-oversight-row"><span><i class="fas fa-user-tie"></i> Prof. Reyes</span><span class="user-role-tag">faculty</span><span class="ban-action">warn</span></div>
-            <div class="user-oversight-row"><span><i class="fas fa-user"></i> Adriane M.</span><span class="user-role-tag">staff</span><span class="ban-action">manage</span></div>
-            <div class="user-oversight-row"><span><i class="fas fa-user"></i> Justin S.</span><span class="user-role-tag admin-badge">flagged</span><span class="ban-action" style="background:#fceaea;"> ban</span></div>
-            <div class="user-oversight-row"><span><i class="fas fa-user"></i> Terrence P.</span><span class="user-role-tag">student</span><span class="ban-action">···</span></div>
-            <p class="text-small" style="margin-top:16px;"><i class="fas fa-shield-alt"></i> Ban users violating policy (fake orders)</p>
-          </div>
+<div class="main-content">
+  <section id="sysadmin" class="page-section">
+
+    <!-- ── Nav ── -->
+    <div class="wrapper">
+      <nav class="customer-nav">
+        <a href="index.php?page=customer" class="logo">UniCanteen <span>DLSU</span></a>
+        <div class="customer-nav-links">
+          <span style="font-weight:600; color:#0f4a2f;">
+            <i class="fas fa-user-shield" style="color:var(--dlsu-green);"></i>
+            System Administrator
+          </span>
+          <span class="sync-badge"><i class="fas fa-circle" style="color:#28a745; font-size:0.6rem;"></i> Admin Panel</span>
+          <a href="index.php?page=customer" class="btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Home
+          </a>
+          <a href="index.php?page=logout" class="btn-primary" style="padding:10px 20px;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </a>
         </div>
-        <!-- platform settings & compliance log -->
-        <div style="display: flex; gap: 30px; margin-top: 30px; flex-wrap: wrap;">
-          <div class="admin-card" style="flex:1;">
-            <h3><i class="fas fa-gear"></i> Platform settings</h3>
-            <div class="vendor-row"><span>Default user role</span><span class="reset-btn">student/staff</span></div>
-            <div class="vendor-row"><span>Session timeout</span><span>30 min</span></div>
-            <div class="vendor-row"><span>Maintenance mode</span><span class="status-inactive">off</span></div>
+      </nav>
+    </div>
+
+    <!-- ── Hero Banner ── -->
+    <div class="admin-hero">
+      <div class="wrapper">
+        <div class="admin-hero-inner">
+          <div>
+            <h1><i class="fas fa-user-shield" style="font-size:1.5rem; opacity:0.85; margin-right:10px;"></i> System Administration</h1>
+            <p>Manage vendors, oversee users, and maintain platform compliance.</p>
           </div>
-          <div class="admin-card" style="flex:1;">
-            <h3><i class="fas fa-file-invoice"></i> Compliance log</h3>
-            <div><i class="fas fa-circle-check" style="color:green;"></i> 3 stalls audited today</div>
-            <div><i class="fas fa-clock"></i> last violation: none</div>
-            <div class="mt-4"><span class="status-badge completed">fake order report resolved</span></div>
+          <div class="admin-hero-actions">
+            <button onclick="openCreateVendorModal()" class="btn-admin-action">
+              <i class="fas fa-plus"></i> Create Vendor
+            </button>
           </div>
-        </div>
-        <!-- queue monitoring (admin overview) -->
-        <div class="queue-number-panel" style="margin-top:40px; background:#1e5f3e;">
-          <span><i class="fas fa-queue"></i> System queue status</span>
-          <span style="font-size:2rem; font-weight:700;">A‑012 · B‑042 · C‑008</span>
         </div>
       </div>
-      <footer class="footer-note"><i class="fas fa-user-tie"></i> System Admin – vendor creation, user bans, oversight</footer>
-    </section>
+    </div>
+
+    <div class="wrapper">
+
+      <!-- ── Action Messages ── -->
+      <?php if ($action_message): ?>
+        <div class="<?php echo $action_type === 'success' ? 'success-message' : 'error-message'; ?>" style="margin-top:20px;">
+          <i class="fas <?php echo $action_type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
+          <?php echo htmlspecialchars($action_message); ?>
+        </div>
+      <?php endif; ?>
+
+      <!-- ── Stats Bar ── -->
+      <div class="admin-stats-bar">
+        <div class="astat">
+          <span class="astat-num"><?php echo $total_users; ?></span>
+          <span class="astat-lbl">customers</span>
+        </div>
+        <div class="adivider"></div>
+        <div class="astat">
+          <span class="astat-num"><?php echo $total_vendors; ?></span>
+          <span class="astat-lbl">vendors</span>
+        </div>
+        <div class="adivider"></div>
+        <div class="astat">
+          <span class="astat-num"><?php echo $active_stalls; ?></span>
+          <span class="astat-lbl">active stalls</span>
+        </div>
+        <div class="adivider"></div>
+        <div class="astat">
+          <span class="astat-num"><?php echo $today_orders; ?></span>
+          <span class="astat-lbl">orders today</span>
+        </div>
+        <div class="adivider"></div>
+        <div class="astat">
+          <span class="astat-num" style="color:#b13e3e;"><?php echo $banned_users; ?></span>
+          <span class="astat-lbl">banned</span>
+        </div>
+        <div class="adivider"></div>
+        <div class="astat">
+          <span class="astat-num"><?php echo formatPrice($today_revenue); ?></span>
+          <span class="astat-lbl">revenue today</span>
+        </div>
+      </div>
+
+      <!-- ── Tab Navigation ── -->
+      <div class="admin-tabs">
+        <div class="admin-tab active" onclick="switchTab('vendors', this)">
+          <i class="fas fa-store"></i> Vendors / Stalls
+          <span class="tab-count"><?php echo count($vendors); ?></span>
+        </div>
+        <div class="admin-tab" onclick="switchTab('users', this)">
+          <i class="fas fa-users"></i> Customers
+          <span class="tab-count"><?php echo count($users); ?></span>
+        </div>
+        <div class="admin-tab" onclick="switchTab('banned', this)">
+          <i class="fas fa-ban"></i> Banned
+          <span class="tab-count"><?php echo count($banned_list); ?></span>
+        </div>
+        <div class="admin-tab" onclick="switchTab('blacklist', this)">
+          <i class="fas fa-user-slash"></i> Blacklisted
+          <span class="tab-count"><?php echo count($blacklisted_list); ?></span>
+        </div>
+        <div class="admin-tab" onclick="switchTab('logs', this)">
+          <i class="fas fa-file-invoice"></i> Activity Logs
+        </div>
+      </div>
+
+      <!-- TAB 1: VENDORS / STALLS                     -->
+
+      <div id="tab-vendors" class="tab-panel active">
+        <div class="info-card" style="margin-bottom:30px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+            <h3 style="margin:0;"><i class="fas fa-truck"></i> Food Vendors / Stalls</h3>
+            <button onclick="openCreateVendorModal()" class="btn-sm btn-toggle" style="padding:8px 20px;">
+              <i class="fas fa-plus-circle"></i> Create Vendor Account
+            </button>
+          </div>
+
+          <?php if (empty($vendors)): ?>
+            <div class="empty-state">
+              <i class="fas fa-store"></i>
+              <p>No vendor accounts yet. Create the first one!</p>
+            </div>
+          <?php else: ?>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Vendor</th>
+                  <th>Restaurant</th>
+                  <th>Status</th>
+                  <th>Items</th>
+                  <th>Orders</th>
+                  <th>Revenue</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($vendors as $v): ?>
+                <tr>
+                  <td>
+                    <div style="font-weight:600; color:#0f4a2f;"><?php echo htmlspecialchars($v['full_name']); ?></div>
+                    <div style="font-size:0.8rem; color:#5f8b74;"><?php echo htmlspecialchars($v['email']); ?></div>
+                  </td>
+                  <td>
+                    <div style="font-weight:500;"><?php echo htmlspecialchars($v['restaurant_name'] ?? '—'); ?></div>
+                    <div style="font-size:0.78rem; color:#5f8b74;"><?php echo htmlspecialchars($v['address'] ?? ''); ?></div>
+                  </td>
+                  <td>
+                    <?php if ($v['is_banned']): ?>
+                      <span class="pill pill-banned"><i class="fas fa-ban"></i> Banned</span>
+                    <?php elseif (!$v['is_active']): ?>
+                      <span class="pill pill-inactive"><i class="fas fa-times-circle"></i> Inactive</span>
+                    <?php else: ?>
+                      <span class="pill pill-active"><i class="fas fa-check-circle"></i> Active</span>
+                    <?php endif; ?>
+                    <?php if ($v['restaurant_id']): ?>
+                      <br><span class="pill <?php echo $v['is_open'] ? 'pill-open' : 'pill-closed'; ?>" style="margin-top:4px;">
+                        <i class="fas <?php echo $v['is_open'] ? 'fa-door-open' : 'fa-door-closed'; ?>"></i>
+                        <?php echo $v['is_open'] ? 'Open' : 'Closed'; ?>
+                      </span>
+                    <?php endif; ?>
+                  </td>
+                  <td style="font-weight:600; color:var(--dlsu-green);"><?php echo $v['item_count']; ?></td>
+                  <td><?php echo $v['order_count']; ?></td>
+                  <td style="font-weight:600; color:var(--dlsu-green);"><?php echo formatPrice($v['revenue']); ?></td>
+                  <td>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                      <?php if ($v['is_banned']): ?>
+                        <form method="POST" style="display:inline;">
+                          <input type="hidden" name="admin_action" value="unban_user">
+                          <input type="hidden" name="user_id" value="<?php echo $v['ID']; ?>">
+                          <button type="submit" class="btn-sm btn-unban" onclick="return confirm('Unban this vendor?')">
+                            <i class="fas fa-unlock"></i> Unban
+                          </button>
+                        </form>
+                      <?php else: ?>
+                        <?php if ($v['restaurant_id']): ?>
+                          <form method="POST" style="display:inline;">
+                            <input type="hidden" name="admin_action" value="toggle_restaurant">
+                            <input type="hidden" name="restaurant_id" value="<?php echo $v['restaurant_id']; ?>">
+                            <input type="hidden" name="new_status" value="<?php echo $v['is_open'] ? 0 : 1; ?>">
+                            <button type="submit" class="btn-sm btn-toggle">
+                              <i class="fas <?php echo $v['is_open'] ? 'fa-pause' : 'fa-play'; ?>"></i>
+                              <?php echo $v['is_open'] ? 'Disable' : 'Enable'; ?>
+                            </button>
+                          </form>
+                        <?php endif; ?>
+                        <form method="POST" style="display:inline;">
+                          <input type="hidden" name="admin_action" value="ban_user">
+                          <input type="hidden" name="user_id" value="<?php echo $v['ID']; ?>">
+                          <button type="submit" class="btn-sm btn-ban" onclick="return confirm('Ban this vendor? They will lose access immediately.')">
+                            <i class="fas fa-ban"></i> Ban
+                          </button>
+                        </form>
+                      <?php endif; ?>
+                    </div>
+                  </td>
+                </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- TAB 2: CUSTOMERS                            -->
+
+      <div id="tab-users" class="tab-panel">
+        <div class="info-card" style="margin-bottom:30px;">
+          <h3><i class="fas fa-users"></i> Customer Accounts (Students / Staff)</h3>
+
+          <?php if (empty($users)): ?>
+            <div class="empty-state">
+              <i class="fas fa-user-graduate"></i>
+              <p>No customer accounts registered yet.</p>
+            </div>
+          <?php else: ?>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Orders</th>
+                  <th>Total Spent</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($users as $u): ?>
+                <tr>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <div style="background:#e1f3e9; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-user-graduate" style="color:var(--dlsu-green); margin:0;"></i>
+                      </div>
+                      <span style="font-weight:600;"><?php echo htmlspecialchars($u['full_name']); ?></span>
+                    </div>
+                  </td>
+                  <td style="font-size:0.85rem; color:#5f8b74;"><?php echo htmlspecialchars($u['email']); ?></td>
+                  <td>
+                    <?php if ($u['is_banned']): ?>
+                      <span class="pill pill-banned"><i class="fas fa-ban"></i> Banned</span>
+                    <?php elseif (!$u['is_active']): ?>
+                      <span class="pill pill-inactive"><i class="fas fa-times-circle"></i> Inactive</span>
+                    <?php else: ?>
+                      <span class="pill pill-active"><i class="fas fa-check-circle"></i> Active</span>
+                    <?php endif; ?>
+                  </td>
+                  <td><?php echo $u['order_count']; ?></td>
+                  <td style="font-weight:600; color:var(--dlsu-green);"><?php echo formatPrice($u['total_spent']); ?></td>
+                  <td style="font-size:0.82rem; color:#5f8b74;"><?php echo date('M d, Y', strtotime($u['created_at'])); ?></td>
+                  <td>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                      <?php if ($u['is_banned']): ?>
+                        <form method="POST" style="display:inline;">
+                          <input type="hidden" name="admin_action" value="unban_user">
+                          <input type="hidden" name="user_id" value="<?php echo $u['ID']; ?>">
+                          <button type="submit" class="btn-sm btn-unban" onclick="return confirm('Unban this user?')">
+                            <i class="fas fa-unlock"></i> Unban
+                          </button>
+                        </form>
+                      <?php elseif (!$u['is_active']): ?>
+                        <form method="POST" style="display:inline;">
+                          <input type="hidden" name="admin_action" value="unban_user">
+                          <input type="hidden" name="user_id" value="<?php echo $u['ID']; ?>">
+                          <button type="submit" class="btn-sm btn-unban" onclick="return confirm('Reactivate this user?')">
+                            <i class="fas fa-user-check"></i> Whitelist
+                          </button>
+                        </form>
+                      <?php else: ?>
+                        <form method="POST" style="display:inline;">
+                          <input type="hidden" name="admin_action" value="blacklist_user">
+                          <input type="hidden" name="user_id" value="<?php echo $u['ID']; ?>">
+                          <button type="submit" class="btn-sm btn-blacklist" onclick="return confirm('Blacklist (deactivate) this user?')">
+                            <i class="fas fa-user-slash"></i> Blacklist
+                          </button>
+                        </form>
+                        <form method="POST" style="display:inline;">
+                          <input type="hidden" name="admin_action" value="ban_user">
+                          <input type="hidden" name="user_id" value="<?php echo $u['ID']; ?>">
+                          <button type="submit" class="btn-sm btn-ban" onclick="return confirm('Ban this user? This is more severe than blacklisting.')">
+                            <i class="fas fa-ban"></i> Ban
+                          </button>
+                        </form>
+                      <?php endif; ?>
+                    </div>
+                  </td>
+                </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- TAB 3: BANNED LIST                          -->
+
+      <div id="tab-banned" class="tab-panel">
+        <div class="info-card" style="margin-bottom:30px;">
+          <h3><i class="fas fa-ban" style="color:#b13e3e;"></i> Banned Users</h3>
+          <p style="color:#5f8b74; margin-bottom:20px; font-size:0.9rem;">
+            Banned users are completely locked out of the platform. They cannot log in or place orders.
+          </p>
+
+          <?php if (empty($banned_list)): ?>
+            <div class="empty-state">
+              <i class="fas fa-shield-alt" style="color:#0b6d38;"></i>
+              <p>No banned users. The platform is in good standing!</p>
+            </div>
+          <?php else: ?>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($banned_list as $b): ?>
+                <tr>
+                  <td style="font-weight:600; color:#b13e3e;">
+                    <i class="fas fa-ban" style="color:#b13e3e;"></i>
+                    <?php echo htmlspecialchars($b['full_name']); ?>
+                  </td>
+                  <td style="font-size:0.85rem;"><?php echo htmlspecialchars($b['email']); ?></td>
+                  <td>
+                    <span class="pill <?php echo $b['role'] === 'V' ? 'pill-vendor' : 'pill-customer'; ?>">
+                      <?php echo $b['role'] === 'V' ? 'Vendor' : ($b['role'] === 'A' ? 'Admin' : 'Customer'); ?>
+                    </span>
+                  </td>
+                  <td style="font-size:0.82rem; color:#5f8b74;"><?php echo date('M d, Y', strtotime($b['created_at'])); ?></td>
+                  <td>
+                    <form method="POST" style="display:inline;">
+                      <input type="hidden" name="admin_action" value="unban_user">
+                      <input type="hidden" name="user_id" value="<?php echo $b['ID']; ?>">
+                      <button type="submit" class="btn-sm btn-unban" onclick="return confirm('Unban and whitelist this user?')">
+                        <i class="fas fa-unlock"></i> Unban & Whitelist
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- TAB 4: BLACKLISTED (Inactive)               -->
+
+      <div id="tab-blacklist" class="tab-panel">
+        <div class="info-card" style="margin-bottom:30px;">
+          <h3><i class="fas fa-user-slash" style="color:#9e6d0b;"></i> Blacklisted Users</h3>
+          <p style="color:#5f8b74; margin-bottom:20px; font-size:0.9rem;">
+            Blacklisted users have deactivated accounts. They can be restored (whitelisted) at any time.
+          </p>
+
+          <?php if (empty($blacklisted_list)): ?>
+            <div class="empty-state">
+              <i class="fas fa-user-check" style="color:#0b6d38;"></i>
+              <p>No blacklisted users.</p>
+            </div>
+          <?php else: ?>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($blacklisted_list as $bl): ?>
+                <tr>
+                  <td style="font-weight:600; color:#9e6d0b;">
+                    <i class="fas fa-user-slash" style="color:#9e6d0b;"></i>
+                    <?php echo htmlspecialchars($bl['full_name']); ?>
+                  </td>
+                  <td style="font-size:0.85rem;"><?php echo htmlspecialchars($bl['email']); ?></td>
+                  <td>
+                    <span class="pill <?php echo $bl['role'] === 'V' ? 'pill-vendor' : 'pill-customer'; ?>">
+                      <?php echo $bl['role'] === 'V' ? 'Vendor' : ($bl['role'] === 'A' ? 'Admin' : 'Customer'); ?>
+                    </span>
+                  </td>
+                  <td style="font-size:0.82rem; color:#5f8b74;"><?php echo date('M d, Y', strtotime($bl['created_at'])); ?></td>
+                  <td>
+                    <div style="display:flex; gap:6px;">
+                      <form method="POST" style="display:inline;">
+                        <input type="hidden" name="admin_action" value="unban_user">
+                        <input type="hidden" name="user_id" value="<?php echo $bl['ID']; ?>">
+                        <button type="submit" class="btn-sm btn-unban" onclick="return confirm('Whitelist (reactivate) this user?')">
+                          <i class="fas fa-user-check"></i> Whitelist
+                        </button>
+                      </form>
+                      <form method="POST" style="display:inline;">
+                        <input type="hidden" name="admin_action" value="ban_user">
+                        <input type="hidden" name="user_id" value="<?php echo $bl['ID']; ?>">
+                        <button type="submit" class="btn-sm btn-ban" onclick="return confirm('Escalate to full ban?')">
+                          <i class="fas fa-ban"></i> Ban
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- TAB 5: ACTIVITY LOGS                        -->
+
+      <div id="tab-logs" class="tab-panel">
+        <div class="info-card" style="margin-bottom:30px;">
+          <h3><i class="fas fa-file-invoice"></i> Admin Activity Logs</h3>
+
+          <?php if (empty($admin_logs)): ?>
+            <div class="empty-state">
+              <i class="fas fa-clipboard-list"></i>
+              <p>No admin activity yet.</p>
+            </div>
+          <?php else: ?>
+            <?php foreach ($admin_logs as $log): ?>
+              <div class="log-entry">
+                <div>
+                  <span class="log-user"><?php echo htmlspecialchars($log['full_name'] ?? 'System'); ?></span>
+                  <span class="log-action" style="margin-left:8px;">
+                    <?php
+                    $action = $log['action'];
+                    if (strpos($action, 'CREATE_VENDOR') !== false) {
+                        echo '<i class="fas fa-plus-circle" style="color:var(--dlsu-green);"></i> Created a vendor account';
+                    } elseif (strpos($action, 'BAN_USER') !== false) {
+                        $target = str_replace('ADMIN_BAN_USER_', '', $action);
+                        echo '<i class="fas fa-ban" style="color:#b13e3e;"></i> Banned user #' . htmlspecialchars($target);
+                    } elseif (strpos($action, 'UNBAN_USER') !== false) {
+                        $target = str_replace('ADMIN_UNBAN_USER_', '', $action);
+                        echo '<i class="fas fa-unlock" style="color:#0b6d38;"></i> Unbanned user #' . htmlspecialchars($target);
+                    } elseif (strpos($action, 'BLACKLIST_USER') !== false) {
+                        $target = str_replace('ADMIN_BLACKLIST_USER_', '', $action);
+                        echo '<i class="fas fa-user-slash" style="color:#9e6d0b;"></i> Blacklisted user #' . htmlspecialchars($target);
+                    } else {
+                        echo htmlspecialchars($action);
+                    }
+                    ?>
+                  </span>
+                </div>
+                <div>
+                  <span class="log-time">
+                    <i class="far fa-clock"></i>
+                    <?php echo getTimeAgo($log['timestamp']); ?>
+                    · <?php echo date('M d, g:i A', strtotime($log['timestamp'])); ?>
+                  </span>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+      </div>
+
+    </div><!-- /wrapper -->
+
+    <footer class="footer-note">
+      <i class="fas fa-user-shield"></i>
+      System Admin · UniCanteen · Vendor creation, user bans, oversight · <?php echo date('g:i A'); ?>
+    </footer>
+
+  </section>
+</div>
+
+<!-- CREATE VENDOR MODAL                         -->
+
+<div id="createVendorModal" class="modal-overlay">
+  <div class="modal-card">
+    <h3><i class="fas fa-store"></i> Create New Vendor Account</h3>
+    <form method="POST" action="index.php?page=sysadmin" id="createVendorForm">
+      <input type="hidden" name="admin_action" value="create_vendor">
+
+      <p style="background:#e3f4ea; padding:12px 16px; border-radius:14px; font-size:0.85rem; color:#0b6d38; margin-bottom:20px;">
+        <i class="fas fa-info-circle"></i>
+        This will create a vendor login and automatically set up their restaurant profile.
+      </p>
+
+      <div style="margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid #e8f3ec;">
+        <div style="font-weight:700; color:#0f4a2f; margin-bottom:12px; font-size:0.9rem;">
+          <i class="fas fa-user" style="color:var(--dlsu-green);"></i> Vendor Account Details
+        </div>
+        <div class="modal-field">
+          <label>Full Name *</label>
+          <input type="text" name="vendor_name" placeholder="e.g. Bloemen Hall Manager" required>
+        </div>
+        <div class="modal-field">
+          <label>Email Address *</label>
+          <input type="email" name="vendor_email" placeholder="vendor@dlsu.edu" required>
+        </div>
+        <div class="modal-field">
+          <label>Temporary Password *</label>
+          <input type="text" name="vendor_password" placeholder="Min 8 characters" required minlength="8">
+          <small style="color:#5f8b74; font-size:0.78rem; display:block; margin-top:4px;">
+            <i class="fas fa-info-circle"></i> The vendor should change this after first login.
+          </small>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-weight:700; color:#0f4a2f; margin-bottom:12px; font-size:0.9rem;">
+          <i class="fas fa-store" style="color:var(--dlsu-green);"></i> Restaurant Information
+        </div>
+        <div class="modal-field">
+          <label>Restaurant / Stall Name *</label>
+          <input type="text" name="restaurant_name" placeholder="e.g. Bloemen Hall Cafe" required>
+        </div>
+        <div class="modal-field">
+          <label>Address / Location</label>
+          <input type="text" name="restaurant_address" placeholder="e.g. Bloemen Hall, DLSU">
+        </div>
+        <div class="modal-field">
+          <label>Description</label>
+          <textarea name="restaurant_description" placeholder="Brief description of the stall..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-modal-cancel" onclick="closeCreateVendorModal()">Cancel</button>
+        <button type="submit" class="btn-modal-submit">
+          <i class="fas fa-plus-circle"></i> Create Vendor Account
+        </button>
+      </div>
+    </form>
   </div>
+</div>
+
+<script>
+  // Tab switching
+  function switchTab(tabName, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + tabName).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // Create vendor modal
+  function openCreateVendorModal() {
+    document.getElementById('createVendorModal').style.display = 'flex';
+  }
+  function closeCreateVendorModal() {
+    document.getElementById('createVendorModal').style.display = 'none';
+  }
+
+  // Close modals on overlay click
+  document.getElementById('createVendorModal').addEventListener('click', function(e) {
+    if (e.target === this) this.style.display = 'none';
+  });
+
+  // Auto-hide success/error messages after 5s
+  document.querySelectorAll('.success-message, .error-message').forEach(el => {
+    setTimeout(() => {
+      el.style.transition = 'opacity 0.5s ease';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 500);
+    }, 5000);
+  });
+</script>
 </body>
 </html>
