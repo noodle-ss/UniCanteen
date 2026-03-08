@@ -1,5 +1,11 @@
 <?php
 require_once __DIR__ . '/config/config.php';
+define('MAINTENANCE_MODE', false);
+
+if (MAINTENANCE_MODE) {
+    include __DIR__ . '/maintenance.php';
+    exit();
+}
 
 //this is a simple router/controller pattern where we include different frontend PHP files based on the 'page' query parameter. Each frontend file is responsible for rendering a specific view (customer, vendor, sysadmin) and handling its own logic. The left sidebar allows switching between these views, and the main content area displays the selected view's content.
 // DEV HACK – always act as vendor #3
