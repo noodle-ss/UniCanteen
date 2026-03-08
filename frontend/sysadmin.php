@@ -156,6 +156,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_action'])) {
         }
     }
 
+    //  Delete Review / Rating 
+    if ($_POST['admin_action'] === 'delete_review') {
+        $rating_id = intval($_POST['rating_id'] ?? 0);
+        if ($rating_id) {
+            $stmt = $db->prepare("DELETE FROM Ratings WHERE ID = ?");
+            $stmt->bind_param("i", $rating_id);
+            if ($stmt->execute()) {
+                $admin_id = $_SESSION['user_id'];
+                $log = $db->prepare("INSERT INTO UserLogs (user_id, action, ip_address, user_agent) VALUES (?, ?, ?, ?)");
+                $action_str = "ADMIN_DELETE_REVIEW_" . $rating_id;
+                $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+                $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+                $log->bind_param("isss", $admin_id, $action_str, $ip, $ua);
+                $log->execute();
+                $action_message = 'Review deleted successfully.';
+                $action_type = 'success';
+            } else {
+                $action_message = 'Failed to delete review.';
+                $action_type = 'error';
+            }
+        }
+    }
+
     //  Toggle Restaurant Status 
     if ($_POST['admin_action'] === 'toggle_restaurant') {
         $rest_id = intval($_POST['restaurant_id'] ?? 0);
@@ -225,22 +248,27 @@ $logs_query = "SELECT ul.*, u.full_name
                LIMIT 10";
 $admin_logs = $db->query($logs_query)->fetch_all(MYSQLI_ASSOC);
 
-$csrf_token = generateCSRFToken();
+// All restaurants for review filter dropdown
+$restaurants_list = $db->query("SELECT ID, name FROM Restaurants ORDER BY name")->fetch_all(MYSQLI_ASSOC);
+
+// Reviews — filter by restaurant if selected
+$filter_restaurant_id = intval($_GET['review_restaurant'] ?? 0);
+$reviews_query = "SELECT r.ID, r.rating, r.review, r.timestamp,
+                         res.name AS restaurant_name, res.ID AS restaurant_id,
+                         o.ID AS order_id
+                  FROM Ratings r
+                  LEFT JOIN Restaurants res ON r.restaurant_ID = res.ID
+                  LEFT JOIN Orders o ON r.order_ID = o.ID"
+                 . ($filter_restaurant_id ? " WHERE r.restaurant_ID = $filter_restaurant_id" : "")
+                 . " ORDER BY r.timestamp DESC";
+$reviews = $db->query($reviews_query)->fetch_all(MYSQLI_ASSOC);
+$total_reviews = count($reviews);
 ?>
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UniCanteen · System Admin</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
-  <style>
-    body { display: block; min-height: auto; margin: 0; padding: 0; }
-    .main-content { margin-left: 0; }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+<style>
     .wrapper { max-width: 1300px; margin: 0 auto; padding: 0 36px; }
 
     /* Admin Hero */
@@ -460,30 +488,7 @@ $csrf_token = generateCSRFToken();
       .sys-grid, .admin-grid { grid-template-columns: 1fr !important; }
     }
   </style>
-</head>
-<body>
-<div class="main-content">
-  <section id="sysadmin" class="page-section">
-
-    <!-- ── Nav ── -->
-    <div class="wrapper">
-      <nav class="customer-nav">
-        <a href="index.php?page=customer" class="logo">UniCanteen <span>DLSU</span></a>
-        <div class="customer-nav-links">
-          <span style="font-weight:600; color:#0f4a2f;">
-            <i class="fas fa-user-shield" style="color:var(--dlsu-green);"></i>
-            System Administrator
-          </span>
-          <span class="sync-badge"><i class="fas fa-circle" style="color:#28a745; font-size:0.6rem;"></i> Admin Panel</span>
-          <a href="index.php?page=customer" class="btn-outline">
-            <i class="fas fa-arrow-left"></i> Back to Home
-          </a>
-          <a href="index.php?page=logout" class="btn-primary" style="padding:10px 20px;">
-            <i class="fas fa-sign-out-alt"></i> Logout
-          </a>
-        </div>
-      </nav>
-    </div>
+<section id="sysadmin" class="page-section">
 
     <!-- ── Hero Banner ── -->
     <div class="admin-hero">
@@ -494,6 +499,12 @@ $csrf_token = generateCSRFToken();
             <p>Manage vendors, oversee users, and maintain platform compliance.</p>
           </div>
           <div class="admin-hero-actions">
+            <a href="index.php?page=customer" class="btn-admin-action">
+              <i class="fas fa-arrow-left"></i> Back to Home
+            </a>
+            <a href="index.php?page=logout" class="btn-admin-action">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
             <button onclick="openCreateVendorModal()" class="btn-admin-action">
               <i class="fas fa-plus"></i> Create Vendor
             </button>
@@ -565,6 +576,10 @@ $csrf_token = generateCSRFToken();
         </div>
         <div class="admin-tab" onclick="switchTab('logs', this)">
           <i class="fas fa-file-invoice"></i> Activity Logs
+        </div>
+        <div class="admin-tab" onclick="switchTab('reviews', this)">
+          <i class="fas fa-comments"></i> Comment Moderation
+          <span class="tab-count"><?php echo $total_reviews; ?></span>
         </div>
       </div>
 
@@ -906,6 +921,9 @@ $csrf_token = generateCSRFToken();
                     } elseif (strpos($action, 'UNBAN_USER') !== false) {
                         $target = str_replace('ADMIN_UNBAN_USER_', '', $action);
                         echo '<i class="fas fa-unlock" style="color:#0b6d38;"></i> Unbanned user #' . htmlspecialchars($target);
+                    } elseif (strpos($action, 'DELETE_REVIEW') !== false) {
+                        $target = str_replace('ADMIN_DELETE_REVIEW_', '', $action);
+                        echo '<i class="fas fa-trash-alt" style="color:#b13e3e;"></i> Deleted review #' . htmlspecialchars($target);
                     } elseif (strpos($action, 'BLACKLIST_USER') !== false) {
                         $target = str_replace('ADMIN_BLACKLIST_USER_', '', $action);
                         echo '<i class="fas fa-user-slash" style="color:#9e6d0b;"></i> Blacklisted user #' . htmlspecialchars($target);
@@ -928,15 +946,140 @@ $csrf_token = generateCSRFToken();
         </div>
       </div>
 
-    </div><!-- /wrapper -->
+      </div>
 
-    <footer class="footer-note">
+      <!-- TAB 6: COMMENT MODERATION                   -->
+
+      <div id="tab-reviews" class="tab-panel">
+        <div class="info-card" style="margin-bottom:30px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+            <h3 style="margin:0;"><i class="fas fa-comments"></i> Comment Moderation</h3>
+            <span style="font-size:0.85rem; color:#5f8b74;">
+              <i class="fas fa-info-circle"></i> Deleted reviews are permanently removed and cannot be recovered.
+            </span>
+          </div>
+
+          <!-- Restaurant Filter -->
+          <form method="GET" action="index.php" style="margin-bottom:20px;">
+            <input type="hidden" name="page" value="sysadmin">
+            <input type="hidden" name="tab" value="reviews">
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <label style="font-size:0.85rem; font-weight:700; color:#16623b; text-transform:uppercase; letter-spacing:0.5px;">
+                <i class="fas fa-store"></i> Restaurant:
+              </label>
+              <select name="review_restaurant" onchange="this.form.submit()"
+                style="padding:8px 16px; border:1.5px solid #cae3d6; border-radius:30px;
+                       font-family:'Inter',sans-serif; font-size:0.88rem; color:#1e3a2f;
+                       background:#f9fffc; outline:none; cursor:pointer; min-width:200px;">
+                <option value="0">All Restaurants</option>
+                <?php foreach ($restaurants_list as $rest): ?>
+                  <option value="<?php echo $rest['ID']; ?>"
+                    <?php echo $filter_restaurant_id === intval($rest['ID']) ? 'selected' : ''; ?>>
+                    <?php echo htmlspecialchars($rest['name']); ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+              <?php if ($filter_restaurant_id): ?>
+                <a href="index.php?page=sysadmin&tab=reviews"
+                   class="btn-sm btn-ban" style="text-decoration:none;">
+                  <i class="fas fa-times"></i> Clear
+                </a>
+              <?php endif; ?>
+              <span style="font-size:0.85rem; color:#5f8b74; margin-left:auto;">
+                <?php echo $total_reviews; ?> review<?php echo $total_reviews !== 1 ? 's' : ''; ?>
+              </span>
+            </div>
+          </form>
+
+          <?php if (empty($reviews)): ?>
+            <div class="empty-state">
+              <i class="fas fa-comment-slash"></i>
+              <p>No reviews found<?php echo $filter_restaurant_id ? ' for this restaurant' : ''; ?>.</p>
+            </div>
+          <?php else: ?>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Restaurant</th>
+                  <th>Rating</th>
+                  <th>Review</th>
+                  <th>Order</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($reviews as $rev): ?>
+                <tr>
+                  <td>
+                    <span style="font-weight:600; color:#0f4a2f;">
+                      <?php echo htmlspecialchars($rev['restaurant_name'] ?? '—'); ?>
+                    </span>
+                  </td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                      <?php
+                        $stars = round(floatval($rev['rating']) * 2) / 2;
+                        for ($s = 1; $s <= 5; $s++) {
+                          if ($s <= $stars) echo '<i class="fas fa-star" style="color:#f5a623; font-size:0.75rem;"></i>';
+                          elseif ($s - 0.5 === $stars) echo '<i class="fas fa-star-half-alt" style="color:#f5a623; font-size:0.75rem;"></i>';
+                          else echo '<i class="far fa-star" style="color:#ccc; font-size:0.75rem;"></i>';
+                        }
+                      ?>
+                      <strong style="font-size:0.82rem; color:#1a4d31;">
+                        <?php echo number_format(floatval($rev['rating']), 1); ?>
+                      </strong>
+                    </div>
+                  </td>
+                  <td style="max-width:340px;">
+                    <?php if ($rev['review']): ?>
+                      <span style="color:#2c4f3b; font-style:italic; font-size:0.88rem;">
+                        "<?php echo htmlspecialchars($rev['review']); ?>"
+                      </span>
+                    <?php else: ?>
+                      <span style="color:#9ab8a7; font-size:0.82rem;">
+                        <i class="fas fa-minus"></i> Rating only
+                      </span>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <?php if ($rev['order_id']): ?>
+                      <span class="pill pill-customer">#<?php echo $rev['order_id']; ?></span>
+                    <?php else: ?>
+                      <span class="pill" style="background:#f0f0f0; color:#999;">—</span>
+                    <?php endif; ?>
+                  </td>
+                  <td style="color:#5f8b74; font-size:0.85rem; white-space:nowrap;">
+                    <?php echo date('M d, Y', strtotime($rev['timestamp'])); ?><br>
+                    <span style="font-size:0.78rem;"><?php echo date('g:i A', strtotime($rev['timestamp'])); ?></span>
+                  </td>
+                  <td>
+                    <form method="POST" action="index.php?page=sysadmin&tab=reviews<?php echo $filter_restaurant_id ? '&review_restaurant='.$filter_restaurant_id : ''; ?>">
+                      <input type="hidden" name="admin_action" value="delete_review">
+                      <input type="hidden" name="rating_id" value="<?php echo $rev['ID']; ?>">
+                      <button type="submit" class="btn-sm btn-ban"
+                        onclick="return confirm('Permanently delete this review?')">
+                        <i class="fas fa-trash-alt"></i> Delete
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <footer class="footer-note">
       <i class="fas fa-user-shield"></i>
       System Admin · UniCanteen · Vendor creation, user bans, oversight · <?php echo date('g:i A'); ?>
     </footer>
+    </div><!-- /wrapper -->
+
+    
 
   </section>
-</div>
 
 <!-- CREATE VENDOR MODAL                         -->
 
@@ -1009,6 +1152,22 @@ $csrf_token = generateCSRFToken();
     btn.classList.add('active');
   }
 
+  // Restore active tab from URL param
+  (function() {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab) {
+      const panel = document.getElementById('tab-' + tab);
+      const btn = [...document.querySelectorAll('.admin-tab')].find(b => b.getAttribute('onclick')?.includes("'" + tab + "'"));
+      if (panel && btn) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+        panel.classList.add('active');
+        btn.classList.add('active');
+      }
+    }
+  })();
+
   // Create vendor modal
   function openCreateVendorModal() {
     document.getElementById('createVendorModal').style.display = 'flex';
@@ -1031,5 +1190,3 @@ $csrf_token = generateCSRFToken();
     }, 5000);
   });
 </script>
-</body>
-</html>
