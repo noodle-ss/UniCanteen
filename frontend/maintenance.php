@@ -130,21 +130,11 @@
             animation: pulse-ring 2.4s ease-in-out infinite;
         }
 
-        @keyframes pulse-ring {
-            0%, 100% { box-shadow: 0 0 0 0   rgba(0, 122, 62, 0.18); }
-            50%       { box-shadow: 0 0 0 14px rgba(0, 122, 62, 0.00); }
-        }
+        
 
         .icon-wrap i {
             font-size: 2.4rem;
             color: var(--green-dark);
-            animation: wrench-rock 2.4s ease-in-out infinite;
-            transform-origin: bottom center;
-        }
-
-        @keyframes wrench-rock {
-            0%, 100% { transform: rotate(-12deg); }
-            50%       { transform: rotate( 12deg); }
         }
 
         /* ── Typography ── */
@@ -227,19 +217,7 @@
             white-space: nowrap;
         }
 
-        /* ── Animated dots for "We'll be back" ── */
-        .dots span {
-            display: inline-block;
-            animation: dot-bounce 1.4s ease-in-out infinite;
-            color: var(--green-dark);
-        }
-        .dots span:nth-child(2) { animation-delay: 0.2s; }
-        .dots span:nth-child(3) { animation-delay: 0.4s; }
 
-        @keyframes dot-bounce {
-            0%, 80%, 100% { transform: translateY(0);    opacity: 0.4; }
-            40%            { transform: translateY(-5px); opacity: 1;   }
-        }
     </style>
 </head>
 <body>

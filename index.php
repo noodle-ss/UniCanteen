@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . '/config/config.php';
-define('MAINTENANCE_MODE', false);
+define('MAINTENANCE_MODE', true);
 
 if (MAINTENANCE_MODE) {
-    include __DIR__ . '/maintenance.php';
+    include __DIR__ . '/frontend/maintenance.php';
     exit();
 }
 
