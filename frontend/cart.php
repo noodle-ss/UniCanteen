@@ -97,7 +97,7 @@ if (isset($_POST['checkout'])) {
             $subtotal += $item['price'] * $item['quantity'];
             $restaurant_id = $item['restaurant_id'];
         }
-        $service_fee_checkout = 20;
+        $service_fee_checkout = 15;
         $total = $subtotal + $service_fee_checkout;
 
         $queueQuery = "SELECT COALESCE(MAX(queue_number), 2400) + 1 as next_queue
@@ -155,7 +155,7 @@ if (!empty($_SESSION['cart'])) {
 }
 
 $subtotal    = $cart_total;
-$service_fee = 20;
+$service_fee = 15;
 $grand_total = $subtotal + $service_fee;
 ?>
 <!DOCTYPE html>
