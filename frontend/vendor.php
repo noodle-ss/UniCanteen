@@ -821,7 +821,12 @@ unset($order);
                   </div>
                   <div style="font-size:0.9rem;"><?= htmlspecialchars($order['full_name']) ?></div>
                   <div style="font-size:0.85rem; color:#5f8b74;"><?= date('g:i A', strtotime($order['order_date'])) ?></div>
-                  <div style="font-weight:600; color:var(--dlsu-green);">₱<?= number_format($order['total_amount'], 2) ?>
+                  <div>
+                    <div style="font-weight:600; color:var(--dlsu-green);">₱<?= number_format($order['total_amount'], 2) ?>
+                    </div>
+                    <div style="font-size:0.8rem; color:#4a755e; margin-top:4px;">
+                      <i class="fas fa-mobile-screen-button"></i> GCash
+                    </div>
                   </div>
                   <div>
                     <select class="order-status-select" onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)" style="<?php

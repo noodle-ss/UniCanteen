@@ -309,6 +309,15 @@ $orderItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                             <span
                                 style="font-size: 1.8rem; font-weight: 800; color: #0f4a2f;">₱<?php echo number_format($currentOrder['total_amount'], 2); ?></span>
                         </div>
+
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; padding: 15px 10px 0; margin-top: 15px; border-top: 1px solid #e0f0e8;">
+                            <span style="font-size: 0.95rem; color: #4a755e; font-weight: 500;">Payment Method</span>
+                            <span
+                                style="font-size: 1.05rem; font-weight: 700; color: #1a4d31; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-mobile-screen-button" style="color: #007a3e;"></i> GCash
+                            </span>
+                        </div>
                     </div>
                 </div> <!-- closes track-card -->
             </div> <!-- closes order-details-container -->

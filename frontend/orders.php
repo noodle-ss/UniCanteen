@@ -162,6 +162,10 @@ $orders = $stmt->get_result();
                                     <p><i class="fas fa-money-bill"></i> Total:
                                         <strong>₱<?php echo number_format($order['total_amount'], 2); ?></strong>
                                     </p>
+                                    <p style="margin-top: 5px; font-size: 0.9rem; color: #4a755e;">
+                                        <i class="fas fa-mobile-screen-button"
+                                            style="color: #007a3e; width: 16px; text-align: center;"></i> GCash
+                                    </p>
                                 </div>
                                 <a href="index.php?page=order-details&id=<?php echo $order['ID']; ?>" class="btn-primary">
                                     View Details <i class="fas fa-arrow-right"></i>

@@ -105,8 +105,9 @@ if (isset($_POST['checkout'])) {
         $stmt = $db->prepare($queueQuery);
         $stmt->bind_param("i", $restaurant_id);
         $stmt->execute();
-        $queueData    = $stmt->get_result()->fetch_assoc();
+        $queueData = $stmt->get_result()->fetch_assoc();
         $queue_number = $queueData['next_queue'];
+        $stmt->close();
 
         $db->begin_transaction();
         try {
@@ -457,42 +458,75 @@ $grand_total = $subtotal + $service_fee;
         .sum-label { font-weight: 500; }
         .sum-val   { font-weight: 600; }
 
-        /* ── GCash payment block ── */
-        .gcash-block {
+        /* ── Payment methods block ── */
+        .payment-methods {
             margin: 0 24px 20px;
-            border: 2px solid #007a3e;
+        }
+        .payment-option {
+            border: 2px solid #e0f0e8;
             border-radius: 18px;
             padding: 16px 20px;
-            background: linear-gradient(135deg, #f0faf5, #e3f4ea);
+            background: #fff;
             display: flex;
             align-items: center;
             gap: 14px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .gcash-logo {
+        .payment-option:last-child {
+            margin-bottom: 0;
+        }
+        .payment-option.active {
+            border-color: #007a3e;
+            background: linear-gradient(135deg, #f0faf5, #e3f4ea);
+        }
+        .payment-logo {
             width: 48px; height: 48px;
-            background: #007a3e;
+            background: #f4fbf7;
             border-radius: 14px;
             display: flex; align-items: center; justify-content: center;
-            color: #fff;
+            color: #4a7560;
             font-size: 1.3rem;
             flex-shrink: 0;
+            transition: all 0.2s;
         }
-        .gcash-title {
+        .payment-option.active .payment-logo.gcash-logo { background: #007a3e; color: #fff; }
+        .payment-option.active .payment-logo.card-logo { background: #1f5090; color: #fff; }
+        
+        .payment-title {
             font-weight: 700;
             color: #0a3d22;
             font-size: 0.95rem;
         }
-        .gcash-sub {
+        .payment-sub {
             font-size: 0.78rem;
             color: #3d7455;
             margin-top: 2px;
         }
-        .gcash-check {
+        .payment-check {
             margin-left: auto;
-            color: #007a3e;
+            color: #e0f0e8;
             font-size: 1.3rem;
+            transition: color 0.2s;
         }
-
+        .payment-option.active .payment-check {
+            color: #007a3e;
+        }
+        
+        .qr-instruction {
+            display: none;
+            margin: 10px 24px 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #475569;
+        }
+        .qr-instruction.show { display: block; }
+        
         /* ── Checkout button ── */
         .checkout-wrap { padding: 0 24px 24px; }
         .btn-checkout {
@@ -810,14 +844,21 @@ $grand_total = $subtotal + $service_fee;
                             </div>
                         </div>
 
-                        <!-- GCash-only payment -->
-                        <div class="gcash-block">
-                            <div class="gcash-logo"><i class="fas fa-mobile-screen-button"></i></div>
-                            <div>
-                                <div class="gcash-title">GCash</div>
-                                <div class="gcash-sub">Cashless · Secure · Instant</div>
-                            </div>
-                            <div class="gcash-check"><i class="fas fa-circle-check"></i></div>
+                        <!-- Active Payment Method -->
+                        <div class="payment-methods">
+                            <label class="payment-option active" style="cursor: default;">
+                                <div class="payment-logo gcash-logo" style="background: #007a3e; color: #fff;"><i class="fas fa-mobile-screen-button"></i></div>
+                                <div>
+                                    <div class="payment-title">GCash</div>
+                                    <div class="payment-sub">Cashless · Secure · Instant</div>
+                                </div>
+                                <div class="payment-check" style="color: #007a3e;"><i class="fas fa-circle-check"></i></div>
+                            </label>
+                        </div>
+                        
+                        <div id="gcashInstruction" class="qr-instruction show">
+                            <i class="fas fa-qrcode" style="font-size: 2rem; color: #64748b; margin-bottom: 8px; display: block;"></i>
+                            <strong>Scan QR or send payment</strong> at the stall.<br>Please show proof of transfer when picking up your food.
                         </div>
 
                         <?php if (!isLoggedIn()): ?>
@@ -829,7 +870,7 @@ $grand_total = $subtotal + $service_fee;
 
                         <div class="checkout-wrap">
                             <form method="POST" action="index.php?page=cart" id="checkoutForm">
-                                <input type="hidden" name="payment_method" value="gcash">
+                                <input type="hidden" name="payment_method" id="paymentMethodInput" value="gcash">
                                 <button type="button" id="placeOrderBtn" class="btn-checkout"
                                     <?php echo !isLoggedIn() ? 'disabled' : ''; ?>
                                     onclick="openConfirmModal()">
@@ -873,6 +914,10 @@ $grand_total = $subtotal + $service_fee;
             <div class="modal-row total">
                 <span>Total</span>
                 <span>&#8369;<?php echo number_format($grand_total, 2); ?></span>
+            </div>
+            <div class="modal-row" style="margin-top: 10px; border-top: 2px dashed #e0f0e8; padding-top: 10px;">
+                <span style="font-size: 0.85rem; color: #6b8f7a;">Payment Method</span>
+                <span id="modalPaymentDisplay" style="font-weight: 600; color: #1a3d28;">GCash</span>
             </div>
         </div>
         <div class="modal-btns">
