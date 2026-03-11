@@ -190,6 +190,7 @@ $orderItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                 <div class="customer-nav-links">
                     <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
                     <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
+                    <a href="<?php echo url('index.php?page=favorites'); ?>">Favorites</a>
                     <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
                     <a href="<?php echo url('index.php?page=profile'); ?>">
                         <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Profile'); ?>
@@ -202,9 +203,17 @@ $orderItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
             </nav>
 
             <div class="order-details-container">
-                <a href="<?php echo url('index.php?page=orders'); ?>" class="btn-back">
-                    <i class="fas fa-arrow-left"></i> Back to Orders
-                </a>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <a href="<?php echo url('index.php?page=orders'); ?>" class="btn-back">
+                        <i class="fas fa-arrow-left"></i> Back to Orders
+                    </a>
+                    <form method="POST" action="index.php?page=reorder" style="margin-bottom:30px;" onsubmit="return confirmReorder(this, <?php echo $currentOrder['restaurant_ID']; ?>);">
+                        <input type="hidden" name="order_id" value="<?php echo $currentOrder['ID']; ?>">
+                        <button type="submit" style="display:inline-flex; align-items:center; gap:8px; background:#007a3e; border:none; color:#fff; padding:10px 24px; border-radius:40px; font-weight:600; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(0, 122, 62, 0.2); transition:all 0.2s ease;">
+                            <i class="fas fa-redo-alt"></i> Reorder Entire Meal
+                        </button>
+                    </form>
+                </div>
 
                 <div class="track-card" style="padding: 30px;">
                     <div class="order-header-info">
@@ -321,6 +330,24 @@ $orderItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                     </div>
                 </div> <!-- closes track-card -->
             </div> <!-- closes order-details-container -->
+
+            <?php
+            // Pass cart info to JS for validation
+            $current_cart_restaurant_id = null;
+            if (isset($_SESSION['cart']) && !empty($_SESSION['cart'])) {
+                $first_item = reset($_SESSION['cart']);
+                $current_cart_restaurant_id = $first_item['restaurant_id'];
+            }
+            ?>
+            <script>
+                const currentCartRestaurantId = <?php echo $current_cart_restaurant_id ? $current_cart_restaurant_id : 'null'; ?>;
+                function confirmReorder(form, targetRestaurantId) {
+                    if (currentCartRestaurantId !== null && currentCartRestaurantId !== targetRestaurantId) {
+                        return confirm("Your cart currently contains items from a different stall. Reordering this meal will clear your current cart. Proceed?");
+                    }
+                    return true;
+                }
+            </script>
 
             <footer class="footer-note" style="margin-top: 50px; padding-bottom: 40px; color: #4a755e;">
                 <i class="fas fa-clipboard-list"></i> Order History · Track Orders · Reorder Favorites

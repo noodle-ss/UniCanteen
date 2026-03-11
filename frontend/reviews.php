@@ -327,7 +327,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
                     <div class="customer-nav-links">
                         <a href="index.php?page=customer#menu">Menu</a>
                         <a href="index.php?page=customer#track">Track</a>
-                        <a href="index.php?page=reviews">Reviews</a>
+                        <a href="index.php?page=favorites">Favorites</a>
+                        <a href="index.php?page=reviews" style="font-weight: 700; color: #007a3e;">Reviews</a>
                         <?php if (isset($_SESSION['user_id'])): ?>
                             <a
                                 href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>

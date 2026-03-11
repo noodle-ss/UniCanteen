@@ -135,6 +135,12 @@ if (isset($_GET['dev']) && $_GET['dev'] === 'vendor') {
             case 'forgot-password':
                 include 'frontend/forgot-password.php';
                 break;
+            case 'favorites':
+                include 'frontend/favorites.php';
+                break;
+            case 'reorder':
+                include 'frontend/reorder.php';
+                break;                
             case 'cart':
                 include 'frontend/cart.php';
                 break;

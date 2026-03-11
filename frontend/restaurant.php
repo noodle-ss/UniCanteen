@@ -68,6 +68,26 @@ if (isset($_SESSION['cart'])) {
         $cart_items_count += $item['quantity'];
     }
 }
+
+// User favorites
+$userFavorites = [];
+if (isLoggedIn()) {
+    $favQuery = "SELECT item_id FROM Favorites WHERE user_id = ?";
+    $stmtFav = $db->prepare($favQuery);
+    $stmtFav->bind_param("i", $_SESSION['user_id']);
+    $stmtFav->execute();
+    $favResult = $stmtFav->get_result();
+    while ($row = $favResult->fetch_assoc()) {
+        $userFavorites[] = $row['item_id'];
+    }
+}
+
+// Flash messages from add-to-cart redirect
+if (isset($_SESSION['cart'])) {
+    foreach ($_SESSION['cart'] as $item) {
+        $cart_items_count += $item['quantity'];
+    }
+}
 // Flash messages from add-to-cart redirect
 $flash_added = isset($_GET['added']) ? urldecode($_GET['added']) : '';
 $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
@@ -620,6 +640,11 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
 </head>
 
 <body>
+    <script>
+        // Pass PHP favorites array to JS early
+        window.userFavorites = <?php echo json_encode($userFavorites); ?>;
+        window.isLoggedIn = <?php echo isLoggedIn() ? 'true' : 'false'; ?>;
+    </script>
     <div class="main-content">
         <section class="page-section">
 
@@ -746,9 +771,15 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
                         $count = 0;
                         while ($item = $itemsResult->fetch_assoc()):
                             $isAvailable = ($item['isAvailable'] == 1 || $item['isAvailable'] === '1' || $item['isAvailable'] === true);
+                            $isFav = in_array($item['ID'], $userFavorites);
                             $count++;
                             ?>
-                            <div class="menu-card <?php echo !$isAvailable ? 'sold-out-card' : ''; ?>">
+                            <div class="menu-card <?php echo !$isAvailable ? 'sold-out-card' : ''; ?>" style="position:relative;">
+                                <!-- Favorite Heart Toggle -->
+                                <button class="fav-btn" data-item-id="<?php echo $item['ID']; ?>" 
+                                        style="position:absolute; top:12px; right:12px; z-index:10; background:rgba(255,255,255,0.9); border:none; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.1); color: <?php echo $isFav ? '#dc2626' : '#9ca3af'; ?>; transition: transform 0.2s, color 0.2s; font-size:1.15rem;">
+                                    <i class="<?php echo $isFav ? 'fas' : 'far'; ?> fa-heart" style="transform: translate(1px, 1px);"></i>
+                                </button>
                                 <?php if (!empty($item['image_url'])): ?>
                                     <img src="<?php echo htmlspecialchars(url($item['image_url'])); ?>"
                                         alt="<?php echo htmlspecialchars($item['name']); ?>" class="menu-card-img">
@@ -899,6 +930,74 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
         ['addToast', 'errToast'].forEach(id => {
             const el = document.getElementById(id);
             if (el) setTimeout(() => { el.style.transition = 'opacity 0.5s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 500); }, 3000);
+        });
+
+        // ── Favorite Toggle ─────────────────────────────────────────────────
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.fav-btn');
+            if (!btn) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (!window.isLoggedIn) {
+                alert('Please sign in to save your favorite items.');
+                window.location.href = 'index.php?page=login';
+                return;
+            }
+
+            const itemId = btn.dataset.itemId;
+            const icon = btn.querySelector('i');
+            
+            // Optimistic UI update
+            const isCurrentlyFav = icon.classList.contains('fas');
+            if (isCurrentlyFav) {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                btn.style.color = '#9ca3af';
+            } else {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                btn.style.color = '#dc2626';
+            }
+
+            // AJAX request
+            const formData = new FormData();
+            formData.append('item_id', itemId);
+
+            fetch('frontend/toggle_favorite.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    // Revert UI on failure
+                    console.error('Failed to toggle favorite:', data.message);
+                    if (isCurrentlyFav) {
+                        icon.classList.add('fas');
+                        icon.classList.remove('far');
+                        btn.style.color = '#dc2626';
+                    } else {
+                        icon.classList.add('far');
+                        icon.classList.remove('fas');
+                        btn.style.color = '#9ca3af';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revert UI on error
+                if (isCurrentlyFav) {
+                    icon.classList.add('fas');
+                    icon.classList.remove('far');
+                    btn.style.color = '#dc2626';
+                } else {
+                    icon.classList.add('far');
+                    icon.classList.remove('fas');
+                    btn.style.color = '#9ca3af';
+                }
+            });
         });
     </script>
 </body>

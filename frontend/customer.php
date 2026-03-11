@@ -61,7 +61,18 @@ $ratingStats = $ratingStatsResult->fetch_assoc();
 
 // Get current orders if user is logged in
 $activeOrders = [];
+$userFavorites = [];
 if (isLoggedIn()) {
+    // Get favorites
+    $favQuery = "SELECT item_id FROM Favorites WHERE user_id = ?";
+    $stmtFav = $db->prepare($favQuery);
+    $stmtFav->bind_param("i", $_SESSION['user_id']);
+    $stmtFav->execute();
+    $favResult = $stmtFav->get_result();
+    while ($row = $favResult->fetch_assoc()) {
+        $userFavorites[] = $row['item_id'];
+    }
+
     $orderQuery = "SELECT 
         o.*,
         r.name as restaurant_name
@@ -296,6 +307,11 @@ if (isLoggedIn()) {
 </head>
 
 <body>
+    <script>
+        // Pass PHP favorites array to JS early
+        window.userFavorites = <?php echo json_encode($userFavorites); ?>;
+        window.isLoggedIn = <?php echo isLoggedIn() ? 'true' : 'false'; ?>;
+    </script>
     <div class="main-content">
         <section id="customer" class="page-section">
             <div class="wrapper">
@@ -442,8 +458,9 @@ if (isLoggedIn()) {
                                 <?php
                                 foreach ($itemsForAttr as $item):
                                     $isAvailable = ($item['isAvailable'] == 1 || $item['isAvailable'] === '1' || $item['isAvailable'] === true);
+                                    $isFav = in_array($item['ID'], $userFavorites);
                                     ?>
-                                    <div class="menu-row" title="<?php echo htmlspecialchars($item['description'] ?? ''); ?>">
+                                    <div class="menu-row" title="<?php echo htmlspecialchars($item['description'] ?? ''); ?>" style="position:relative; padding-right:30px;">
                                         <span class="item-name"><?php echo htmlspecialchars($item['name']); ?></span>
                                         <span class="price-tag">₱<?php echo number_format($item['price'], 0); ?></span>
                                         <?php if ($isAvailable): ?>
@@ -452,6 +469,10 @@ if (isLoggedIn()) {
                                             <span class="avail-tag not-available"><i class="fas fa-times-circle"></i> Sold
                                                 Out</span>
                                         <?php endif; ?>
+                                        <button class="fav-btn" data-item-id="<?php echo $item['ID']; ?>" 
+                                                style="position:absolute; right:-5px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color: <?php echo $isFav ? '#dc2626' : '#9ca3af'; ?>; transition: color 0.2s; font-size:1.1rem; padding:5px;">
+                                            <i class="<?php echo $isFav ? 'fas' : 'far'; ?> fa-heart"></i>
+                                        </button>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
@@ -787,6 +808,74 @@ if (isLoggedIn()) {
 
         // On page load — hide clear btn
         document.getElementById('searchClearBtn').style.display = 'none';
+
+        // ── Favorite Toggle ─────────────────────────────────────────────────
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.fav-btn');
+            if (!btn) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (!window.isLoggedIn) {
+                alert('Please sign in to save your favorite items.');
+                window.location.href = 'index.php?page=login';
+                return;
+            }
+
+            const itemId = btn.dataset.itemId;
+            const icon = btn.querySelector('i');
+            
+            // Optimistic UI update
+            const isCurrentlyFav = icon.classList.contains('fas');
+            if (isCurrentlyFav) {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                btn.style.color = '#9ca3af';
+            } else {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                btn.style.color = '#dc2626';
+            }
+
+            // AJAX request
+            const formData = new FormData();
+            formData.append('item_id', itemId);
+
+            fetch('frontend/toggle_favorite.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    // Revert UI on failure
+                    console.error('Failed to toggle favorite:', data.message);
+                    if (isCurrentlyFav) {
+                        icon.classList.add('fas');
+                        icon.classList.remove('far');
+                        btn.style.color = '#dc2626';
+                    } else {
+                        icon.classList.add('far');
+                        icon.classList.remove('fas');
+                        btn.style.color = '#9ca3af';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revert UI on error
+                if (isCurrentlyFav) {
+                    icon.classList.add('fas');
+                    icon.classList.remove('far');
+                    btn.style.color = '#dc2626';
+                } else {
+                    icon.classList.add('far');
+                    icon.classList.remove('fas');
+                    btn.style.color = '#9ca3af';
+                }
+            });
+        });
     </script>
 </body>
 

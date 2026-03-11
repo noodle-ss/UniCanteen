@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS Item_Categories;
 DROP TABLE IF EXISTS Categories;
 DROP TABLE IF EXISTS Order_ItemLine;
 DROP TABLE IF EXISTS Ratings;
+DROP TABLE IF EXISTS Favorites;
 DROP TABLE IF EXISTS Orders;
 DROP TABLE IF EXISTS Sessions;
 DROP TABLE IF EXISTS UserLogs;
@@ -119,6 +120,17 @@ CREATE TABLE Order_ItemLine (
     price_at_time DECIMAL(10, 2) NOT NULL,
     FOREIGN KEY (order_ID) REFERENCES Orders(ID) ON DELETE CASCADE,
     FOREIGN KEY (item_ID) REFERENCES Items(ID)
+);
+
+-- ==================== FAVORITES TABLE ====================
+CREATE TABLE Favorites (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    item_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(ID) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES Items(ID) ON DELETE CASCADE,
+    UNIQUE KEY unique_favorite (user_id, item_id)
 );
 
 -- ==================== RATINGS TABLE ====================

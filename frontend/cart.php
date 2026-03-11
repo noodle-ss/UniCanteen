@@ -44,13 +44,23 @@ if (isset($_GET['add']) && isset($_GET['restaurant_id'])) {
                     'restaurant_name' => $item['restaurant_name'],
                 ];
             }
-            // Stay on restaurant page with a flash, NOT redirect to cart
+            // Stay on previous page with a flash, NOT redirect to cart
             $itemName = urlencode($item['name']);
-            header("Location: index.php?page=restaurant&id={$restaurant_id}&added=" . $itemName);
+            $return_to = $_GET['return_to'] ?? null;
+            if ($return_to === 'favorites') {
+                header("Location: index.php?page=favorites&added=" . urlencode($item['name']));
+            } else {
+                header("Location: index.php?page=restaurant&id={$restaurant_id}&added=" . $itemName);
+            }
             exit();
         }
     }
-    header("Location: index.php?page=restaurant&id={$restaurant_id}&error=" . urlencode($addError ?? "Item not available."));
+    $return_to = $_GET['return_to'] ?? null;
+    if ($return_to === 'favorites') {
+        header("Location: index.php?page=favorites&error=" . urlencode($addError ?? "Item not available."));
+    } else {
+        header("Location: index.php?page=restaurant&id={$restaurant_id}&error=" . urlencode($addError ?? "Item not available."));
+    }
     exit();
 }
 
@@ -139,6 +149,8 @@ if (isset($_POST['checkout'])) {
 // ── Page vars ────────────────────────────────────────────────────────────────
 $successMsg = $_GET['success'] ?? '';
 $errorMsg   = $_GET['error']   ?? ($checkoutError ?? '');
+$warningMsg = $_SESSION['flash_warning'] ?? '';
+unset($_SESSION['flash_warning']);
 
 $cart_total       = 0;
 $cart_items_count = 0;
@@ -236,6 +248,7 @@ $grand_total = $subtotal + $service_fee;
         }
         .toast.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
         .toast.error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .toast.warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
 
         /* ── Restaurant banner ── */
         .stall-banner {
@@ -685,6 +698,7 @@ $grand_total = $subtotal + $service_fee;
             <div class="customer-nav-links">
                 <a href="index.php?page=customer#menu">Menu</a>
                 <a href="index.php?page=customer#track">Track</a>
+                <a href="index.php?page=favorites">Favorites</a>
                 <a href="index.php?page=reviews">Reviews</a>
                 <?php if (isset($_SESSION['user_id'])): ?>
                     <a href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>
@@ -732,7 +746,7 @@ $grand_total = $subtotal + $service_fee;
             <div class="toast success">
                 <i class="fas fa-circle-check"></i>
                 <?php
-                    $msgs = ['added'=>'Item added to cart!','updated'=>'Cart updated!','removed'=>'Item removed.','cleared'=>'Cart cleared.','placed'=>'Order placed successfully!'];
+                    $msgs = ['added'=>'Item added to cart!','updated'=>'Cart updated!','removed'=>'Item removed.','cleared'=>'Cart cleared.','placed'=>'Order placed successfully!','reordered'=>'Meal reordered! Review your cart.'];
                     echo $msgs[$successMsg] ?? 'Done!';
                 ?>
             </div>
@@ -741,6 +755,12 @@ $grand_total = $subtotal + $service_fee;
             <div class="toast error">
                 <i class="fas fa-exclamation-circle"></i>
                 <?php echo htmlspecialchars($errorMsg); ?>
+            </div>
+            <?php endif; ?>
+            <?php if ($warningMsg): ?>
+            <div class="toast warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <?php echo htmlspecialchars($warningMsg); ?>
             </div>
             <?php endif; ?>
 

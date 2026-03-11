@@ -308,6 +308,7 @@ $reviews = $stmt->get_result();
                 <div class="customer-nav-links">
                     <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
                     <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
+                    <a href="<?php echo url('index.php?page=favorites'); ?>">Favorites</a>
                     <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
                     <a href="<?php echo url('index.php?page=profile'); ?>"
                         style="color: #007a3e;"><?php echo htmlspecialchars(explode(' ', $user['full_name'])[0]); ?></a>

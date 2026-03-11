@@ -116,6 +116,7 @@ $orders = $stmt->get_result();
                 <div class="customer-nav-links">
                     <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
                     <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
+                    <a href="<?php echo url('index.php?page=favorites'); ?>">Favorites</a>
                     <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
                     <a
                         href="<?php echo url('index.php?page=profile'); ?>"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Profile'); ?></a>
@@ -124,9 +125,14 @@ $orders = $stmt->get_result();
                         <i class="fas fa-bag-shopping"></i> Cart
                         <?php
                         $cart_items_count = 0;
+                        $current_cart_restaurant_id = null;
                         if (isset($_SESSION['cart'])) {
-                            foreach ($_SESSION['cart'] as $ci)
+                            foreach ($_SESSION['cart'] as $ci) {
                                 $cart_items_count += $ci['quantity'];
+                                if ($current_cart_restaurant_id === null) {
+                                    $current_cart_restaurant_id = $ci['restaurant_id'];
+                                }
+                            }
                         }
                         ?>
                         <span
@@ -167,9 +173,17 @@ $orders = $stmt->get_result();
                                             style="color: #007a3e; width: 16px; text-align: center;"></i> GCash
                                     </p>
                                 </div>
-                                <a href="index.php?page=order-details&id=<?php echo $order['ID']; ?>" class="btn-primary">
-                                    View Details <i class="fas fa-arrow-right"></i>
-                                </a>
+                                <div style="display:flex; gap:10px;">
+                                    <form method="POST" action="index.php?page=reorder" style="margin:0;" onsubmit="return confirmReorder(this, <?php echo $order['restaurant_ID']; ?>);">
+                                        <input type="hidden" name="order_id" value="<?php echo $order['ID']; ?>">
+                                        <button type="submit" class="btn-primary" style="background:#e3f4ea; color:#007a3e; border:1px solid #b8e0cc;">
+                                            <i class="fas fa-redo-alt"></i> Reorder
+                                        </button>
+                                    </form>
+                                    <a href="index.php?page=order-details&id=<?php echo $order['ID']; ?>" class="btn-primary">
+                                        View Details <i class="fas fa-arrow-right"></i>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     <?php endwhile; ?>
@@ -191,6 +205,18 @@ $orders = $stmt->get_result();
             <i class="fas fa-clipboard-list"></i> Order History · Track Orders · Reorder Favorites
         </footer>
     </div>
+
+    <script>
+        const currentCartRestaurantId = <?php echo $current_cart_restaurant_id ? $current_cart_restaurant_id : 'null'; ?>;
+        
+        function confirmReorder(form, targetRestaurantId) {
+            // If cart has items from a different restaurant
+            if (currentCartRestaurantId !== null && currentCartRestaurantId !== targetRestaurantId) {
+                return confirm("Your cart currently contains items from a different stall. Reordering this meal will clear your current cart. Proceed?");
+            }
+            return true;
+        }
+    </script>
 </body>
 
 </html>
