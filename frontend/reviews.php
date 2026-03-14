@@ -136,17 +136,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
-        body {
-            display: block;
-            min-height: auto;
-            margin: 0;
-            padding: 0;
-        }
-
-        .main-content {
-            margin-left: 0;
-        }
-
         .reviews-header {
             background: linear-gradient(rgba(245, 250, 245, 0.9), rgba(245, 250, 245, 0.95));
             padding: 40px 0;
@@ -315,6 +304,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
             padding: 0 !important;
             margin-bottom: 20px;
         }
+
+        .success-message {
+            background: #dcfce7;
+            color: #166534;
+            padding: 15px 20px;
+            border-radius: 16px;
+            border: 1px solid #bbf7d0;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
     </style>
 </head>
 
@@ -328,6 +330,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
                         <a href="index.php?page=customer#menu">Menu</a>
                         <a href="index.php?page=customer#track">Track</a>
                         <a href="index.php?page=favorites">Favorites</a>
+                        <a href="index.php?page=orders">Orders</a>
                         <a href="index.php?page=reviews" style="font-weight: 700; color: #007a3e;">Reviews</a>
                         <?php if (isset($_SESSION['user_id'])): ?>
                             <a
@@ -420,47 +423,55 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
                                 JOIN Restaurants r ON o.restaurant_ID = r.ID
                                 LEFT JOIN Ratings rt ON o.ID = rt.order_ID
                                 WHERE o.customer_ID = ? AND o.status = 'C' AND rt.ID IS NULL
-                                LIMIT 1";
+                                ORDER BY o.order_date DESC";
                 $stmt = $db->prepare($pendingQuery);
                 $stmt->bind_param("i", $_SESSION['user_id']);
                 $stmt->execute();
-                $pendingOrder = $stmt->get_result()->fetch_assoc();
+                $pendingOrders = $stmt->get_result();
 
-                if ($pendingOrder):
+                if ($pendingOrders->num_rows > 0):
                     ?>
                     <div class="review-form">
-                        <h3 style="margin-bottom: 15px; color: #16623b;">Review Your Recent Order</h3>
+                        <h3 style="margin-bottom: 15px; color: #16623b;">Review Your Completed Orders</h3>
                         <p style="color: #3b7455; margin-bottom: 20px;">
-                            Order #<?php echo $pendingOrder['queue_number']; ?> from
-                            <?php echo $pendingOrder['restaurant_name']; ?>
+                            You have <?php echo $pendingOrders->num_rows; ?> order<?php echo $pendingOrders->num_rows > 1 ? 's' : ''; ?> waiting for your review.
                         </p>
 
-                        <form method="POST" action="">
-                            <input type="hidden" name="order_id" value="<?php echo $pendingOrder['ID']; ?>">
+                        <?php while ($pendingOrder = $pendingOrders->fetch_assoc()): ?>
+                        <div style="background: #f0f7f2; border-radius: 16px; padding: 20px; margin-bottom: 16px; border: 1px solid #e0f0e8;">
+                            <p style="font-weight: 600; color: #1a4d31; margin-bottom: 12px;">
+                                <i class="fas fa-receipt" style="color: #007a3e; margin-right: 6px;"></i>
+                                Order #<?php echo $pendingOrder['queue_number']; ?> — <?php echo htmlspecialchars($pendingOrder['restaurant_name']); ?>
+                            </p>
 
-                            <div style="margin-bottom: 20px;">
-                                <label style="display: block; margin-bottom: 10px; font-weight: 500;">Your Rating</label>
-                                <div class="star-rating" id="starRating">
-                                    <i class="far fa-star" data-rating="1"></i>
-                                    <i class="far fa-star" data-rating="2"></i>
-                                    <i class="far fa-star" data-rating="3"></i>
-                                    <i class="far fa-star" data-rating="4"></i>
-                                    <i class="far fa-star" data-rating="5"></i>
+                            <form method="POST" action="index.php?page=reviews">
+                                <input type="hidden" name="order_id" value="<?php echo $pendingOrder['ID']; ?>">
+
+                                <div style="margin-bottom: 15px;">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 500;">Your Rating</label>
+                                    <div class="star-rating" data-order-id="<?php echo $pendingOrder['ID']; ?>">
+                                        <i class="fas fa-star" data-rating="1"></i>
+                                        <i class="fas fa-star" data-rating="2"></i>
+                                        <i class="fas fa-star" data-rating="3"></i>
+                                        <i class="fas fa-star" data-rating="4"></i>
+                                        <i class="fas fa-star" data-rating="5"></i>
+                                    </div>
+                                    <input type="hidden" name="rating" class="ratingValue" value="5">
                                 </div>
-                                <input type="hidden" name="rating" id="ratingValue" value="5">
-                            </div>
 
-                            <div style="margin-bottom: 20px;">
-                                <label style="display: block; margin-bottom: 10px; font-weight: 500;">Your Review</label>
-                                <textarea name="review" rows="4" required
-                                    style="width: 100%; padding: 15px; border: 2px solid #e0f0e8; border-radius: 30px; font-family: 'Inter', sans-serif;"
-                                    placeholder="Tell us about your experience..."></textarea>
-                            </div>
+                                <div style="margin-bottom: 15px;">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 500;">Your Review</label>
+                                    <textarea name="review" rows="3" required
+                                        style="width: 100%; padding: 12px 15px; border: 2px solid #e0f0e8; border-radius: 16px; font-family: 'Inter', sans-serif; resize: vertical; box-sizing: border-box;"
+                                        placeholder="Tell us about your experience..."></textarea>
+                                </div>
 
-                            <button type="submit" name="submit_review" class="btn-primary">
-                                <i class="fas fa-paper-plane"></i> Submit Review
-                            </button>
-                        </form>
+                                <button type="submit" name="submit_review" class="btn-primary" style="padding: 10px 24px;">
+                                    <i class="fas fa-paper-plane"></i> Submit Review
+                                </button>
+                            </form>
+                        </div>
+                        <?php endwhile; ?>
                     </div>
                 <?php endif; endif; ?>
 
@@ -546,40 +557,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
     </div>
 
     <script>
-        // Star rating functionality
-        const stars = document.querySelectorAll('#starRating i');
-        const ratingInput = document.getElementById('ratingValue');
+        // Star rating functionality for multiple review forms
+        document.querySelectorAll('.star-rating').forEach(container => {
+            const stars = container.querySelectorAll('i');
+            const ratingInput = container.parentElement.querySelector('.ratingValue');
 
-        if (stars.length > 0) {
+            function highlightStars(rating) {
+                stars.forEach(star => {
+                    star.className = star.dataset.rating <= rating ? 'fas fa-star' : 'far fa-star';
+                });
+            }
+
             stars.forEach(star => {
-                star.addEventListener('mouseover', function () {
-                    const rating = this.dataset.rating;
-                    highlightStars(rating);
-                });
-
-                star.addEventListener('mouseout', function () {
-                    const currentRating = ratingInput.value;
-                    highlightStars(currentRating);
-                });
-
-                star.addEventListener('click', function () {
-                    const rating = this.dataset.rating;
-                    ratingInput.value = rating;
-                    highlightStars(rating);
+                star.addEventListener('mouseover', () => highlightStars(star.dataset.rating));
+                star.addEventListener('mouseout', () => highlightStars(ratingInput.value));
+                star.addEventListener('click', () => {
+                    ratingInput.value = star.dataset.rating;
+                    highlightStars(star.dataset.rating);
                 });
             });
-        }
 
-        function highlightStars(rating) {
-            stars.forEach(star => {
-                const starRating = star.dataset.rating;
-                if (starRating <= rating) {
-                    star.className = 'fas fa-star';
-                } else {
-                    star.className = 'far fa-star';
-                }
-            });
-        }
+            // Pre-fill stars to match default value
+            highlightStars(ratingInput.value);
+        });
     </script>
 </body>
 

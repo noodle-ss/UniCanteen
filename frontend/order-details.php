@@ -36,6 +36,15 @@ $stmt = $db->prepare($itemsQuery);
 $stmt->bind_param("i", $order_id);
 $stmt->execute();
 $orderItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+// Check if order has been reviewed
+$hasReview = false;
+if ($currentOrder['status'] === 'C') {
+    $reviewCheckStmt = $db->prepare("SELECT ID FROM Ratings WHERE order_ID = ?");
+    $reviewCheckStmt->bind_param("i", $order_id);
+    $reviewCheckStmt->execute();
+    $hasReview = $reviewCheckStmt->get_result()->num_rows > 0;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -52,18 +61,6 @@ $orderItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
-        body {
-            display: block;
-            min-height: auto;
-            margin: 0;
-            padding: 0;
-            background: #f0f7f2;
-        }
-
-        .main-content {
-            margin-left: 0;
-        }
-
         .wrapper {
             max-width: 1300px;
             margin: 0 auto;
@@ -191,6 +188,7 @@ $orderItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                     <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
                     <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
                     <a href="<?php echo url('index.php?page=favorites'); ?>">Favorites</a>
+                    <a href="<?php echo url('index.php?page=orders'); ?>">Orders</a>
                     <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
                     <a href="<?php echo url('index.php?page=profile'); ?>">
                         <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Profile'); ?>
@@ -203,16 +201,29 @@ $orderItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
             </nav>
 
             <div class="order-details-container">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 10px;">
                     <a href="<?php echo url('index.php?page=orders'); ?>" class="btn-back">
                         <i class="fas fa-arrow-left"></i> Back to Orders
                     </a>
-                    <form method="POST" action="index.php?page=reorder" style="margin-bottom:30px;" onsubmit="return confirmReorder(this, <?php echo $currentOrder['restaurant_ID']; ?>);">
-                        <input type="hidden" name="order_id" value="<?php echo $currentOrder['ID']; ?>">
-                        <button type="submit" style="display:inline-flex; align-items:center; gap:8px; background:#007a3e; border:none; color:#fff; padding:10px 24px; border-radius:40px; font-weight:600; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(0, 122, 62, 0.2); transition:all 0.2s ease;">
-                            <i class="fas fa-redo-alt"></i> Reorder Entire Meal
-                        </button>
-                    </form>
+                    <div style="display: flex; gap: 10px; margin-bottom: 30px;">
+                        <?php if ($currentOrder['status'] === 'C'): ?>
+                            <?php if ($hasReview): ?>
+                                <span style="display:inline-flex; align-items:center; gap:8px; background:#dcfce7; color:#166534; padding:10px 24px; border-radius:40px; font-weight:600; font-size:0.95rem; border:1px solid #bbf7d0;">
+                                    <i class="fas fa-check-circle"></i> Reviewed
+                                </span>
+                            <?php else: ?>
+                                <a href="<?php echo url('index.php?page=reviews'); ?>" style="display:inline-flex; align-items:center; gap:8px; background:#fef9c3; color:#854d0e; padding:10px 24px; border-radius:40px; font-weight:600; font-size:0.95rem; text-decoration:none; border:1px solid #fde68a; transition:all 0.2s ease;">
+                                    <i class="fas fa-star"></i> Leave Review
+                                </a>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                        <form method="POST" action="index.php?page=reorder" style="margin-bottom:0;" onsubmit="return confirmReorder(this, <?php echo $currentOrder['restaurant_ID']; ?>);">
+                            <input type="hidden" name="order_id" value="<?php echo $currentOrder['ID']; ?>">
+                            <button type="submit" style="display:inline-flex; align-items:center; gap:8px; background:#007a3e; border:none; color:#fff; padding:10px 24px; border-radius:40px; font-weight:600; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(0, 122, 62, 0.2); transition:all 0.2s ease;">
+                                <i class="fas fa-redo-alt"></i> Reorder Entire Meal
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
                 <div class="track-card" style="padding: 30px;">

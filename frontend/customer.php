@@ -117,17 +117,6 @@ if (isLoggedIn()) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
-        body {
-            display: block;
-            min-height: auto;
-            margin: 0;
-            padding: 0;
-        }
-
-        .main-content {
-            margin-left: 0;
-        }
-
         .wrapper {
             max-width: 1300px;
             margin: 0 auto;
@@ -320,6 +309,8 @@ if (isLoggedIn()) {
                     <div class="customer-nav-links">
                         <a href="index.php?page=customer#menu">Menu</a>
                         <a href="index.php?page=customer#track">Track</a>
+                        <a href="index.php?page=favorites">Favorites</a>
+                        <a href="index.php?page=orders">Orders</a>
                         <a href="index.php?page=reviews">Reviews</a>
                         <?php if (isset($_SESSION['user_id'])): ?>
                             <a

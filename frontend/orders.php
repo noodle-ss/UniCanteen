@@ -7,13 +7,15 @@ requireLogin();
 $db = Database::getInstance()->getConnection();
 $user_id = $_SESSION['user_id'];
 
-// Get all user orders
+// Get all user orders with review status
 $ordersQuery = "SELECT o.*, r.name as restaurant_name,
                 COUNT(oi.ID) as item_count,
-                SUM(oi.quantity) as total_items
+                SUM(oi.quantity) as total_items,
+                rt.ID as review_id
                 FROM Orders o
                 JOIN Restaurants r ON o.restaurant_ID = r.ID
                 LEFT JOIN Order_ItemLine oi ON o.ID = oi.order_ID
+                LEFT JOIN Ratings rt ON o.ID = rt.order_ID
                 WHERE o.customer_ID = ?
                 GROUP BY o.ID
                 ORDER BY o.order_date DESC";
@@ -37,18 +39,6 @@ $orders = $stmt->get_result();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
-        /* ── Layout reset (same as customer.php) ── */
-        body {
-            display: block;
-            min-height: auto;
-            margin: 0;
-            padding: 0;
-        }
-
-        .main-content {
-            margin-left: 0;
-        }
-
         .wrapper {
             max-width: 1300px;
             margin: 0 auto;
@@ -117,6 +107,7 @@ $orders = $stmt->get_result();
                     <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
                     <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
                     <a href="<?php echo url('index.php?page=favorites'); ?>">Favorites</a>
+                    <a href="<?php echo url('index.php?page=orders'); ?>" style="font-weight: 700; color: #007a3e;">Orders</a>
                     <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
                     <a
                         href="<?php echo url('index.php?page=profile'); ?>"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Profile'); ?></a>
@@ -173,7 +164,18 @@ $orders = $stmt->get_result();
                                             style="color: #007a3e; width: 16px; text-align: center;"></i> GCash
                                     </p>
                                 </div>
-                                <div style="display:flex; gap:10px;">
+                                <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                                    <?php if ($order['status'] === 'C'): ?>
+                                        <?php if ($order['review_id']): ?>
+                                            <span class="btn-primary" style="background:#dcfce7; color:#166534; border:1px solid #bbf7d0; cursor:default;">
+                                                <i class="fas fa-check-circle"></i> Reviewed
+                                            </span>
+                                        <?php else: ?>
+                                            <a href="index.php?page=reviews" class="btn-primary" style="background:#fef9c3; color:#854d0e; border:1px solid #fde68a; text-decoration:none;">
+                                                <i class="fas fa-star"></i> Leave Review
+                                            </a>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
                                     <form method="POST" action="index.php?page=reorder" style="margin:0;" onsubmit="return confirmReorder(this, <?php echo $order['restaurant_ID']; ?>);">
                                         <input type="hidden" name="order_id" value="<?php echo $order['ID']; ?>">
                                         <button type="submit" class="btn-primary" style="background:#e3f4ea; color:#007a3e; border:1px solid #b8e0cc;">

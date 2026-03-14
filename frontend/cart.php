@@ -183,9 +183,7 @@ $grand_total = $subtotal + $service_fee;
     <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
         /* ── Layout reset ── */
-        body { display: block; min-height: auto; margin: 0; padding: 0; background: #f0f7f2; }
-        .main-content { margin-left: 0; }
-        .wrapper { max-width: 1200px; margin: 0 auto; padding: 0 36px; }
+        .wrapper { max-width: 1300px; margin: 0 auto; padding: 0 36px; }
 
         .cart-count {
             background: white; color: #007a3e;
@@ -699,6 +697,7 @@ $grand_total = $subtotal + $service_fee;
                 <a href="index.php?page=customer#menu">Menu</a>
                 <a href="index.php?page=customer#track">Track</a>
                 <a href="index.php?page=favorites">Favorites</a>
+                <a href="index.php?page=orders">Orders</a>
                 <a href="index.php?page=reviews">Reviews</a>
                 <?php if (isset($_SESSION['user_id'])): ?>
                     <a href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>

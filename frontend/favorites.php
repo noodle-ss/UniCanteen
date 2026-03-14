@@ -54,8 +54,7 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
-        body { background: #f0f7f2; }
-        .wrapper { max-width: 1200px; margin: 0 auto; padding: 0 36px; }
+        .wrapper { max-width: 1300px; margin: 0 auto; padding: 0 36px; }
         .cart-count { background: white; color: #007a3e; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; }
         
         /* ── Toasts ── */
@@ -148,6 +147,7 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
                         <a href="index.php?page=customer#menu">Menu</a>
                         <a href="index.php?page=customer#track">Track</a>
                         <a href="index.php?page=favorites" style="font-weight: 700; color: #007a3e;">Favorites</a>
+                        <a href="index.php?page=orders">Orders</a>
                         <a href="index.php?page=reviews">Reviews</a>
                         <?php if (isset($_SESSION['user_id'])): ?>
                             <a href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>

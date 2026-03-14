@@ -104,6 +104,12 @@ if (isset($_GET['dev']) && $_GET['dev'] === 'vendor') {
             margin-left: 108px;
             background: #f0f7f0;
         }
+
+        /* Reset nested .main-content divs created by included pages */
+        .main-content .main-content {
+            margin-left: 0;
+            overflow-y: visible;
+        }
     </style>
 </head>
 

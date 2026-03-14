@@ -130,6 +130,16 @@ $stmt = $db->prepare($reviewsQuery);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $reviews = $stmt->get_result();
+
+// Get count of completed orders that haven't been reviewed
+$pendingReviewsQuery = "SELECT COUNT(*) as pending_count
+                        FROM Orders o
+                        LEFT JOIN Ratings rt ON o.ID = rt.order_ID
+                        WHERE o.customer_ID = ? AND o.status = 'C' AND rt.ID IS NULL";
+$stmt = $db->prepare($pendingReviewsQuery);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$pendingReviews = $stmt->get_result()->fetch_assoc()['pending_count'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -146,18 +156,6 @@ $reviews = $stmt->get_result();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
-        /* ── Layout reset (same as customer.php) ── */
-        body {
-            display: block;
-            min-height: auto;
-            margin: 0;
-            padding: 0;
-        }
-
-        .main-content {
-            margin-left: 0;
-        }
-
         .wrapper {
             max-width: 1300px;
             margin: 0 auto;
@@ -309,6 +307,7 @@ $reviews = $stmt->get_result();
                     <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
                     <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
                     <a href="<?php echo url('index.php?page=favorites'); ?>">Favorites</a>
+                    <a href="<?php echo url('index.php?page=orders'); ?>">Orders</a>
                     <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
                     <a href="<?php echo url('index.php?page=profile'); ?>"
                         style="color: #007a3e;"><?php echo htmlspecialchars(explode(' ', $user['full_name'])[0]); ?></a>
@@ -446,15 +445,25 @@ $reviews = $stmt->get_result();
                                     <div style="flex: 1; min-width: 200px;">
                                         <?php echo htmlspecialchars($review['review']); ?>
                                     </div>
-                                    <span class="btn-secondary" style="padding: 8px 20px; opacity:0.5; cursor:default;">
-                                        <i class="fas fa-edit"></i> Review
-                                    </span>
                                 </div>
                             <?php endwhile; ?>
                         <?php else: ?>
                             <p style="text-align: center; color: #3b7455; padding: 30px;">
                                 You haven't written any reviews yet.
                             </p>
+                        <?php endif; ?>
+
+                        <?php if ($pendingReviews > 0): ?>
+                            <a href="<?php echo url('index.php?page=reviews'); ?>" class="btn-primary"
+                                style="width: 100%; margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;">
+                                <i class="fas fa-star"></i>
+                                Write a Review (<?php echo $pendingReviews; ?> pending)
+                            </a>
+                        <?php else: ?>
+                            <a href="<?php echo url('index.php?page=reviews'); ?>" class="btn-secondary"
+                                style="width: 100%; margin-top: 20px; text-decoration: none; display: block; text-align: center;">
+                                View All Reviews <i class="fas fa-arrow-right"></i>
+                            </a>
                         <?php endif; ?>
                     </div>
                 </div>

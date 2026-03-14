@@ -83,12 +83,6 @@ if (isLoggedIn()) {
 }
 
 // Flash messages from add-to-cart redirect
-if (isset($_SESSION['cart'])) {
-    foreach ($_SESSION['cart'] as $item) {
-        $cart_items_count += $item['quantity'];
-    }
-}
-// Flash messages from add-to-cart redirect
 $flash_added = isset($_GET['added']) ? urldecode($_GET['added']) : '';
 $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
 ?>
@@ -108,20 +102,8 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
     <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
         /* ── Reset for full-width layout ── */
-        body {
-            display: block;
-            min-height: auto;
-            margin: 0;
-            padding: 0;
-            background: #f0f7f2;
-        }
-
-        .main-content {
-            margin-left: 0;
-        }
-
         .wrapper {
-            max-width: 1200px;
+            max-width: 1300px;
             margin: 0 auto;
             padding: 0 36px;
         }
@@ -655,6 +637,8 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
                     <div class="customer-nav-links">
                         <a href="index.php?page=customer#menu">Menu</a>
                         <a href="index.php?page=customer#track">Track</a>
+                        <a href="index.php?page=favorites">Favorites</a>
+                        <a href="index.php?page=orders">Orders</a>
                         <a href="index.php?page=reviews">Reviews</a>
                         <?php if (isset($_SESSION['user_id'])): ?>
                             <a
