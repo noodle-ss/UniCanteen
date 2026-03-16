@@ -857,7 +857,7 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
                                         <span><?php echo number_format($rating, 1); ?></span>
                                     </div>
                                     <?php if ($review['review']): ?>
-                                        <div class="rev-text"><?php echo htmlspecialchars($review['review']); ?></div>
+                                        <div class="rev-text"><?php echo htmlspecialchars(html_entity_decode($review['review'], ENT_QUOTES, 'UTF-8')); ?></div>
                                     <?php endif; ?>
                                 </div>
                                 <?php

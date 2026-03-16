@@ -72,7 +72,8 @@ $statsQuery = "SELECT
     SUM(CASE WHEN rating >= 4.5 THEN 1 ELSE 0 END) as five_star,
     SUM(CASE WHEN rating >= 3.5 AND rating < 4.5 THEN 1 ELSE 0 END) as four_star,
     SUM(CASE WHEN rating >= 2.5 AND rating < 3.5 THEN 1 ELSE 0 END) as three_star,
-    SUM(CASE WHEN rating < 2.5 THEN 1 ELSE 0 END) as two_star
+    SUM(CASE WHEN rating >= 1.5 AND rating < 2.5 THEN 1 ELSE 0 END) as two_star,
+    SUM(CASE WHEN rating < 1.5 THEN 1 ELSE 0 END) as one_star
     FROM Ratings";
 
 $statsParams = [];
@@ -369,7 +370,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
                             5 => $stats['five_star'],
                             4 => $stats['four_star'],
                             3 => $stats['three_star'],
-                            2 => $stats['two_star']
+                            2 => $stats['two_star'],
+                            1 => $stats['one_star']
                         ];
                         foreach ($ratings as $stars => $count):
                             $percentage = $stats['total_reviews'] > 0 ? ($count / $stats['total_reviews']) * 100 : 0;
@@ -511,7 +513,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
                             </div>
                             <div class="review-text">
                                 <i class="fas fa-quote-left"></i>
-                                <?php echo htmlspecialchars($review['review']); ?>
+                                <?php echo htmlspecialchars(html_entity_decode($review['review'], ENT_QUOTES, 'UTF-8')); ?>
                             </div>
                         </div>
                     <?php endwhile; ?>

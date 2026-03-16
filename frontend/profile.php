@@ -443,7 +443,7 @@ $pendingReviews = $stmt->get_result()->fetch_assoc()['pending_count'];
                                         <?php endfor; ?>
                                     </div>
                                     <div style="flex: 1; min-width: 200px;">
-                                        <?php echo htmlspecialchars($review['review']); ?>
+                                        <?php echo htmlspecialchars(html_entity_decode($review['review'], ENT_QUOTES, 'UTF-8')); ?>
                                     </div>
                                 </div>
                             <?php endwhile; ?>

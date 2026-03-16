@@ -54,7 +54,8 @@ $ratingStatsQuery = "SELECT
     SUM(CASE WHEN rating >= 4.5 THEN 1 ELSE 0 END) as five_star,
     SUM(CASE WHEN rating >= 3.5 AND rating < 4.5 THEN 1 ELSE 0 END) as four_star,
     SUM(CASE WHEN rating >= 2.5 AND rating < 3.5 THEN 1 ELSE 0 END) as three_star,
-    SUM(CASE WHEN rating < 2.5 THEN 1 ELSE 0 END) as two_star
+    SUM(CASE WHEN rating < 2.5 THEN 1 ELSE 0 END) as two_star,
+    SUM(CASE WHEN rating < 1.5 THEN 1 ELSE 0 END) as one_star
     FROM Ratings";
 $ratingStatsResult = $db->query($ratingStatsQuery);
 $ratingStats = $ratingStatsResult->fetch_assoc();
@@ -651,7 +652,7 @@ if (isLoggedIn()) {
                                 </div>
                                 <div class="review-text">
                                     <i class="fas fa-quote-left"></i>
-                                    <?php echo htmlspecialchars($review['review']); ?>
+                                    <?php echo htmlspecialchars(html_entity_decode($review['review'], ENT_QUOTES, 'UTF-8')); ?>
                                 </div>
                             </div>
                             <?php
@@ -686,6 +687,8 @@ if (isLoggedIn()) {
                                 style="color:#3b7455;">(<?php echo $ratingStats['three_star']; ?>)</span></div>
                         <div style="text-align: center;"><span style="font-weight:700;">2★</span> <span
                                 style="color:#3b7455;">(<?php echo $ratingStats['two_star']; ?>)</span></div>
+                        <div style="text-align: center;"><span style="font-weight:700;">1★</span> <span
+                                style="color:#3b7455;">(<?php echo $ratingStats['one_star']; ?>)</span></div>
                     </div>
                 </div>
 
