@@ -493,6 +493,15 @@ unset($order);
       border-radius: 30px;
       font-size: 0.75rem;
       font-weight: 700;
+      cursor: pointer;
+      transition: all 0.18s;
+      border: none;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .avail-pill:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
     .avail-pill.yes {
@@ -748,10 +757,14 @@ unset($order);
                     <span class="item-name"><?= htmlspecialchars($item['name']) ?></span>
                   </div>
                   <span class="item-price">₱<?= number_format($item['price'], 2) ?></span>
-                  <span class="avail-pill <?= $item['isAvailable'] ? 'yes' : 'no' ?>">
+                  <button class="avail-pill <?= $item['isAvailable'] ? 'yes' : 'no' ?>"
+                    data-item-id="<?= $item['ID'] ?>"
+                    data-available="<?= $item['isAvailable'] ? '1' : '0' ?>"
+                    onclick="toggleItemStatus(this)"
+                    title="Click to toggle availability">
                     <i class="fas <?= $item['isAvailable'] ? 'fa-check-circle' : 'fa-times-circle' ?>"></i>
                     <?= $item['isAvailable'] ? 'Available' : 'Sold Out' ?>
-                  </span>
+                  </button>
                   <div style="display:flex; justify-content:center;">
                     <button class="btn-edit-item" onclick="openEditModal(
                       <?= $item['ID'] ?>,
@@ -1414,6 +1427,72 @@ unset($order);
       setupDragAndDrop('addDropZone', 'addFileInput');
       setupDragAndDrop('editDropZone', 'editFileInput');
     });
+
+    // Toggle item availability via AJAX
+    function toggleItemStatus(btn) {
+      const itemId = btn.dataset.itemId;
+      const currentlyAvailable = btn.dataset.available === '1';
+      const newStatus = currentlyAvailable ? 0 : 1;
+
+      // Optimistic UI update
+      const icon = btn.querySelector('i');
+      if (newStatus) {
+        btn.className = 'avail-pill yes';
+        icon.className = 'fas fa-check-circle';
+        btn.lastChild.textContent = ' Available';
+        btn.dataset.available = '1';
+      } else {
+        btn.className = 'avail-pill no';
+        icon.className = 'fas fa-times-circle';
+        btn.lastChild.textContent = ' Sold Out';
+        btn.dataset.available = '0';
+      }
+
+      fetch('frontend/toggle_item_status.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'item_id=' + itemId + '&status=' + newStatus
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          showStatusNotification(
+            newStatus ? 'Item marked as Available' : 'Item marked as Sold Out',
+            'success'
+          );
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          // Revert on failure
+          if (currentlyAvailable) {
+            btn.className = 'avail-pill yes';
+            icon.className = 'fas fa-check-circle';
+            btn.lastChild.textContent = ' Available';
+            btn.dataset.available = '1';
+          } else {
+            btn.className = 'avail-pill no';
+            icon.className = 'fas fa-times-circle';
+            btn.lastChild.textContent = ' Sold Out';
+            btn.dataset.available = '0';
+          }
+          showStatusNotification('Failed to update availability', 'error');
+        }
+      })
+      .catch(() => {
+        // Revert on error
+        if (currentlyAvailable) {
+          btn.className = 'avail-pill yes';
+          icon.className = 'fas fa-check-circle';
+          btn.lastChild.textContent = ' Available';
+          btn.dataset.available = '1';
+        } else {
+          btn.className = 'avail-pill no';
+          icon.className = 'fas fa-times-circle';
+          btn.lastChild.textContent = ' Sold Out';
+          btn.dataset.available = '0';
+        }
+        showStatusNotification('Network error. Please try again.', 'error');
+      });
+    }
 
 
     function openAddModal() {
