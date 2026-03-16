@@ -158,50 +158,56 @@ INSERT INTO Categories (name, description) VALUES
 -- Security answer for all sample accounts: 'answer123'
 -- Hash generated with: password_hash('password123', PASSWORD_DEFAULT)
 -- Answer hash generated with: password_hash('answer123', PASSWORD_DEFAULT)
+-- Customers: customer1@dlsu.edu.ph, customer2@dlsu.edu.ph
+-- Vendors: bloemen@dlsu.edu.ph, agno@dlsu.edu.ph, kitchensj@dlsu.edu.ph, deli@dlsu.edu.ph
+-- Admin: admin@dlsu.edu.ph
 INSERT INTO Users (email, password, full_name, role, is_active, login_attempts, security_question, security_answer) VALUES
-('customer1@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Juan Dela Cruz', 'U', TRUE, 0, 'What is the name of your childhood pet?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
-('customer2@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Maria Santos', 'U', TRUE, 0, 'What city were you born in?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
-('vendor1@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Bloemen Hall Manager', 'V', TRUE, 0, 'What is your mother\'s maiden name?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
-('vendor2@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Agno Eatery Owner', 'V', TRUE, 0, 'What was the name of your first school?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
-('admin@dlsu.edu', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'System Administrator', 'A', TRUE, 0, 'What is your favorite book?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.');
+('customer1@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Juan Dela Cruz', 'U', TRUE, 0, 'What is the name of your childhood pet?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
+('customer2@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Maria Santos', 'U', TRUE, 0, 'What city were you born in?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
+('bloemen@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Bloemen Hall Manager', 'V', TRUE, 0, 'What is your mother\'s maiden name?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
+('agno@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Agno Eatery Owner', 'V', TRUE, 0, 'What was the name of your first school?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
+('kitchensj@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Kitchen SJ Manager', 'V', TRUE, 0, 'What is the name of your childhood pet?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
+('deli@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'St. La Salle Deli Owner', 'V', TRUE, 0, 'What was the name of your first school?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
+('admin@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'System Administrator', 'A', TRUE, 0, 'What is your favorite book?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.');
 
--- Insert restaurants
+-- Insert restaurants (each owned by its corresponding vendor user)
+-- Bloemen Hall -> bloemen@dlsu.edu.ph (ID=3)
+-- Agno Eatery -> agno@dlsu.edu.ph (ID=4)
+-- Kitchen SJ -> kitchensj@dlsu.edu.ph (ID=5)
+-- St. La Salle Deli -> deli@dlsu.edu.ph (ID=6)
 INSERT INTO Restaurants (name, address, description, owner_ID, is_open) VALUES
 ('Bloemen Hall', 'Bloemen Hall, DLSU', 'Fresh meals and coffee', 3, TRUE),
 ('Agno Eatery', 'Agno Food Court, DLSU', 'Traditional Filipino favorites', 4, TRUE),
-('Kitchen SJ', 'St. La Salle Building, DLSU', 'Italian and pasta dishes', 3, TRUE),
-('St. La Salle Deli', 'St. La Salle Hall, DLSU', 'Sandwiches and salads', 4, TRUE);
+('Kitchen SJ', 'St. La Salle Building, DLSU', 'Italian and pasta dishes', 5, TRUE),
+('St. La Salle Deli', 'St. La Salle Hall, DLSU', 'Sandwiches and salads', 6, TRUE);
 
 -- Insert items for Bloemen Hall (restaurant_ID = 1)
-INSERT INTO Items (name, description, price, isAvailable, restaurant_ID) VALUES
-('Chicken Bowl', 'Grilled chicken with rice and vegetables', 95.00, TRUE, 1),
-('Iced Latte', 'Espresso with milk and ice', 60.00, TRUE, 1),
-('Garlic Fries', 'French fries with garlic and parsley', 45.00, TRUE, 1),
-('Breakfast Meal', 'Eggs, rice, and choice of meat', 120.00, TRUE, 1);
+INSERT INTO Items (name, description, price, image_url, isAvailable, restaurant_ID) VALUES
+('Chicken Bowl', 'Grilled chicken with rice and vegetables', 95.00, 'assets/uploads/food_69ac419b9d49a5.98156890.jpg', TRUE, 1),
+('Iced Latte', 'Espresso with milk and ice', 60.00, 'assets/uploads/food_69ac41acf056a8.54984326.jpg', TRUE, 1),
+('Garlic Fries', 'French fries with garlic and parsley', 45.00, 'assets/uploads/item_69b755384262a5.24136950.jpg', TRUE, 1),
+('Breakfast Meal', 'Eggs, rice, and choice of meat', 120.00, 'assets/uploads/item_69b755571acd83.60899894.jpg', TRUE, 1);
 
--- Set image URLs for uploaded item images (images committed to assets/uploads/)
-UPDATE Items SET image_url = 'assets/uploads/food_69ac419b9d49a5.98156890.jpg' WHERE name = 'Chicken Bowl' AND restaurant_ID = 1;
-UPDATE Items SET image_url = 'assets/uploads/food_69ac41acf056a8.54984326.jpg' WHERE name = 'Iced Latte' AND restaurant_ID = 1;
 -- Insert items for Agno Eatery (restaurant_ID = 2)
-INSERT INTO Items (name, description, price, isAvailable, restaurant_ID) VALUES
-('Beef Tapa', 'Marinated beef with garlic rice and egg', 99.00, TRUE, 2),
-('Garlic Rice', 'Fried rice with garlic', 20.00, TRUE, 2),
-('Lumpiang Shanghai', 'Fried spring rolls with pork', 55.00, FALSE, 2),
-('Bangus Sisig', 'Milkfish sisig', 89.00, TRUE, 2);
+INSERT INTO Items (name, description, price, image_url, isAvailable, restaurant_ID) VALUES
+('Beef Tapa', 'Marinated beef with garlic rice and egg', 99.00, 'assets/uploads/item_69b7559ee91123.20573314.jpg', TRUE, 2),
+('Garlic Rice', 'Fried rice with garlic', 20.00, 'assets/uploads/item_69b755b9816061.03910626.jpeg', TRUE, 2),
+('Lumpiang Shanghai', 'Fried spring rolls with pork', 55.00, 'assets/uploads/item_69b755cef16094.37442931.webp', FALSE, 2),
+('Bangus Sisig', 'Milkfish sisig', 89.00, 'assets/uploads/item_69b755f9b4cf68.59500060.jpg', TRUE, 2);
 
 -- Insert items for Kitchen SJ (restaurant_ID = 3)
-INSERT INTO Items (name, description, price, isAvailable, restaurant_ID) VALUES
-('Lasagna', 'Classic meat lasagna', 125.00, FALSE, 3),
-('Garlic Bread', 'Toasted bread with garlic butter', 30.00, TRUE, 3),
-('Pesto Pasta', 'Pasta with basil pesto sauce', 110.00, FALSE, 3),
-('Tiramisu', 'Italian coffee dessert', 85.00, TRUE, 3);
+INSERT INTO Items (name, description, price, image_url, isAvailable, restaurant_ID) VALUES
+('Lasagna', 'Classic meat lasagna', 125.00, 'assets/uploads/item_69b75688704017.13622961.jpg', FALSE, 3),
+('Garlic Bread', 'Toasted bread with garlic butter', 30.00, 'assets/uploads/item_69b7569ba351c4.28979106.jpg', TRUE, 3),
+('Pesto Pasta', 'Pasta with basil pesto sauce', 110.00, 'assets/uploads/item_69b756b1861385.35205079.jpg', FALSE, 3),
+('Tiramisu', 'Italian coffee dessert', 85.00, 'assets/uploads/item_69b756c15ec1f2.07308014.webp', TRUE, 3);
 
 -- Insert items for St. La Salle Deli (restaurant_ID = 4)
-INSERT INTO Items (name, description, price, isAvailable, restaurant_ID) VALUES
-('Club Sandwich', 'Triple-layer sandwich with fries', 75.00, TRUE, 4),
-('Fruit Shake', 'Fresh fruit shake', 55.00, TRUE, 4),
-('Caesar Salad', 'Romaine lettuce with Caesar dressing', 85.00, FALSE, 4),
-('Iced Tea', 'Fresh brewed iced tea', 40.00, TRUE, 4);
+INSERT INTO Items (name, description, price, image_url, isAvailable, restaurant_ID) VALUES
+('Club Sandwich', 'Triple-layer sandwich with fries', 75.00, 'assets/uploads/item_69b7562f1ded05.23241086.jpg', TRUE, 4),
+('Fruit Shake', 'Fresh fruit shake', 55.00, 'assets/uploads/item_69b756417383b9.38783976.jpg', TRUE, 4),
+('Caesar Salad', 'Romaine lettuce with Caesar dressing', 85.00, 'assets/uploads/item_69b7565059dc18.61200073.jpg', FALSE, 4),
+('Iced Tea', 'Fresh brewed iced tea', 40.00, 'assets/uploads/item_69b75665d5aeb3.74195366.jpeg', TRUE, 4);
 
 -- Insert sample orders
 INSERT INTO Orders (customer_ID, restaurant_ID, total_amount, status, queue_number, payment_method, order_date) VALUES

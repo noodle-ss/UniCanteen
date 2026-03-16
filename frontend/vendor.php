@@ -354,7 +354,8 @@ unset($order);
     }
 
     .modal-field input,
-    .modal-field select {
+    .modal-field select,
+    .modal-field textarea {
       width: 100%;
       padding: 11px 16px;
       border: 1.5px solid #cae3d6;
@@ -368,8 +369,14 @@ unset($order);
       box-sizing: border-box;
     }
 
+    .modal-field textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
     .modal-field input:focus,
-    .modal-field select:focus {
+    .modal-field select:focus,
+    .modal-field textarea:focus {
       border-color: var(--dlsu-green);
       box-shadow: 0 0 0 3px rgba(0, 122, 62, 0.1);
       background: white;
@@ -750,7 +757,8 @@ unset($order);
                       <?= $item['ID'] ?>,
                       '<?= htmlspecialchars($item['name'], ENT_QUOTES) ?>',
                       <?= $item['price'] ?>,
-                      <?= $item['isAvailable'] ? 'true' : 'false' ?>
+                      <?= $item['isAvailable'] ? 'true' : 'false' ?>,
+                      '<?= htmlspecialchars($item['description'] ?? '', ENT_QUOTES) ?>'
                     )"><i class="fas fa-pen"></i> Edit</button>
                   </div>
                   <div style="display:flex; justify-content:center;">
@@ -1028,6 +1036,10 @@ unset($order);
           <input type="text" name="name" placeholder="e.g. Chicken Bowl" required>
         </div>
         <div class="modal-field">
+          <label>Description</label>
+          <textarea name="description" placeholder="e.g. Grilled chicken with rice and vegetables" rows="2"></textarea>
+        </div>
+        <div class="modal-field">
           <label>Price (₱)</label>
           <input type="number" name="price" placeholder="0.00" required min="0" step="0.01">
         </div>
@@ -1073,6 +1085,10 @@ unset($order);
         <div class="modal-field">
           <label>Item Name</label>
           <input type="text" name="item_name" id="edit_item_name" required>
+        </div>
+        <div class="modal-field">
+          <label>Description</label>
+          <textarea name="description" id="edit_item_description" placeholder="e.g. Grilled chicken with rice and vegetables" rows="2"></textarea>
         </div>
         <div class="modal-field">
           <label>Price (₱)</label>
@@ -1407,12 +1423,13 @@ unset($order);
     }
     function closeAddModal() { document.getElementById('addItemModal').style.display = 'none'; }
 
-    function openEditModal(id, name, price, isAvailable) {
+    function openEditModal(id, name, price, isAvailable, description) {
       document.getElementById('editItemModal').style.display = 'flex';
       document.getElementById('edit_item_id').value = id;
       document.getElementById('edit_item_name').value = name;
       document.getElementById('edit_item_price').value = price;
       document.getElementById('edit_item_availability').value = isAvailable ? '1' : '0';
+      document.getElementById('edit_item_description').value = description || '';
       removePreview('editFileInput', 'edit-preview-img', 'edit-image-preview', 'editDropZone');
     }
     function closeEditModal() { document.getElementById('editItemModal').style.display = 'none'; }

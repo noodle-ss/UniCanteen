@@ -25,6 +25,7 @@ if (!$restaurant_id) {
 
 // read input
 $name = $_POST['name'] ?? '';
+$description = $_POST['description'] ?? '';
 $price = floatval($_POST['price'] ?? 0);
 $isAvailable = (isset($_POST['status']) && $_POST['status'] === 'available') ? 1 : 0;
 
@@ -69,9 +70,9 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
 
 // insert using correct column names
 $stmt = $db->prepare(
-    "INSERT INTO Items (name, price, isAvailable, restaurant_ID, image_url) VALUES (?, ?, ?, ?, ?)"
+    "INSERT INTO Items (name, description, price, isAvailable, restaurant_ID, image_url) VALUES (?, ?, ?, ?, ?, ?)"
 );
-$stmt->bind_param("sdiis", $name, $price, $isAvailable, $restaurant_id, $image_url);
+$stmt->bind_param("ssdiis", $name, $description, $price, $isAvailable, $restaurant_id, $image_url);
 
 $success = $stmt->execute();
 $error = $success ? null : $stmt->error;

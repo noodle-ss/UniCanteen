@@ -7,6 +7,7 @@ requireVendor();
 
 $item_id = $_POST['item_id'] ?? null;
 $name = $_POST['item_name'] ?? '';
+$description = $_POST['description'] ?? '';
 $price = floatval($_POST['price'] ?? 0);
 $avail = isset($_POST['availability']) ? intval($_POST['availability']) : 1;
 
@@ -71,11 +72,11 @@ if (!$res) {
 $restaurant_id = $res['rid'];
 
 if ($update_image) {
-    $stmt = $db->prepare("UPDATE Items SET name=?, price=?, isAvailable=?, image_url=? WHERE ID=? AND restaurant_ID=?");
-    $stmt->bind_param("sdisii", $name, $price, $avail, $image_url, $item_id, $restaurant_id);
+    $stmt = $db->prepare("UPDATE Items SET name=?, description=?, price=?, isAvailable=?, image_url=? WHERE ID=? AND restaurant_ID=?");
+    $stmt->bind_param("ssdisii", $name, $description, $price, $avail, $image_url, $item_id, $restaurant_id);
 } else {
-    $stmt = $db->prepare("UPDATE Items SET name=?, price=?, isAvailable=? WHERE ID=? AND restaurant_ID=?");
-    $stmt->bind_param("sdiii", $name, $price, $avail, $item_id, $restaurant_id);
+    $stmt = $db->prepare("UPDATE Items SET name=?, description=?, price=?, isAvailable=? WHERE ID=? AND restaurant_ID=?");
+    $stmt->bind_param("ssdiii", $name, $description, $price, $avail, $item_id, $restaurant_id);
 }
 
 $success = $stmt->execute();
