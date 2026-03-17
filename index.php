@@ -13,7 +13,7 @@ if (MAINTENANCE_MODE) {
         // If not logged in as admin, redirect to login
         if (!$is_logged_in_admin) {
             $_SESSION['redirect_after_login'] = 'index.php?page=sysadmin';
-            header('Location: index.php?page=login');
+            header('Location: ' . url('index.php?page=login'));
             exit();
         }
         // If logged in as admin, continue to load sysadmin page (skip maintenance page)
@@ -37,7 +37,7 @@ if (MAINTENANCE_MODE) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UniCanteen · Centralized Campus Food Ordering</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="stylesheet" href="<?php echo url('assets/styles.css'); ?>">
     <style>
         body {
             display: flex;
@@ -109,13 +109,13 @@ if (MAINTENANCE_MODE) {
 
 <body>
     <div class="left-switcher">
-        <a href="index.php?page=customer" class="switch-btn <?php echo ($page == 'customer') ? 'active-view' : ''; ?>">
+        <a href="<?php echo url('index.php?page=customer'); ?>" class="switch-btn <?php echo ($page == 'customer') ? 'active-view' : ''; ?>">
             <i class="fas fa-user-graduate"></i><span>CUSTOMER</span>
         </a>
-        <a href="index.php?page=vendor" class="switch-btn <?php echo ($page == 'vendor') ? 'active-view' : ''; ?>">
+        <a href="<?php echo url('index.php?page=vendor'); ?>" class="switch-btn <?php echo ($page == 'vendor') ? 'active-view' : ''; ?>">
             <i class="fas fa-store"></i><span>VENDOR</span>
         </a>
-        <a href="index.php?page=sysadmin" class="switch-btn <?php echo ($page == 'sysadmin') ? 'active-view' : ''; ?>">
+        <a href="<?php echo url('index.php?page=sysadmin'); ?>" class="switch-btn <?php echo ($page == 'sysadmin') ? 'active-view' : ''; ?>">
             <i class="fas fa-user-tie"></i><span>SYSADMIN</span>
         </a>
     </div>
@@ -166,7 +166,7 @@ if (MAINTENANCE_MODE) {
                 if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'V') {
                     include 'frontend/vendor.php';
                 } else {
-                    header('Location: index.php?page=login&error=unauthorized');
+                    header('Location: ' . url('index.php?page=login&error=unauthorized'));
                     exit();
                 }
                 break;
@@ -174,7 +174,7 @@ if (MAINTENANCE_MODE) {
                 if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'A') {
                     include 'frontend/sysadmin.php';
                 } else {
-                    header('Location: index.php?page=login&error=unauthorized');
+                    header('Location: ' . url('index.php?page=login&error=unauthorized'));
                     exit();
                 }
                 break;

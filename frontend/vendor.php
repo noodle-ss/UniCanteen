@@ -632,17 +632,17 @@ unset($order);
       <!-- ── Vendor Nav (matches customer-nav style) ── -->
       <div class="wrapper">
         <nav class="customer-nav">
-          <a href="index.php?page=customer" class="logo">UniCanteen <span>DLSU</span></a>
+          <a href="<?php echo url('index.php?page=customer'); ?>" class="logo">UniCanteen <span>DLSU</span></a>
           <div class="customer-nav-links">
             <span style="font-weight:600; color:#0f4a2f;">
               <i class="fas fa-store" style="color:var(--dlsu-green);"></i>
               <?php echo htmlspecialchars($restaurant['name'] ?? 'Vendor Portal'); ?>
             </span>
             <span class="sync-badge"><i class="fas fa-circle" style="color:#28a745; font-size:0.6rem;"></i> Live</span>
-            <a href="index.php?page=customer" class="btn-outline">
+            <a href="<?php echo url('index.php?page=customer'); ?>" class="btn-outline">
               <i class="fas fa-arrow-left"></i> Back to Stalls
             </a>
-            <a href="index.php?page=logout" class="btn-primary" style="padding:10px 20px;">
+            <a href="<?php echo url('index.php?page=logout'); ?>" class="btn-primary" style="padding:10px 20px;">
               <i class="fas fa-sign-out-alt"></i> Logout
             </a>
           </div>
@@ -659,7 +659,7 @@ unset($order);
               <p>Manage your menu, track orders, and monitor your stall's performance.</p>
             </div>
             <div class="vendor-hero-actions">
-              <a href="index.php?page=customer" class="btn-back-stalls">
+              <a href="<?php echo url('index.php?page=customer'); ?>" class="btn-back-stalls">
                 <i class="fas fa-arrow-left"></i> Back to Stalls
               </a>
               <button onclick="openAddModal()" class="btn-back-stalls" style="cursor:pointer;">
@@ -1221,7 +1221,7 @@ unset($order);
       selectElement.disabled = true;
       const originalStatus = selectElement.dataset.originalStatus || selectElement.value;
 
-      fetch('frontend/update_order_status.php', {
+      fetch('<?php echo url('frontend/update_order_status.php'); ?>', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: 'order_id=' + orderId + '&status=' + status
@@ -1450,7 +1450,7 @@ unset($order);
         btn.dataset.available = '0';
       }
 
-      fetch('frontend/toggle_item_status.php', {
+      fetch('<?php echo url('frontend/toggle_item_status.php'); ?>', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: 'item_id=' + itemId + '&status=' + newStatus
@@ -1536,7 +1536,7 @@ unset($order);
         if (currentOrderId && foundSelect) {
           // Directly call the status update without relying on event.target
           foundSelect.disabled = true;
-          fetch('frontend/update_order_status.php', {
+          fetch('<?php echo url('frontend/update_order_status.php'); ?>', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'order_id=' + currentOrderId + '&status=C'
@@ -1565,7 +1565,7 @@ unset($order);
 
     function resetCounter() {
       if (confirm("Reset the queue counter? This will restart queue numbering from 1.")) {
-        fetch('frontend/reset_queue.php', {
+        fetch('<?php echo url('frontend/reset_queue.php'); ?>', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: 'action=reset_counter'
@@ -1595,7 +1595,7 @@ unset($order);
 
     document.getElementById('editItemForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      fetch('frontend/edit_item.php', { method: 'POST', body: new FormData(this) })
+      fetch('<?php echo url('frontend/edit_item.php'); ?>', { method: 'POST', body: new FormData(this) })
         .then(r => r.json())
         .then(d => {
           if (d.success) { alert("Item updated!"); location.reload(); }
@@ -1605,7 +1605,7 @@ unset($order);
 
     document.getElementById('addItemForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      fetch('frontend/add_item.php', { method: 'POST', body: new FormData(this) })
+      fetch('<?php echo url('frontend/add_item.php'); ?>', { method: 'POST', body: new FormData(this) })
         .then(r => {
           console.log('add_item status', r.status, r.statusText);
           return r.text();
@@ -1634,7 +1634,7 @@ unset($order);
     document.querySelectorAll('.delete-btn').forEach(btn => {
       btn.addEventListener('click', function () {
         if (confirm("Delete this item?")) {
-          fetch('frontend/delete_item.php', {
+          fetch('<?php echo url('frontend/delete_item.php'); ?>', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `id=${this.dataset.id}`

@@ -17,8 +17,13 @@ ob_start();
 
 // Site configuration - Check if constants are already defined before defining them
 if (!defined('BASE_PATH')) {
-    $scriptName = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
-    define('BASE_PATH', rtrim($scriptName, '/') . '/');
+    // Always compute BASE_PATH from the project root directory, not the current script.
+    // This file lives in /UniCanteen/config/, so the project root is one level up.
+    $configDir = str_replace('\\', '/', __DIR__);
+    $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+    $projectRoot = dirname($configDir); // one level up from /config
+    $basePath = str_replace($docRoot, '', $projectRoot);
+    define('BASE_PATH', rtrim($basePath, '/') . '/');
 }
 if (!defined('SITE_NAME')) {
     define('SITE_NAME', 'UniCanteen');
@@ -61,11 +66,12 @@ require_once __DIR__ . '/database.php';
 // Helper functions (functions don't need defined() check, but we can use function_exists)
 if (!function_exists('redirect')) {
     function redirect($url) {
-        // If it's a relative path starting with /, add base path
-        if (substr($url, 0, 1) === '/') {
-            header("Location: " . BASE_PATH . ltrim($url, '/'));
-        } else {
+        // If it's already an absolute URL (http/https), use as-is
+        if (preg_match('/^https?:\/\//', $url)) {
             header("Location: $url");
+        } else {
+            // For all relative paths, use url() to generate proper absolute path
+            header("Location: " . url($url));
         }
         exit();
     }

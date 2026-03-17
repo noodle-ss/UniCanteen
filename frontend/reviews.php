@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
             $insertStmt = $db->prepare("INSERT INTO Ratings (restaurant_ID, order_ID, rating, review) VALUES (?, ?, ?, ?)");
             $insertStmt->bind_param("iids", $restaurant_id, $order_id, $rating, $review);
             if ($insertStmt->execute()) {
-                header("Location: index.php?page=reviews&success=1" . ($restaurant_filter ? "&restaurant=$restaurant_filter" : ""));
+                header("Location: " . url('index.php?page=reviews&success=1') . ($restaurant_filter ? "&restaurant=$restaurant_filter" : ""));
                 exit();
             }
         }
@@ -326,22 +326,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
         <section class="reviews-header">
             <div class="wrapper">
                 <nav class="customer-nav">
-                    <a href="index.php?page=customer" class="logo">UniCanteen <span>DLSU</span></a>
+                    <a href="<?php echo url('index.php?page=customer'); ?>" class="logo">UniCanteen <span>DLSU</span></a>
                     <div class="customer-nav-links">
-                        <a href="index.php?page=customer#menu">Menu</a>
-                        <a href="index.php?page=customer#track">Track</a>
-                        <a href="index.php?page=favorites">Favorites</a>
-                        <a href="index.php?page=orders">Orders</a>
-                        <a href="index.php?page=reviews" style="font-weight: 700; color: #007a3e;">Reviews</a>
+                        <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
+                        <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
+                        <a href="<?php echo url('index.php?page=favorites'); ?>">Favorites</a>
+                        <a href="<?php echo url('index.php?page=orders'); ?>">Orders</a>
+                        <a href="<?php echo url('index.php?page=reviews'); ?>" style="font-weight: 700; color: #007a3e;">Reviews</a>
                         <?php if (isset($_SESSION['user_id'])): ?>
                             <a
-                                href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>
-                            <a href="index.php?page=logout" class="btn-outline">Logout</a>
+                                href="<?php echo url('index.php?page=profile'); ?>"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>
+                            <a href="<?php echo url('index.php?page=logout'); ?>" class="btn-outline">Logout</a>
                         <?php else: ?>
-                            <a href="index.php?page=login">Sign In</a>
-                            <a href="index.php?page=register" class="btn-outline">Register</a>
+                            <a href="<?php echo url('index.php?page=login'); ?>">Sign In</a>
+                            <a href="<?php echo url('index.php?page=register'); ?>" class="btn-outline">Register</a>
                         <?php endif; ?>
-                        <a href="index.php?page=cart" class="btn-primary">
+                        <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-primary">
                             <i class="fas fa-bag-shopping"></i> Cart
                         </a>
                     </div>
@@ -393,7 +393,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
             <div class="filter-section">
                 <i class="fas fa-filter" style="color: #007a3e;"></i>
                 <span style="font-weight: 600;">Filter by:</span>
-                <select onchange="window.location.href='index.php?page=reviews&restaurant=' + this.value"
+                <select onchange="window.location.href='<?php echo url('index.php?page=reviews'); ?>&restaurant=' + this.value"
                     style="padding: 10px 20px; border: 2px solid #e0f0e8; border-radius: 30px; font-family: 'Inter', sans-serif;">
                     <option value="0">All Restaurants</option>
                     <?php
@@ -407,7 +407,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
                 </select>
 
                 <?php if ($restaurant_filter > 0): ?>
-                    <a href="index.php?page=reviews" class="btn-secondary" style="padding: 8px 20px;">
+                    <a href="<?php echo url('index.php?page=reviews'); ?>" class="btn-secondary" style="padding: 8px 20px;">
                         <i class="fas fa-times"></i> Clear Filter
                     </a>
                 <?php endif; ?>
@@ -446,7 +446,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
                                 Order #<?php echo $pendingOrder['queue_number']; ?> — <?php echo htmlspecialchars($pendingOrder['restaurant_name']); ?>
                             </p>
 
-                            <form method="POST" action="index.php?page=reviews">
+                            <form method="POST" action="<?php echo url('index.php?page=reviews'); ?>">
                                 <input type="hidden" name="order_id" value="<?php echo $pendingOrder['ID']; ?>">
 
                                 <div style="margin-bottom: 15px;">
@@ -530,21 +530,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
             <?php if ($total_pages > 1): ?>
                 <div class="pagination">
                     <?php if ($page > 1): ?>
-                        <a href="index.php?page=reviews&page_num=<?php echo $page - 1; ?><?php echo $restaurant_filter ? '&restaurant=' . $restaurant_filter : ''; ?>"
+                        <a href="<?php echo url('index.php?page=reviews&page_num=' . ($page - 1)) . ($restaurant_filter ? '&restaurant=' . $restaurant_filter : ''); ?>"
                             class="page-link">
                             <i class="fas fa-chevron-left"></i>
                         </a>
                     <?php endif; ?>
 
                     <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                        <a href="index.php?page=reviews&page_num=<?php echo $i; ?><?php echo $restaurant_filter ? '&restaurant=' . $restaurant_filter : ''; ?>"
+                        <a href="<?php echo url('index.php?page=reviews&page_num=' . $i) . ($restaurant_filter ? '&restaurant=' . $restaurant_filter : ''); ?>"
                             class="page-link <?php echo $i == $page ? 'active' : ''; ?>">
                             <?php echo $i; ?>
                         </a>
                     <?php endfor; ?>
 
                     <?php if ($page < $total_pages): ?>
-                        <a href="index.php?page=reviews&page_num=<?php echo $page + 1; ?><?php echo $restaurant_filter ? '&restaurant=' . $restaurant_filter : ''; ?>"
+                        <a href="<?php echo url('index.php?page=reviews&page_num=' . ($page + 1)) . ($restaurant_filter ? '&restaurant=' . $restaurant_filter : ''); ?>"
                             class="page-link">
                             <i class="fas fa-chevron-right"></i>
                         </a>

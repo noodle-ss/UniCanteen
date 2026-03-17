@@ -3,7 +3,7 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/auth_check.php';
 
 if (!isset($_GET['id'])) {
-    header("Location: index.php?page=customer");
+    header("Location: " . url('index.php?page=customer'));
     exit();
 }
 
@@ -13,7 +13,7 @@ $db = Database::getInstance()->getConnection();
 // Handle add-to-cart redirect
 if (isset($_GET['add_to_cart'])) {
     $item_id = intval($_GET['add_to_cart']);
-    header("Location: index.php?page=cart&add=$item_id&restaurant_id=$restaurant_id");
+    header("Location: " . url("index.php?page=cart&add=$item_id&restaurant_id=$restaurant_id"));
     exit();
 }
 
@@ -35,7 +35,7 @@ $restaurantResult = $stmt->get_result();
 $restaurant = $restaurantResult->fetch_assoc();
 
 if (!$restaurant) {
-    header("Location: index.php?page=customer");
+    header("Location: " . url('index.php?page=customer'));
     exit();
 }
 
@@ -633,22 +633,22 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
             <!-- Nav -->
             <div class="wrapper">
                 <nav class="customer-nav">
-                    <a href="index.php?page=customer" class="logo">UniCanteen <span>DLSU</span></a>
+                    <a href="<?php echo url('index.php?page=customer'); ?>" class="logo">UniCanteen <span>DLSU</span></a>
                     <div class="customer-nav-links">
-                        <a href="index.php?page=customer#menu">Menu</a>
-                        <a href="index.php?page=customer#track">Track</a>
-                        <a href="index.php?page=favorites">Favorites</a>
-                        <a href="index.php?page=orders">Orders</a>
-                        <a href="index.php?page=reviews">Reviews</a>
+                        <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
+                        <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
+                        <a href="<?php echo url('index.php?page=favorites'); ?>">Favorites</a>
+                        <a href="<?php echo url('index.php?page=orders'); ?>">Orders</a>
+                        <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
                         <?php if (isset($_SESSION['user_id'])): ?>
                             <a
-                                href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>
-                            <a href="index.php?page=logout" class="btn-outline">Logout</a>
+                                href="<?php echo url('index.php?page=profile'); ?>"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>
+                            <a href="<?php echo url('index.php?page=logout'); ?>" class="btn-outline">Logout</a>
                         <?php else: ?>
-                            <a href="index.php?page=login">Sign In</a>
-                            <a href="index.php?page=register" class="btn-outline">Register</a>
+                            <a href="<?php echo url('index.php?page=login'); ?>">Sign In</a>
+                            <a href="<?php echo url('index.php?page=register'); ?>" class="btn-outline">Register</a>
                         <?php endif; ?>
-                        <a href="index.php?page=cart" class="btn-primary">
+                        <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-primary">
                             <i class="fas fa-bag-shopping"></i> Cart
                             <span class="cart-count"><?php echo $cart_items_count; ?></span>
                         </a>
@@ -661,7 +661,7 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
                 <div class="toast-fixed success" id="addToast">
                     <i class="fas fa-circle-check"></i>
                     <span><strong><?php echo htmlspecialchars($flash_added); ?></strong> added to cart!</span>
-                    <a href="index.php?page=cart"
+                    <a href="<?php echo url('index.php?page=cart'); ?>"
                         style="margin-left:auto; color:inherit; font-weight:700; white-space:nowrap; text-decoration:underline;">View
                         Cart</a>
                 </div>
@@ -679,7 +679,7 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
                     <div class="wrapper">
                         <!-- Back button -->
                         <div>
-                            <a href="index.php?page=customer#menu" class="btn-back">
+                            <a href="<?php echo url('index.php?page=customer'); ?>#menu" class="btn-back">
                                 <i class="fas fa-arrow-left"></i> Back to Stalls
                             </a>
                         </div>
@@ -718,7 +718,7 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
 
                             <!-- View Cart button -->
                             <?php if ($cart_items_count > 0): ?>
-                                <a href="index.php?page=cart" class="btn-hero-cart">
+                                <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-hero-cart">
                                     <i class="fas fa-bag-shopping"></i>
                                     View Cart
                                     <span class="badge"><?php echo $cart_items_count; ?></span>
@@ -787,7 +787,7 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
                                             <?php echo $isAvailable ? 'Available' : 'Sold Out'; ?>
                                         </span>
                                         <?php if ($isAvailable): ?>
-                                            <a href="index.php?page=restaurant&id=<?php echo $restaurant_id; ?>&add_to_cart=<?php echo $item['ID']; ?>"
+                                            <a href="<?php echo url('index.php?page=restaurant&id=' . $restaurant_id . '&add_to_cart=' . $item['ID']); ?>"
                                                 class="btn-add" id="cart-btn-<?php echo $item['ID']; ?>">
                                                 <i class="fas fa-plus"></i> Add
                                             </a>
@@ -817,7 +817,7 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
                             <p class="sec-subtitle">What others are saying</p>
                         </div>
                         <div class="sec-header-end">
-                            <a href="index.php?page=reviews"
+                            <a href="<?php echo url('index.php?page=reviews'); ?>"
                                 style="color:#007a3e; font-weight:600; font-size:0.875rem; text-decoration:none; display:flex; align-items:center; gap:6px;">
                                 See all <i class="fas fa-arrow-right"></i>
                             </a>
@@ -926,7 +926,7 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
 
             if (!window.isLoggedIn) {
                 alert('Please sign in to save your favorite items.');
-                window.location.href = 'index.php?page=login';
+                window.location.href = '<?php echo url('index.php?page=login'); ?>';
                 return;
             }
 
@@ -949,7 +949,7 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
             const formData = new FormData();
             formData.append('item_id', itemId);
 
-            fetch('frontend/toggle_favorite.php', {
+            fetch('<?php echo url('frontend/toggle_favorite.php'); ?>', {
                 method: 'POST',
                 body: formData
             })

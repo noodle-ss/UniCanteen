@@ -239,7 +239,7 @@
     <div class="left-switcher">
         <a class="switch-btn"><i class="fas fa-user-graduate"></i><span>CUSTOMER</span></a>
         <a class="switch-btn"><i class="fas fa-store"></i><span>VENDOR</span></a>
-        <a class="switch-btn active" href="index.php?page=sysadmin"><i class="fas fa-user-tie"></i><span>SYSADMIN</span></a>
+        <a class="switch-btn active" href="<?php echo url('index.php?page=sysadmin'); ?>"><i class="fas fa-user-tie"></i><span>SYSADMIN</span></a>
     </div>
 
     <div class="main-content">

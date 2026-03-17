@@ -6,7 +6,12 @@ if (!function_exists('requireLogin')) {
     function requireLogin()
     {
         if (!isLoggedIn()) {
-            $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
+            // Strip BASE_PATH so redirect() won't double-prefix it
+            $uri = $_SERVER['REQUEST_URI'];
+            if (strpos($uri, BASE_PATH) === 0) {
+                $uri = substr($uri, strlen(BASE_PATH));
+            }
+            $_SESSION['redirect_after_login'] = $uri;
             redirect('index.php?page=login');
         }
     }

@@ -357,7 +357,7 @@ $pendingReviews = $stmt->get_result()->fetch_assoc()['pending_count'];
                 <div id="profile-tab" class="tab-content active">
                     <div class="profile-card">
                         <h3 style="margin-bottom: 20px; color: #16623b;">Edit Profile</h3>
-                        <form method="POST" action="index.php?page=profile">
+                        <form method="POST" action="<?php echo url('index.php?page=profile'); ?>">
                             <div class="form-group">
                                 <label>Full Name</label>
                                 <input type="text" name="full_name"
@@ -403,7 +403,7 @@ $pendingReviews = $stmt->get_result()->fetch_assoc()['pending_count'];
                                     <div style="font-weight: 700; color: #007a3e;">
                                         ₱<?php echo number_format($order['total_amount'], 2); ?>
                                     </div>
-                                    <a href="index.php?page=orders" class="btn-secondary" style="padding: 8px 20px;">
+                                    <a href="<?php echo url('index.php?page=orders'); ?>" class="btn-secondary" style="padding: 8px 20px;">
                                         View Orders <i class="fas fa-arrow-right"></i>
                                     </a>
                                 </div>
@@ -414,7 +414,7 @@ $pendingReviews = $stmt->get_result()->fetch_assoc()['pending_count'];
                             </a>
                         <?php else: ?>
                             <p style="text-align: center; color: #3b7455; padding: 30px;">
-                                No orders yet. <a href="index.php?page=customer#menu" style="color: #007a3e;">Start
+                                No orders yet. <a href="<?php echo url('index.php?page=customer'); ?>#menu" style="color: #007a3e;">Start
                                     ordering!</a>
                             </p>
                         <?php endif; ?>
@@ -472,7 +472,7 @@ $pendingReviews = $stmt->get_result()->fetch_assoc()['pending_count'];
                 <div id="security-tab" class="tab-content">
                     <div class="profile-card">
                         <h3 style="margin-bottom: 20px; color: #16623b;">Change Password</h3>
-                        <form method="POST" action="index.php?page=profile">
+                        <form method="POST" action="<?php echo url('index.php?page=profile'); ?>">
                             <div class="form-group">
                                 <label>Current Password</label>
                                 <input type="password" name="current_password" required>

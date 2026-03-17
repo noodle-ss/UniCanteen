@@ -176,20 +176,20 @@ $orders = $stmt->get_result();
                                                 <i class="fas fa-check-circle" style="margin-right:5px;"></i> Reviewed
                                             </span>
                                         <?php else: ?>
-                                            <a href="index.php?page=reviews" class="btn-primary" style="background:#fef9c3; color:#854d0e; border:1px solid #fde68a; text-decoration:none; flex:none; padding:0 18px; font-size:0.85rem; display:inline-flex; align-items:center; height:40px; border-radius:30px; box-sizing:border-box;">
+                                            <a href="<?php echo url('index.php?page=reviews'); ?>" class="btn-primary" style="background:#fef9c3; color:#854d0e; border:1px solid #fde68a; text-decoration:none; flex:none; padding:0 18px; font-size:0.85rem; display:inline-flex; align-items:center; height:40px; border-radius:30px; box-sizing:border-box;">
                                                 <i class="fas fa-star" style="margin-right:5px;"></i> Leave Review
                                             </a>
                                         <?php endif; ?>
                                     <?php endif; ?>
                                     
-                                    <form method="POST" action="index.php?page=reorder" style="margin:0;" onsubmit="return confirmReorder(this, <?php echo $order['restaurant_ID']; ?>);">
+                                    <form method="POST" action="<?php echo url('index.php?page=reorder'); ?>" style="margin:0;" onsubmit="return confirmReorder(this, <?php echo $order['restaurant_ID']; ?>);">
                                         <input type="hidden" name="order_id" value="<?php echo $order['ID']; ?>">
                                         <button type="submit" class="btn-primary" style="background:#e3f4ea; color:#007a3e; border:1px solid #b8e0cc; flex:none; padding:0 18px; font-size:0.85rem; display:inline-flex; align-items:center; height:40px; border-radius:30px; box-sizing:border-box; cursor:pointer;">
                                             <i class="fas fa-redo-alt" style="margin-right:5px;"></i> Reorder
                                         </button>
                                     </form>
                                     
-                                    <a href="index.php?page=order-details&id=<?php echo $order['ID']; ?>" class="btn-primary" style="flex:none; padding:0 18px; font-size:0.85rem; display:inline-flex; align-items:center; height:40px; border-radius:30px; border:1px solid transparent; box-sizing:border-box; text-decoration:none;">
+                                    <a href="<?php echo url('index.php?page=order-details&id=' . $order['ID']); ?>" class="btn-primary" style="flex:none; padding:0 18px; font-size:0.85rem; display:inline-flex; align-items:center; height:40px; border-radius:30px; border:1px solid transparent; box-sizing:border-box; text-decoration:none;">
                                         View Details <i class="fas fa-arrow-right" style="margin-left:5px;"></i>
                                     </a>
                                 </div>

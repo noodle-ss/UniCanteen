@@ -5,7 +5,7 @@ require_once __DIR__ . '/../config/auth_check.php';
 requireLogin();
 
 if (!isset($_GET['id'])) {
-    header('Location: index.php?page=orders');
+    header('Location: ' . url('index.php?page=orders'));
     exit();
 }
 
@@ -23,7 +23,7 @@ $stmt->execute();
 $currentOrder = $stmt->get_result()->fetch_assoc();
 
 if (!$currentOrder) {
-    header('Location: index.php?page=orders');
+    header('Location: ' . url('index.php?page=orders'));
     exit();
 }
 
@@ -217,7 +217,7 @@ if ($currentOrder['status'] === 'C') {
                                 </a>
                             <?php endif; ?>
                         <?php endif; ?>
-                        <form method="POST" action="index.php?page=reorder" style="margin-bottom:0;" onsubmit="return confirmReorder(this, <?php echo $currentOrder['restaurant_ID']; ?>);">
+                        <form method="POST" action="<?php echo url('index.php?page=reorder'); ?>" style="margin-bottom:0;" onsubmit="return confirmReorder(this, <?php echo $currentOrder['restaurant_ID']; ?>);">
                             <input type="hidden" name="order_id" value="<?php echo $currentOrder['ID']; ?>">
                             <button type="submit" style="display:inline-flex; align-items:center; gap:8px; background:#007a3e; border:none; color:#fff; padding:10px 24px; border-radius:40px; font-weight:600; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(0, 122, 62, 0.2); transition:all 0.2s ease;">
                                 <i class="fas fa-redo-alt"></i> Reorder Entire Meal

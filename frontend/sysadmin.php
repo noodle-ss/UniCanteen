@@ -552,10 +552,10 @@ $total_reviews = count($reviews);
             <p>Manage vendors, oversee users, and maintain platform compliance.</p>
           </div>
           <div class="admin-hero-actions">
-            <a href="index.php?page=customer" class="btn-admin-action">
+            <a href="<?php echo url('index.php?page=customer'); ?>" class="btn-admin-action">
               <i class="fas fa-arrow-left"></i> Back to Home
             </a>
-            <a href="index.php?page=logout" class="btn-admin-action">
+            <a href="<?php echo url('index.php?page=logout'); ?>" class="btn-admin-action">
               <i class="fas fa-sign-out-alt"></i> Logout
             </a>
             <button onclick="openCreateVendorModal()" class="btn-admin-action">
@@ -1019,7 +1019,7 @@ $total_reviews = count($reviews);
           </div>
 
           <!-- Restaurant Filter -->
-          <form method="GET" action="index.php" style="margin-bottom:20px;">
+          <form method="GET" action="<?php echo url('index.php'); ?>" style="margin-bottom:20px;">
             <input type="hidden" name="page" value="sysadmin">
             <input type="hidden" name="tab" value="reviews">
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
@@ -1039,7 +1039,7 @@ $total_reviews = count($reviews);
                 <?php endforeach; ?>
               </select>
               <?php if ($filter_restaurant_id): ?>
-                <a href="index.php?page=sysadmin&tab=reviews"
+                <a href="<?php echo url('index.php?page=sysadmin&tab=reviews'); ?>"
                    class="btn-sm btn-ban" style="text-decoration:none;">
                   <i class="fas fa-times"></i> Clear
                 </a>
@@ -1113,7 +1113,7 @@ $total_reviews = count($reviews);
                     <span style="font-size:0.78rem;"><?php echo date('g:i A', strtotime($rev['timestamp'])); ?></span>
                   </td>
                   <td>
-                    <form method="POST" action="index.php?page=sysadmin&tab=reviews<?php echo $filter_restaurant_id ? '&review_restaurant='.$filter_restaurant_id : ''; ?>">
+                    <form method="POST" action="<?php echo url('index.php?page=sysadmin&tab=reviews') . ($filter_restaurant_id ? '&review_restaurant='.$filter_restaurant_id : ''); ?>">
                       <input type="hidden" name="admin_action" value="delete_review">
                       <input type="hidden" name="rating_id" value="<?php echo $rev['ID']; ?>">
                       <button type="submit" class="btn-sm btn-ban"
@@ -1204,7 +1204,7 @@ $total_reviews = count($reviews);
             </div>
             <?php endif; ?>
 
-            <form method="POST" action="index.php?page=sysadmin&tab=maintenance" id="maintenance-form">
+            <form method="POST" action="<?php echo url('index.php?page=sysadmin&tab=maintenance'); ?>" id="maintenance-form">
               <input type="hidden" name="admin_action" value="toggle_maintenance">
               <button type="button" id="maintenance-btn"
                 <?php echo !$maintenance_mode_current ? 'disabled' : ''; ?>
@@ -1369,7 +1369,7 @@ $total_reviews = count($reviews);
 <div id="createVendorModal" class="modal-overlay">
   <div class="modal-card">
     <h3><i class="fas fa-store"></i> Create New Vendor Account</h3>
-    <form method="POST" action="index.php?page=sysadmin" id="createVendorForm">
+    <form method="POST" action="<?php echo url('index.php?page=sysadmin'); ?>" id="createVendorForm">
       <input type="hidden" name="admin_action" value="create_vendor">
 
       <p style="background:#e3f4ea; padding:12px 16px; border-radius:14px; font-size:0.85rem; color:#0b6d38; margin-bottom:20px;">

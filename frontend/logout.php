@@ -26,6 +26,6 @@ if (ini_get("session.use_cookies")) {
 
 session_destroy();
 
-header("Location: " . SITE_URL . "?page=customer&logout=success");
+header("Location: " . url('index.php?page=customer&logout=success'));
 exit();
 ?>

@@ -306,22 +306,22 @@ if (isLoggedIn()) {
         <section id="customer" class="page-section">
             <div class="wrapper">
                 <nav class="customer-nav">
-                    <a href="index.php?page=customer" class="logo">UniCanteen <span>DLSU</span></a>
+                    <a href="<?php echo url('index.php?page=customer'); ?>" class="logo">UniCanteen <span>DLSU</span></a>
                     <div class="customer-nav-links">
-                        <a href="index.php?page=customer#menu">Menu</a>
-                        <a href="index.php?page=customer#track">Track</a>
-                        <a href="index.php?page=favorites">Favorites</a>
-                        <a href="index.php?page=orders">Orders</a>
-                        <a href="index.php?page=reviews">Reviews</a>
+                        <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
+                        <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
+                        <a href="<?php echo url('index.php?page=favorites'); ?>">Favorites</a>
+                        <a href="<?php echo url('index.php?page=orders'); ?>">Orders</a>
+                        <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
                         <?php if (isset($_SESSION['user_id'])): ?>
                             <a
-                                href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>
-                            <a href="index.php?page=logout" class="btn-outline">Logout</a>
+                                href="<?php echo url('index.php?page=profile'); ?>"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>
+                            <a href="<?php echo url('index.php?page=logout'); ?>" class="btn-outline">Logout</a>
                         <?php else: ?>
-                            <a href="index.php?page=login">Sign In</a>
-                            <a href="index.php?page=register" class="btn-outline">Register</a>
+                            <a href="<?php echo url('index.php?page=login'); ?>">Sign In</a>
+                            <a href="<?php echo url('index.php?page=register'); ?>" class="btn-outline">Register</a>
                         <?php endif; ?>
-                        <a href="index.php?page=cart" class="btn-primary">
+                        <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-primary">
                             <i class="fas fa-bag-shopping"></i> Cart
                             <span class="cart-count"><?php echo $cart_items_count; ?></span>
                         </a>
@@ -475,7 +475,7 @@ if (isLoggedIn()) {
                                     class="available-count"><?php echo $restaurant['available_items_count']; ?>/<?php echo $restaurant['total_items_count']; ?>
                                     available</span>
                             </div>
-                            <a href="index.php?page=restaurant&id=<?php echo $restaurant['ID']; ?>" class="btn-secondary"
+                            <a href="<?php echo url('index.php?page=restaurant&id=' . $restaurant['ID']); ?>" class="btn-secondary"
                                 style="width: 100%; margin-top: 15px; text-decoration: none;">
                                 View Full Menu <i class="fas fa-arrow-right"></i>
                             </a>
@@ -502,7 +502,7 @@ if (isLoggedIn()) {
                                     </p>
                                 </div>
                             </div>
-                            <a href="index.php?page=orders" class="btn-secondary"
+                            <a href="<?php echo url('index.php?page=orders'); ?>" class="btn-secondary"
                                 style="padding: 10px 22px; text-decoration: none; font-size: 0.9rem;">
                                 <i class="fas fa-list"></i> View All Orders
                             </a>
@@ -536,7 +536,7 @@ if (isLoggedIn()) {
                                             echo $statusText[$activeOrder['status']];
                                             ?>
                                         </span>
-                                        <a href="index.php?page=order-details&id=<?php echo $activeOrder['ID']; ?>"
+                                        <a href="<?php echo url('index.php?page=order-details&id=' . $activeOrder['ID']); ?>"
                                             style="color: #007a3e; font-size: 0.85rem; font-weight: 600; text-decoration: none;">Details
                                             <i class="fas fa-arrow-right" style="font-size:0.75rem;"></i></a>
                                     </div>
@@ -610,7 +610,7 @@ if (isLoggedIn()) {
                 <div class="section-header" id="reviews">
                     <i class="fas fa-star"></i>
                     <h2>Recent Ratings & Reviews</h2>
-                    <a href="index.php?page=reviews"
+                    <a href="<?php echo url('index.php?page=reviews'); ?>"
                         style="margin-left: auto; color: #007a3e; font-weight: 500; text-decoration: none;">
                         See all <i class="fas fa-arrow-right"></i>
                     </a>
@@ -813,7 +813,7 @@ if (isLoggedIn()) {
 
             if (!window.isLoggedIn) {
                 alert('Please sign in to save your favorite items.');
-                window.location.href = 'index.php?page=login';
+                window.location.href = '<?php echo url('index.php?page=login'); ?>';
                 return;
             }
 
@@ -836,7 +836,7 @@ if (isLoggedIn()) {
             const formData = new FormData();
             formData.append('item_id', itemId);
 
-            fetch('frontend/toggle_favorite.php', {
+            fetch('<?php echo url('frontend/toggle_favorite.php'); ?>', {
                 method: 'POST',
                 body: formData
             })

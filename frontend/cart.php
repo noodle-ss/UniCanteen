@@ -48,18 +48,18 @@ if (isset($_GET['add']) && isset($_GET['restaurant_id'])) {
             $itemName = urlencode($item['name']);
             $return_to = $_GET['return_to'] ?? null;
             if ($return_to === 'favorites') {
-                header("Location: index.php?page=favorites&added=" . urlencode($item['name']));
+                header("Location: " . url('index.php?page=favorites&added=' . urlencode($item['name'])));
             } else {
-                header("Location: index.php?page=restaurant&id={$restaurant_id}&added=" . $itemName);
+                header("Location: " . url("index.php?page=restaurant&id={$restaurant_id}&added=" . $itemName));
             }
             exit();
         }
     }
     $return_to = $_GET['return_to'] ?? null;
     if ($return_to === 'favorites') {
-        header("Location: index.php?page=favorites&error=" . urlencode($addError ?? "Item not available."));
+        header("Location: " . url('index.php?page=favorites&error=' . urlencode($addError ?? "Item not available.")));
     } else {
-        header("Location: index.php?page=restaurant&id={$restaurant_id}&error=" . urlencode($addError ?? "Item not available."));
+        header("Location: " . url("index.php?page=restaurant&id={$restaurant_id}&error=" . urlencode($addError ?? "Item not available.")));
     }
     exit();
 }
@@ -74,21 +74,21 @@ if (isset($_POST['update_cart'])) {
             $_SESSION['cart'][$item_id]['quantity'] = $quantity;
         }
     }
-    header("Location: index.php?page=cart&success=updated");
+    header("Location: " . url('index.php?page=cart&success=updated'));
     exit();
 }
 
 // ── Handle remove ───────────────────────────────────────────────────────────
 if (isset($_GET['remove'])) {
     unset($_SESSION['cart'][intval($_GET['remove'])]);
-    header("Location: index.php?page=cart&success=removed");
+    header("Location: " . url('index.php?page=cart&success=removed'));
     exit();
 }
 
 // ── Handle clear ────────────────────────────────────────────────────────────
 if (isset($_GET['clear'])) {
     $_SESSION['cart'] = [];
-    header("Location: index.php?page=cart&success=cleared");
+    header("Location: " . url('index.php?page=cart&success=cleared'));
     exit();
 }
 
@@ -98,7 +98,7 @@ if (isset($_POST['checkout'])) {
         $checkoutError = "Your cart is empty!";
     } elseif (!isLoggedIn()) {
         $_SESSION['redirect_after_login'] = 'index.php?page=cart';
-        header("Location: index.php?page=login");
+        header("Location: " . url('index.php?page=login'));
         exit();
     } else {
         $subtotal      = 0;
@@ -140,7 +140,7 @@ if (isset($_POST['checkout'])) {
 
             $db->commit();
             $_SESSION['cart'] = [];
-            header("Location: index.php?page=orders&order_id=$order_id&success=placed");
+            header("Location: " . url("index.php?page=orders&order_id=$order_id&success=placed"));
             exit();
         } catch (Exception $e) {
             $db->rollback();
@@ -695,21 +695,21 @@ $grand_total = $subtotal + $service_fee;
     <!-- Nav -->
     <div class="wrapper">
         <nav class="customer-nav">
-            <a href="index.php?page=customer" class="logo">UniCanteen <span>DLSU</span></a>
+            <a href="<?php echo url('index.php?page=customer'); ?>" class="logo">UniCanteen <span>DLSU</span></a>
             <div class="customer-nav-links">
-                <a href="index.php?page=customer#menu">Menu</a>
-                <a href="index.php?page=customer#track">Track</a>
-                <a href="index.php?page=favorites">Favorites</a>
-                <a href="index.php?page=orders">Orders</a>
-                <a href="index.php?page=reviews">Reviews</a>
+                <a href="<?php echo url('index.php?page=customer'); ?>#menu">Menu</a>
+                <a href="<?php echo url('index.php?page=customer'); ?>#track">Track</a>
+                <a href="<?php echo url('index.php?page=favorites'); ?>">Favorites</a>
+                <a href="<?php echo url('index.php?page=orders'); ?>">Orders</a>
+                <a href="<?php echo url('index.php?page=reviews'); ?>">Reviews</a>
                 <?php if (isset($_SESSION['user_id'])): ?>
-                    <a href="index.php?page=profile"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>
-                    <a href="index.php?page=logout" class="btn-outline">Logout</a>
+                    <a href="<?php echo url('index.php?page=profile'); ?>"><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Profile')[0]); ?></a>
+                    <a href="<?php echo url('index.php?page=logout'); ?>" class="btn-outline">Logout</a>
                 <?php else: ?>
-                    <a href="index.php?page=login">Sign In</a>
-                    <a href="index.php?page=register" class="btn-outline">Register</a>
+                    <a href="<?php echo url('index.php?page=login'); ?>">Sign In</a>
+                    <a href="<?php echo url('index.php?page=register'); ?>" class="btn-outline">Register</a>
                 <?php endif; ?>
-                <a href="index.php?page=cart" class="btn-primary">
+                <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-primary">
                     <i class="fas fa-bag-shopping"></i> Cart
                     <span class="cart-count"><?php echo $cart_items_count; ?></span>
                 </a>
@@ -723,8 +723,8 @@ $grand_total = $subtotal + $service_fee;
             <div class="wrapper">
                 <?php
                 $backUrl = $restaurant_id_for_back
-                    ? "index.php?page=restaurant&id={$restaurant_id_for_back}"
-                    : "index.php?page=customer#menu";
+                    ? url("index.php?page=restaurant&id={$restaurant_id_for_back}")
+                    : url('index.php?page=customer') . '#menu';
                 ?>
                 <a href="<?php echo $backUrl; ?>" class="btn-back">
                     <i class="fas fa-arrow-left"></i>
@@ -772,7 +772,7 @@ $grand_total = $subtotal + $service_fee;
                 <i class="fas fa-bag-shopping"></i>
                 <h3>Your cart is empty</h3>
                 <p>Add some items from our stalls and they'll appear here.</p>
-                <a href="index.php?page=customer#menu" class="btn-checkout" style="width:auto; display:inline-flex; padding:13px 28px;">
+                <a href="<?php echo url('index.php?page=customer'); ?>#menu" class="btn-checkout" style="width:auto; display:inline-flex; padding:13px 28px;">
                     <i class="fas fa-utensils"></i> Browse Stalls
                 </a>
             </div>
@@ -801,7 +801,7 @@ $grand_total = $subtotal + $service_fee;
                             <span></span>
                         </div>
 
-                        <form method="POST" action="index.php?page=cart" id="cartForm">
+                        <form method="POST" action="<?php echo url('index.php?page=cart'); ?>" id="cartForm">
                         <?php foreach ($_SESSION['cart'] as $item_id => $item): ?>
                         <div class="cart-row">
                             <div>
@@ -818,7 +818,7 @@ $grand_total = $subtotal + $service_fee;
                                 <button type="button" class="qty-btn" onclick="changeQty(this, 1)">&#43;</button>
                             </div>
                             <div class="item-subtotal">₱<?php echo number_format($item['price'] * $item['quantity'], 0); ?></div>
-                            <a href="index.php?page=cart&remove=<?php echo $item_id; ?>"
+                            <a href="<?php echo url('index.php?page=cart&remove=' . $item_id); ?>"
                                class="btn-remove"
                                onclick="return confirm('Remove this item?')">
                                 <i class="fas fa-xmark"></i>
@@ -830,12 +830,12 @@ $grand_total = $subtotal + $service_fee;
                             <button type="submit" name="update_cart" class="btn-sm update">
                                 <i class="fas fa-rotate-right"></i> Update
                             </button>
-                            <a href="index.php?page=cart&clear=1"
+                            <a href="<?php echo url('index.php?page=cart&clear=1'); ?>"
                                class="btn-sm clear"
                                onclick="return confirm('Clear your entire cart?')">
                                 <i class="fas fa-trash"></i> Clear Cart
                             </a>
-                            <a href="<?php echo $restaurant_id_for_back ? "index.php?page=restaurant&id={$restaurant_id_for_back}" : "index.php?page=customer#menu"; ?>"
+                            <a href="<?php echo $restaurant_id_for_back ? url('index.php?page=restaurant&id=' . $restaurant_id_for_back) : url('index.php?page=customer') . '#menu'; ?>"
                                class="btn-sm add-more">
                                 <i class="fas fa-plus"></i> Add More
                             </a>
@@ -898,12 +898,12 @@ $grand_total = $subtotal + $service_fee;
                         <?php if (!isLoggedIn()): ?>
                         <div class="login-notice">
                             <i class="fas fa-info-circle"></i>
-                            Please <a href="index.php?page=login">sign in</a> to checkout.
+                            Please <a href="<?php echo url('index.php?page=login'); ?>">sign in</a> to checkout.
                         </div>
                         <?php endif; ?>
 
                         <div class="checkout-wrap">
-                            <form method="POST" action="index.php?page=cart" id="checkoutForm">
+                            <form method="POST" action="<?php echo url('index.php?page=cart'); ?>" id="checkoutForm">
                                 <input type="hidden" name="payment_method" id="paymentMethodInput" value="gcash">
                                 <button type="button" id="placeOrderBtn" class="btn-checkout"
                                     <?php echo !isLoggedIn() ? 'disabled' : ''; ?>

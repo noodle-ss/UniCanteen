@@ -5,7 +5,7 @@ require_once __DIR__ . '/../config/auth_check.php';
 requireLogin();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header("Location: index.php?page=orders");
+    header("Location: " . url('index.php?page=orders'));
     exit();
 }
 
@@ -22,7 +22,7 @@ $orderResult = $stmt->get_result();
 
 if ($orderResult->num_rows === 0) {
     // Unauthorized or non-existent order
-    header("Location: index.php?page=orders&error=" . urlencode("Invalid order or unauthorized access."));
+    header("Location: " . url('index.php?page=orders&error=' . urlencode("Invalid order or unauthorized access.")));
     exit();
 }
 
@@ -52,7 +52,7 @@ while ($row = $itemsResult->fetch_assoc()) {
 
 // If ALL items from that order are unavailable
 if (empty($itemsToAdd)) {
-    header("Location: index.php?page=orders&error=" . urlencode("All items from this order are currently unavailable."));
+    header("Location: " . url('index.php?page=orders&error=' . urlencode("All items from this order are currently unavailable.")));
     exit();
 }
 
@@ -105,5 +105,5 @@ if ($unavailableCount > 0) {
 }
 
 // Redirect to cart
-header("Location: index.php?page=cart&success=reordered");
+header("Location: " . url('index.php?page=cart&success=reordered'));
 exit();

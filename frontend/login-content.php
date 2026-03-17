@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/config.php';
 
 // Redirect if already logged in
 if (isLoggedIn()) {
-    header("Location: index.php?page=customer");
+    header("Location: " . url('index.php?page=customer'));
     exit();
 }
 
