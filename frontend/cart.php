@@ -119,12 +119,15 @@ if (isset($_POST['checkout'])) {
         $queue_number = $queueData['next_queue'];
         $stmt->close();
 
+        $payment_method = isset($_POST['payment_method']) && in_array($_POST['payment_method'], ['gcash', 'card']) 
+            ? $_POST['payment_method'] : 'gcash';
+
         $db->begin_transaction();
         try {
             $orderQuery = "INSERT INTO Orders (customer_ID, restaurant_ID, total_amount, status, queue_number, payment_method)
-                           VALUES (?, ?, ?, 'P', ?, 'gcash')";
+                           VALUES (?, ?, ?, 'P', ?, ?)";
             $stmt = $db->prepare($orderQuery);
-            $stmt->bind_param("iidi", $_SESSION['user_id'], $restaurant_id, $total, $queue_number);
+            $stmt->bind_param("iidis", $_SESSION['user_id'], $restaurant_id, $total, $queue_number, $payment_method);
             $stmt->execute();
             $order_id = $db->insert_id;
 
@@ -863,9 +866,9 @@ $grand_total = $subtotal + $service_fee;
                             </div>
                         </div>
 
-                        <!-- Active Payment Method -->
+                        <!-- Payment Methods -->
                         <div class="payment-methods">
-                            <label class="payment-option active" style="cursor: default;">
+                            <label class="payment-option active" onclick="selectPayment('gcash', this)">
                                 <div class="payment-logo gcash-logo" style="background: #007a3e; color: #fff;"><i class="fas fa-mobile-screen-button"></i></div>
                                 <div>
                                     <div class="payment-title">GCash</div>
@@ -873,11 +876,23 @@ $grand_total = $subtotal + $service_fee;
                                 </div>
                                 <div class="payment-check" style="color: #007a3e;"><i class="fas fa-circle-check"></i></div>
                             </label>
+                            <label class="payment-option" onclick="selectPayment('card', this)">
+                                <div class="payment-logo card-logo"><i class="fas fa-credit-card"></i></div>
+                                <div>
+                                    <div class="payment-title">Card</div>
+                                    <div class="payment-sub">Debit or Credit Card</div>
+                                </div>
+                                <div class="payment-check"><i class="fas fa-circle-check"></i></div>
+                            </label>
                         </div>
                         
                         <div id="gcashInstruction" class="qr-instruction show">
                             <i class="fas fa-qrcode" style="font-size: 2rem; color: #64748b; margin-bottom: 8px; display: block;"></i>
                             <strong>Scan QR or send payment</strong> at the stall.<br>Please show proof of transfer when picking up your food.
+                        </div>
+                        <div id="cardInstruction" class="qr-instruction">
+                            <i class="fas fa-credit-card" style="font-size: 2rem; color: #64748b; margin-bottom: 8px; display: block;"></i>
+                            <strong>Present your card</strong> at the stall.<br>Payment will be processed upon pickup.
                         </div>
 
                         <?php if (!isLoggedIn()): ?>
@@ -936,7 +951,7 @@ $grand_total = $subtotal + $service_fee;
             </div>
             <div class="modal-row" style="margin-top: 10px; border-top: 2px dashed #e0f0e8; padding-top: 10px;">
                 <span style="font-size: 0.85rem; color: #6b8f7a;">Payment Method</span>
-                <span id="modalPaymentDisplay" style="font-weight: 600; color: #1a3d28;">GCash</span>
+                <span id="modalPaymentDisplay" style="font-weight: 600; color: #1a3d28;"></span>
             </div>
         </div>
         <div class="modal-btns">
@@ -1001,6 +1016,25 @@ function submitOrder() {
 // Close modal on overlay click
 document.getElementById('confirmModal').addEventListener('click', function(e) {
     if (e.target === this) closeConfirmModal();
+});
+
+// Payment method selection
+function selectPayment(method, el) {
+    document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('paymentMethodInput').value = method;
+    // Toggle instruction blocks
+    document.getElementById('gcashInstruction').classList.toggle('show', method === 'gcash');
+    document.getElementById('cardInstruction').classList.toggle('show', method === 'card');
+    // Update modal display
+    const labels = { gcash: 'GCash', card: 'Card' };
+    document.getElementById('modalPaymentDisplay').textContent = labels[method] || method;
+}
+// Init modal label on load
+document.addEventListener('DOMContentLoaded', function() {
+    const method = document.getElementById('paymentMethodInput').value;
+    const labels = { gcash: 'GCash', card: 'Card' };
+    document.getElementById('modalPaymentDisplay').textContent = labels[method] || method;
 });
 </script>
 </body>

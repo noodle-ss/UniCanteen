@@ -104,7 +104,7 @@ CREATE TABLE Orders (
     total_amount DECIMAL(10, 2) NOT NULL,
     status ENUM('P', 'PR', 'R', 'C') DEFAULT 'P',
     queue_number INT,
-    payment_method ENUM('cash', 'gcash', 'card') DEFAULT 'cash',
+    payment_method ENUM('gcash', 'card') DEFAULT 'gcash',
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     pickup_time TIME,
     FOREIGN KEY (customer_ID) REFERENCES Users(ID),
@@ -212,7 +212,7 @@ INSERT INTO Items (name, description, price, image_url, isAvailable, restaurant_
 -- Insert sample orders
 INSERT INTO Orders (customer_ID, restaurant_ID, total_amount, status, queue_number, payment_method, order_date) VALUES
 (1, 1, 185.00, 'PR', 2417, 'gcash', NOW() - INTERVAL 1 HOUR),
-(2, 2, 119.00, 'R', 2418, 'cash', NOW() - INTERVAL 2 HOUR),
+(2, 2, 119.00, 'R', 2418, 'gcash', NOW() - INTERVAL 2 HOUR),
 (1, 3, 115.00, 'C', 2419, 'card', NOW() - INTERVAL 3 HOUR);
 
 -- Insert order items

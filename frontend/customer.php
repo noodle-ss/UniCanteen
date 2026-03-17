@@ -54,7 +54,7 @@ $ratingStatsQuery = "SELECT
     SUM(CASE WHEN rating >= 4.5 THEN 1 ELSE 0 END) as five_star,
     SUM(CASE WHEN rating >= 3.5 AND rating < 4.5 THEN 1 ELSE 0 END) as four_star,
     SUM(CASE WHEN rating >= 2.5 AND rating < 3.5 THEN 1 ELSE 0 END) as three_star,
-    SUM(CASE WHEN rating < 2.5 THEN 1 ELSE 0 END) as two_star,
+    SUM(CASE WHEN rating >= 1.5 AND rating < 2.5 THEN 1 ELSE 0 END) as two_star,
     SUM(CASE WHEN rating < 1.5 THEN 1 ELSE 0 END) as one_star
     FROM Ratings";
 $ratingStatsResult = $db->query($ratingStatsQuery);

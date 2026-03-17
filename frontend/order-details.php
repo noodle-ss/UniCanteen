@@ -335,7 +335,11 @@ if ($currentOrder['status'] === 'C') {
                             <span style="font-size: 0.95rem; color: #4a755e; font-weight: 500;">Payment Method</span>
                             <span
                                 style="font-size: 1.05rem; font-weight: 700; color: #1a4d31; display: flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-mobile-screen-button" style="color: #007a3e;"></i> GCash
+                                <?php if ($currentOrder['payment_method'] === 'card'): ?>
+                                    <i class="fas fa-credit-card" style="color: #1f5090;"></i> Card
+                                <?php else: ?>
+                                    <i class="fas fa-mobile-screen-button" style="color: #007a3e;"></i> GCash
+                                <?php endif; ?>
                             </span>
                         </div>
                     </div>

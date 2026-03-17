@@ -160,8 +160,13 @@ $orders = $stmt->get_result();
                                         <strong>₱<?php echo number_format($order['total_amount'], 2); ?></strong>
                                     </p>
                                     <p style="margin-top: 5px; font-size: 0.9rem; color: #4a755e;">
-                                        <i class="fas fa-mobile-screen-button"
-                                            style="color: #007a3e; width: 16px; text-align: center;"></i> GCash
+                                        <?php if ($order['payment_method'] === 'card'): ?>
+                                            <i class="fas fa-credit-card"
+                                                style="color: #1f5090; width: 16px; text-align: center;"></i> Card
+                                        <?php else: ?>
+                                            <i class="fas fa-mobile-screen-button"
+                                                style="color: #007a3e; width: 16px; text-align: center;"></i> GCash
+                                        <?php endif; ?>
                                     </p>
                                 </div>
                                 <div style="display:flex; gap:10px; flex-wrap: wrap;">
