@@ -110,7 +110,7 @@ if (isset($_POST['checkout'])) {
         $service_fee_checkout = 15;
         $total = $subtotal + $service_fee_checkout;
 
-        $queueQuery = "SELECT COALESCE(MAX(queue_number), 2400) + 1 as next_queue
+        $queueQuery = "SELECT COALESCE(MAX(queue_number), 0) + 1 as next_queue
                        FROM Orders WHERE restaurant_ID = ? AND DATE(order_date) = CURDATE()";
         $stmt = $db->prepare($queueQuery);
         $stmt->bind_param("i", $restaurant_id);
