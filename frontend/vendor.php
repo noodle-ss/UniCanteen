@@ -1,6 +1,4 @@
 <?php
-global $dbConn;
-
 $dbConn = Database::getInstance()->getConnection();
 
 // =====================
@@ -846,11 +844,15 @@ unset($order);
                     <div style="font-weight:600; color:var(--dlsu-green);">₱<?= number_format($order['total_amount'], 2) ?>
                     </div>
                     <div style="font-size:0.8rem; color:#4a755e; margin-top:4px;">
-                      <i class="fas fa-mobile-screen-button"></i> GCash
+                      <?php if (($order['payment_method'] ?? 'gcash') === 'card'): ?>
+                        <i class="fas fa-credit-card"></i> Card
+                      <?php else: ?>
+                        <i class="fas fa-mobile-screen-button"></i> GCash
+                      <?php endif; ?>
                     </div>
                   </div>
                   <div>
-                    <select class="order-status-select" onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)" style="<?php
+                    <select class="order-status-select" data-order-id="<?= $order['ID'] ?>" onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)" style="<?php
                       $status_styles = [
                         'P' => 'background: #fee9e9; color: #b13e3e; border-color: #f5c6cb;',
                         'PR' => 'background: #fff1cf; color: #9e6d0b; border-color: #ffeeba;',
@@ -1525,11 +1527,8 @@ unset($order);
 
         for (let select of orderSelects) {
           if (select.value === 'P' || select.value === 'PR') {
-            const match = select.getAttribute('onchange').match(/updateOrderStatus\((\d+)/);
-            if (match) {
-              currentOrderId = match[1];
-              foundSelect = select;
-            }
+            currentOrderId = select.dataset.orderId;
+            foundSelect = select;
             break;
           }
         }

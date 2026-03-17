@@ -132,7 +132,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 3) {
 }
 
 // ─── Restore state for GET (when returning from a POST redirect) ──────────────
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($_SESSION['reset_step'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['reset'])) {
+    // "Start over" link clicked – clear all reset session data
+    unset($_SESSION['reset_email'], $_SESSION['reset_user_id'], $_SESSION['reset_step'], $_SESSION['reset_verified']);
+    $step = 1;
+} elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($_SESSION['reset_step'])) {
     $step = intval($_SESSION['reset_step']);
     if ($step >= 2) {
         $email = $_SESSION['reset_email'] ?? '';
@@ -510,8 +514,7 @@ $csrf_token = generateCSRFToken();
                         </div>
                         <button type="submit" class="fp-btn"><i class="fas fa-check"></i> Verify Answer</button>
                     </form>
-                    <a href="<?php echo url('index.php?page=forgot-password'); ?>" class="fp-back"
-                        onclick="<?php echo "fetch(''.concat('', window.location.href.replace(/[^/]+$/, '')), {method:'GET'});"; ?>">
+                    <a href="<?php echo url('index.php?page=forgot-password&reset=1'); ?>" class="fp-back">
                         <i class="fas fa-arrow-left"></i> Start over
                     </a>
 

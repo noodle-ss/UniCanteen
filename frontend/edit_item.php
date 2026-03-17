@@ -3,6 +3,7 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/auth_check.php';
 require_once __DIR__ . '/../config/database.php';
 
+header('Content-Type: application/json');
 requireVendor();
 
 $item_id = $_POST['item_id'] ?? null;
