@@ -638,6 +638,22 @@ unset($order);
               <i class="fas fa-store" style="color:var(--dlsu-green);"></i>
               <?php echo htmlspecialchars($restaurant['name'] ?? 'Vendor Portal'); ?>
             </span>
+              <form method="POST" action="<?php echo url('frontend/toggle_stall.php'); ?>" style="display:inline;">
+                <input type="hidden" name="restaurant_id" value="<?php echo $restaurant['ID']; ?>">
+                  <button type="submit" style="
+                      background: <?php echo $restaurant['is_open'] ? '#e3f4ea' : '#fee9e9'; ?>;
+                      color: <?php echo $restaurant['is_open'] ? '#007a3e' : '#b13e3e'; ?>;
+                      border: none;
+                      padding: 6px 14px;
+                      border-radius: 20px;
+                      cursor: pointer;
+                      font-size: 0.8rem;
+                      margin-left: 10px;
+                      font-weight: 600;
+                  ">
+                      <?php echo $restaurant['is_open'] ? 'Open' : 'Close'; ?>
+                  </button>
+              </form>
             <span class="sync-badge"><i class="fas fa-circle" style="color:#28a745; font-size:0.6rem;"></i> Live</span>
             <a href="<?php echo url('index.php?page=customer'); ?>" class="btn-outline">
               <i class="fas fa-arrow-left"></i> Back to Stalls
