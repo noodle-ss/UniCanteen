@@ -13,6 +13,15 @@ $db = Database::getInstance()->getConnection();
 // Handle add-to-cart redirect
 if (isset($_GET['add_to_cart'])) {
     $item_id = intval($_GET['add_to_cart']);
+    // Check if the restaurant is open before allowing add-to-cart
+    $openCheck = $db->prepare("SELECT is_open FROM Restaurants WHERE ID = ?");
+    $openCheck->bind_param("i", $restaurant_id);
+    $openCheck->execute();
+    $openResult = $openCheck->get_result()->fetch_assoc();
+    if (!$openResult || !$openResult['is_open']) {
+        header("Location: " . url("index.php?page=restaurant&id=$restaurant_id&error=" . urlencode("This store is currently closed. Ordering is unavailable.")));
+        exit();
+    }
     header("Location: " . url("index.php?page=cart&add=$item_id&restaurant_id=$restaurant_id"));
     exit();
 }
@@ -610,6 +619,56 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
             font-weight: 600;
         }
 
+        /* ── Closed store banner ── */
+        .closed-store-banner {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border: 1.5px solid #fca5a5;
+            border-radius: 20px;
+            padding: 20px 28px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .closed-store-banner-icon {
+            width: 50px;
+            height: 50px;
+            background: #fee2e2;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #dc2626;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            border: 2px solid #fca5a5;
+        }
+        .closed-store-banner h3 {
+            color: #991b1b;
+            font-size: 1rem;
+            margin: 0 0 4px;
+        }
+        .closed-store-banner p {
+            color: #b91c1c;
+            font-size: 0.85rem;
+            margin: 0;
+            opacity: 0.85;
+        }
+        .btn-store-closed {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: #f3f4f6;
+            color: #9ca3af;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.82rem;
+            white-space: nowrap;
+            border: 1.5px solid #e5e7eb;
+            cursor: not-allowed;
+        }
+
         .rev-text {
             font-size: 0.875rem;
             color: #4a6655;
@@ -716,8 +775,8 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
                                 </div>
                             </div>
 
-                            <!-- View Cart button -->
-                            <?php if ($cart_items_count > 0): ?>
+                            <!-- View Cart button (hidden when store is closed) -->
+                            <?php if ($cart_items_count > 0 && $restaurant['is_open']): ?>
                                 <a href="<?php echo url('index.php?page=cart'); ?>" class="btn-hero-cart">
                                     <i class="fas fa-bag-shopping"></i>
                                     View Cart
@@ -732,6 +791,19 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
             <!-- Body content -->
             <div class="r-body">
                 <div class="wrapper">
+
+                    <?php if (!$restaurant['is_open']): ?>
+                    <!-- Closed Store Banner -->
+                    <div class="closed-store-banner">
+                        <div class="closed-store-banner-icon">
+                            <i class="fas fa-store-slash"></i>
+                        </div>
+                        <div>
+                            <h3><i class="fas fa-exclamation-circle" style="margin-right:6px;"></i>This Store is Currently Closed</h3>
+                            <p>You can browse the menu, but ordering is not available right now. Please check back later!</p>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <!-- ── FULL MENU ── -->
                     <div class="sec-header">
@@ -786,7 +858,11 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
                                         <span class="avail-tag-small <?php echo $isAvailable ? 'yes' : 'no'; ?>">
                                             <?php echo $isAvailable ? 'Available' : 'Sold Out'; ?>
                                         </span>
-                                        <?php if ($isAvailable): ?>
+                                        <?php if (!$restaurant['is_open']): ?>
+                                            <span class="btn-store-closed">
+                                                <i class="fas fa-lock"></i> Store Closed
+                                            </span>
+                                        <?php elseif ($isAvailable): ?>
                                             <a href="<?php echo url('index.php?page=restaurant&id=' . $restaurant_id . '&add_to_cart=' . $item['ID']); ?>"
                                                 class="btn-add" id="cart-btn-<?php echo $item['ID']; ?>">
                                                 <i class="fas fa-plus"></i> Add

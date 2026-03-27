@@ -14,7 +14,7 @@ if (isset($_GET['add']) && isset($_GET['restaurant_id'])) {
     $item_id      = intval($_GET['add']);
     $restaurant_id = intval($_GET['restaurant_id']);
 
-    $checkQuery = "SELECT i.*, r.name as restaurant_name, r.ID as restaurant_id
+    $checkQuery = "SELECT i.*, r.name as restaurant_name, r.ID as restaurant_id, r.is_open
                    FROM Items i
                    JOIN Restaurants r ON i.restaurant_ID = r.ID
                    WHERE i.ID = ? AND i.isAvailable = TRUE";
@@ -25,7 +25,11 @@ if (isset($_GET['add']) && isset($_GET['restaurant_id'])) {
 
     $addError = null;
     if ($item = $result->fetch_assoc()) {
-        if (!empty($_SESSION['cart'])) {
+        // Check if the restaurant is open
+        if (!$item['is_open']) {
+            $addError = "This store is currently closed. You cannot add items from a closed store.";
+        }
+        if (!$addError && !empty($_SESSION['cart'])) {
             $first = reset($_SESSION['cart']);
             if ($first['restaurant_id'] != $restaurant_id) {
                 $addError = "You can only order from one restaurant at a time. Clear your cart first.";
@@ -101,7 +105,20 @@ if (isset($_POST['checkout'])) {
         header("Location: " . url('index.php?page=login'));
         exit();
     } else {
-        $subtotal      = 0;
+        // Verify the restaurant is still open before checkout
+        $restaurant_id_checkout = null;
+        foreach ($_SESSION['cart'] as $item) {
+            $restaurant_id_checkout = $item['restaurant_id'];
+            break;
+        }
+        $openCheck = $db->prepare("SELECT is_open FROM Restaurants WHERE ID = ?");
+        $openCheck->bind_param("i", $restaurant_id_checkout);
+        $openCheck->execute();
+        $openRes = $openCheck->get_result()->fetch_assoc();
+        if (!$openRes || !$openRes['is_open']) {
+            $checkoutError = "Sorry, this store has closed. Your order cannot be placed at this time.";
+        } else {
+            $subtotal      = 0;
         $restaurant_id = null;
         foreach ($_SESSION['cart'] as $item) {
             $subtotal += $item['price'] * $item['quantity'];
@@ -146,6 +163,7 @@ if (isset($_POST['checkout'])) {
             $db->rollback();
             $checkoutError = "Checkout failed. Please try again.";
         }
+    }
     }
 }
 

@@ -29,9 +29,8 @@ $restaurantsQuery = "SELECT
     (SELECT COUNT(*) FROM Items WHERE restaurant_ID = r.ID) as total_items_count
     FROM Restaurants r
     LEFT JOIN Ratings rt ON r.ID = rt.restaurant_ID
-    WHERE r.is_open = TRUE
     GROUP BY r.ID
-    ORDER BY r.name";
+    ORDER BY r.is_open DESC, r.name";
 $restaurantsResult = $db->query($restaurantsQuery);
 
 // Get recent reviews
@@ -293,6 +292,98 @@ if (isLoggedIn()) {
             white-space: nowrap;
             display: none;
         }
+
+        /* ── Closed stall card styling ── */
+        .stall-card-closed {
+            position: relative;
+            border: 2px solid #e8b4b4 !important;
+            background: linear-gradient(145deg, #fff9f9 0%, #fef2f2 100%) !important;
+            overflow: hidden;
+        }
+        .stall-card-closed::before {
+            content: 'CLOSED';
+            position: absolute;
+            top: 14px;
+            right: -30px;
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            padding: 4px 40px;
+            transform: rotate(35deg);
+            z-index: 5;
+            box-shadow: 0 2px 8px rgba(185, 28, 28, 0.3);
+        }
+        .stall-card-closed .stall-header {
+            opacity: 0.85;
+        }
+        .stall-card-closed .menu-row {
+            opacity: 0.45;
+            filter: grayscale(40%);
+        }
+        .stall-card-closed .price-tag {
+            background: #f3f4f6 !important;
+            color: #9ca3af !important;
+        }
+        .stall-card-closed .avail-tag {
+            background: #f3f4f6 !important;
+            color: #9ca3af !important;
+        }
+        .stall-card-closed .avail-tag i {
+            color: #9ca3af !important;
+        }
+        .stall-card-closed .fav-btn {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        .stall-card-closed .availability-summary {
+            opacity: 0.5;
+        }
+        .closed-overlay-bar {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: white;
+            font-weight: 700;
+            font-size: 0.85rem;
+            border-radius: 40px; 
+            margin-top: 5px;
+            letter-spacing: 0.3px;
+        }
+        .closed-overlay-bar i {
+            font-size: 1rem;
+            animation: pulse-icon 2s ease-in-out infinite;
+        }
+        @keyframes pulse-icon {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .btn-secondary-closed {
+            width: 100%;
+            margin-top: 15px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            background: #fff;
+            color: #6b7280;
+            border: 1.5px solid #d1d5db;
+            transition: all 0.18s;
+        }
+        .btn-secondary-closed:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+            color: #4b5563;
+        }
     </style>
 </head>
 
@@ -427,7 +518,7 @@ if (isLoggedIn()) {
                         }
                         $itemsResult->data_seek(0);
                         ?>
-                        <div class="stall-card"
+                        <div class="stall-card <?php echo !$restaurant['is_open'] ? 'stall-card-closed' : ''; ?>"
                             data-stall-name="<?php echo htmlspecialchars(strtolower($restaurant['name'])); ?>"
                             data-items="<?php echo htmlspecialchars(strtolower(implode(' ', $itemNames))); ?>"
                             data-open="<?php echo $restaurant['is_open'] ? '1' : '0'; ?>"
@@ -475,10 +566,19 @@ if (isLoggedIn()) {
                                     class="available-count"><?php echo $restaurant['available_items_count']; ?>/<?php echo $restaurant['total_items_count']; ?>
                                     available</span>
                             </div>
-                            <a href="<?php echo url('index.php?page=restaurant&id=' . $restaurant['ID']); ?>" class="btn-secondary"
-                                style="width: 100%; margin-top: 15px; text-decoration: none;">
-                                View Full Menu <i class="fas fa-arrow-right"></i>
-                            </a>
+                            <?php if ($restaurant['is_open']): ?>
+                                <a href="<?php echo url('index.php?page=restaurant&id=' . $restaurant['ID']); ?>" class="btn-secondary"
+                                    style="width: 100%; margin-top: 15px; text-decoration: none;">
+                                    View Full Menu <i class="fas fa-arrow-right"></i>
+                                </a>
+                            <?php else: ?>
+                                <a href="<?php echo url('index.php?page=restaurant&id=' . $restaurant['ID']); ?>" class="btn-secondary-closed">
+                                    <i class="fas fa-eye"></i> View Menu (Closed)
+                                </a>
+                                <div class="closed-overlay-bar">
+                                    <i class="fas fa-store-slash"></i> This store is currently closed
+                                </div>
+                            <?php endif; ?>
                         </div>
                     <?php endwhile; ?>
                 </div>

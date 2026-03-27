@@ -79,6 +79,21 @@ while (count($best_selling_items) < 6) {
 }
 // === END METRICS ===
 
+// === QUEUE: Find currently serving order (earliest P or PR order) ===
+$currentServingOrder = null;
+$nextServingOrder = null;
+if ($restaurant_id) {
+    $queueQuery = "SELECT queue_number, status FROM Orders 
+                   WHERE restaurant_ID = {$restaurant_id} AND status IN ('P','PR','R') 
+                   ORDER BY order_date ASC";
+    $queueResult = $dbConn->query($queueQuery);
+    $queueOrders = $queueResult ? $queueResult->fetch_all(MYSQLI_ASSOC) : [];
+    if (!empty($queueOrders)) {
+        $currentServingOrder = $queueOrders[0];
+        $nextServingOrder = isset($queueOrders[1]) ? $queueOrders[1] : null;
+    }
+}
+
 $orderQuery = "
 SELECT o.*, u.full_name
 FROM Orders o
@@ -803,10 +818,42 @@ unset($order);
             </button>
           </div>
 
-          <!-- ── RIGHT: Order Queue ── -->
+          <!-- ── RIGHT: Order Queue (with integrated Queue Management) ── -->
           <div class="admin-card">
             <div class="vendor-section-header" style="margin-top:0;">
               <h2><i class="fas fa-clock"></i> Order Queue</h2>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <button class="btn-primary" style="font-size:0.78rem; padding:8px 16px; white-space: nowrap;" onclick="nextCustomer()">
+                  <i class="fas fa-forward"></i> Next Customer
+                </button>
+                <button class="btn-secondary" style="font-size:0.78rem; padding:8px 16px;" onclick="resetCounter()">
+                  <i class="fas fa-rotate-right"></i> Reset
+                </button>
+              </div>
+            </div>
+
+            <!-- Now Serving Bar -->
+            <div style="display:flex; gap:14px; align-items:center; background: linear-gradient(135deg, #e3f4ea, #f0faf5); border: 1.5px solid #b8e0cc; border-radius: 16px; padding: 14px 20px; margin-bottom: 18px;">
+              <div style="background: linear-gradient(135deg, #007a3e, #005c2e); color:white; width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:800; flex-shrink:0; box-shadow: 0 4px 12px rgba(0,122,62,0.25);">
+                <?php echo $currentServingOrder ? $currentServingOrder['queue_number'] : '—'; ?>
+              </div>
+              <div style="flex:1;">
+                <div style="font-weight:700; font-size:0.9rem; color:#0f4a2f; display:flex; align-items:center; gap:6px;">
+                  <span style="background:#007a3e; color:white; font-size:0.6rem; padding:2px 8px; border-radius:10px; font-weight:700; letter-spacing:0.5px;">NOW SERVING</span>
+                  <?php if ($currentServingOrder): ?>
+                    <span style="font-size:0.75rem; color:#5f8b74; font-weight:500;">
+                      <?php 
+                        $sLabels = ['P'=>'Pending','PR'=>'Preparing','R'=>'Ready'];
+                        echo $sLabels[$currentServingOrder['status']] ?? $currentServingOrder['status'];
+                      ?>
+                    </span>
+                  <?php endif; ?>
+                </div>
+                <div style="font-size:0.8rem; color:#5f8b74; margin-top:4px;">
+                  Next: <?php echo $nextServingOrder ? '#' . $nextServingOrder['queue_number'] : 'N/A'; ?>
+                  · Waiting: <?php echo ($pending_orders + $preparing_orders); ?> orders
+                </div>
+              </div>
             </div>
 
             <!-- Status filter tabs -->
@@ -828,7 +875,8 @@ unset($order);
             </div>
 
             <!-- Queue header -->
-            <div class="queue-item header" style="grid-template-columns: 1.8fr 1.1fr 0.9fr 1fr 1.4fr;">
+            <div class="queue-item header" style="grid-template-columns: 50px 1.6fr 1fr 0.9fr 1fr 1.4fr;">
+              <span>#</span>
               <span>Order Items</span>
               <span>Customer</span>
               <span>Time</span>
@@ -845,7 +893,8 @@ unset($order);
               </div>
             <?php else: ?>
               <?php foreach ($orders as $order): ?>
-                <div class="queue-item" style="grid-template-columns: 1.8fr 1.1fr 0.9fr 1fr 1.4fr;">
+                <div class="queue-item" style="grid-template-columns: 50px 1.6fr 1fr 0.9fr 1fr 1.4fr;">
+                  <div style="font-weight:800; color:#007a3e; font-size:1.05rem;"><?= $order['queue_number'] ?></div>
                   <div>
                     <?php foreach ($order['items'] as $oi): ?>
                       <div style="font-size:0.85rem; color:#1a4d31;">
@@ -979,37 +1028,8 @@ unset($order);
           </div>
         </div>
 
-        <!-- ── Queue Management + Recent Transactions ── -->
-        <div class="queue-management">
-          <!-- Queue card -->
-          <div class="queue-card">
-            <h3 style="font-size:1.2rem; color:#0f4a2f; margin-bottom:20px;">
-              <i class="fas fa-people-arrows" style="color:var(--dlsu-green);"></i> Queue Management
-            </h3>
-            <div class="current-queue">
-              <div class="queue-number-box">
-                <span class="queue-label">NOW</span>
-                <span class="queue-value"><?php echo !empty($orders) ? $orders[0]['queue_number'] : '—'; ?></span>
-              </div>
-              <div class="queue-info">
-                <h4>Current Queue Number</h4>
-                <div class="queue-subtext">
-                  Next: <?php echo !empty($orders) && isset($orders[1]) ? $orders[1]['queue_number'] : 'N/A'; ?>
-                  · Waiting: <?php echo $pending_orders; ?> orders
-                </div>
-              </div>
-            </div>
-            <div class="queue-actions">
-              <button class="btn-primary" style="font-size:0.9rem; padding:12px 20px; flex:1;" onclick="nextCustomer()">
-                <i class="fas fa-forward"></i> Next Customer
-              </button>
-              <button class="btn-secondary" style="font-size:0.9rem; padding:12px 20px; flex:1;"
-                onclick="resetCounter()">
-                <i class="fas fa-rotate-right"></i> Reset Counter
-              </button>
-            </div>
-          </div>
-
+        <!-- ── Recent Transactions ── -->
+        <div class="queue-management" style="grid-template-columns: 1fr;">
           <!-- Recent Transactions -->
           <div class="queue-card">
             <h3 style="font-size:1.2rem; color:#0f4a2f; margin-bottom:20px;">
