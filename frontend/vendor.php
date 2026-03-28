@@ -95,9 +95,9 @@ if ($restaurant_id) {
 }
 
 $orderQuery = "
-SELECT o.*, u.full_name
+SELECT o.*, IFNULL(u.full_name, 'Walk-in Customer') AS display_name
 FROM Orders o
-JOIN Users u ON o.customer_ID = u.ID
+LEFT JOIN Users u ON o.customer_ID = u.ID
 WHERE o.restaurant_ID = ?
 ORDER BY o.order_date DESC
 ";
@@ -907,7 +907,7 @@ unset($order);
                       </div>
                     <?php endforeach; ?>
                   </div>
-                  <div style="font-size:0.9rem;"><?= htmlspecialchars($order['full_name']) ?></div>
+                  <div style="font-size:0.9rem;"><?= htmlspecialchars($order['display_name']) ?></div>
                   <div style="font-size:0.85rem; color:#5f8b74;"><?= date('g:i A', strtotime($order['order_date'])) ?></div>
                   <div>
                     <div style="font-weight:600; color:var(--dlsu-green);">₱<?= number_format($order['total_amount'], 2) ?>
@@ -1235,23 +1235,24 @@ unset($order);
   </div>
 
   <!-- Walk-in Sale Modal -->
-  <div id="walkinModal" class="modal-overlay">
-    <div class="modal-card">
+  <div id="walkin-modal" class="modal-overlay">
+    <div class="modal-card" style="width: 500px;">
       <h3><i class="fas fa-cash-register"></i> Walk-in Sale</h3>
-
-      <form method="POST" action="<?php echo url('frontend/create_walking_order.php'); ?>">
+      <form id="walkin-form">
         <input type="hidden" name="restaurant_id" value="<?= $restaurant_id ?>">
-
-        <?php foreach ($menu_items as $item): ?>
-          <div class="modal-field">
-            <label><?= $item['name'] ?> (₱<?= $item['price'] ?>)</label>
-            <input type="number" name="items[<?= $item['ID'] ?>]" min="0" value="0">
-          </div>
-        <?php endforeach; ?>
-
+        <div style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
+          <?php foreach ($menu_items as $item): ?>
+            <?php if ($item['isAvailable']): ?>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+                <span><?= htmlspecialchars($item['name']) ?> (₱<?= number_format($item['price'], 2) ?>)</span>
+                <input type="number" name="items[<?= $item['ID'] ?>]" value="0" min="0" style="width: 60px; padding: 4px;">
+              </div>
+            <?php endif; ?>
+          <?php endforeach; ?>
+        </div>
         <div class="modal-actions">
-          <button type="button" class="btn-modal-cancel" onclick="closeWalkInModal()">Cancel</button>
-          <button type="submit" class="btn-modal-submit">Complete Sale</button>
+          <button type="button" onclick="closeWalkInModal()" class="btn-modal-cancel">Cancel</button>
+          <button type="submit" class="btn-modal-submit">Create Order</button>
         </div>
       </form>
     </div>
@@ -1581,11 +1582,11 @@ unset($order);
     function closeAllTransactionsModal() { document.getElementById('allTransactionsModal').style.display = 'none'; }
 
     function openWalkInModal() {
-      document.getElementById('walkinModal').style.display = 'flex';
+        document.getElementById('walkin-modal').style.display = 'flex';
     }
 
     function closeWalkInModal() {
-      document.getElementById('walkinModal').style.display = 'none';
+        document.getElementById('walkin-modal').style.display = 'none';
     }
 
     // Queue Management Functions
@@ -1734,6 +1735,40 @@ unset($order);
       document.getElementById('analytics-avg').textContent = '₱' + parseFloat(d.avg).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       document.getElementById('analytics-revenue-sub').innerHTML = '<i class="fas fa-calendar-day"></i> ' + periodLabels[period];
     }
+
+    document.getElementById('walkin-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        // If create_walkin_order.php is inside the "frontend" folder alongside vendor.php
+        const targetUrl = '<?php echo url("frontend/create_walkin_order.php"); ?>';
+        
+        // NOTE: If you placed it in the main root folder instead, change the above line to:
+        // const targetUrl = '<?php echo url("create_walkin_order.php"); ?>';
+
+      fetch('<?php echo url("frontend/create_walkin_order.php"); ?>', { 
+          method: 'POST',
+          body: formData
+      })
+      .then(response => {
+          // Check if PHP rejected the order and sent us to an error URL
+          if (response.redirected && response.url.includes('error=')) {
+              throw new Error("Please select at least one item with a quantity greater than 0.");
+          }
+          if (!response.ok) {
+              throw new Error('Server error.');
+          }
+          return response.text();
+      })
+      .then(data => {
+          alert("Order Created Successfully!" + data);
+          location.reload();
+      })
+      .catch(error => {
+          console.error('Error:', error);
+          alert(error.message); // This will now properly alert if no items were selected
+      });
+    });
   </script>
 </body>
 
