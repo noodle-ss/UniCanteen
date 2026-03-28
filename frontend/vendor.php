@@ -913,10 +913,15 @@ unset($order);
                     <div style="font-weight:600; color:var(--dlsu-green);">₱<?= number_format($order['total_amount'], 2) ?>
                     </div>
                     <div style="font-size:0.8rem; color:#4a755e; margin-top:4px;">
-                      <?php if (($order['payment_method'] ?? 'gcash') === 'card'): ?>
-                        <i class="fas fa-credit-card"></i> Card
+                      <?php 
+                          $pay_method = $order['payment_method'] ?? 'gcash';
+                          if ($pay_method === 'cash' || (isset($order['customer_ID']) && $order['customer_ID'] == 8)): 
+                      ?>
+                          <i class="fas fa-money-bill-wave"></i> Cash
+                      <?php elseif ($pay_method === 'card'): ?>
+                          <i class="fas fa-credit-card"></i> Card
                       <?php else: ?>
-                        <i class="fas fa-mobile-screen-button"></i> GCash
+                          <i class="fas fa-mobile-screen-button"></i> GCash
                       <?php endif; ?>
                     </div>
                   </div>

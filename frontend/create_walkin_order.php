@@ -111,7 +111,6 @@ $qRow = $qResult->fetch_assoc();
 $next_queue = $qRow['next_queue'];
 $qStmt->close();
 
-// Step 2: I-update ang order gamit ang nakuha nating number
 $uStmt = $db->prepare("UPDATE Orders SET queue_number = ? WHERE ID = ?");
 $uStmt->bind_param("ii", $next_queue, $order_id);
 $uStmt->execute();
