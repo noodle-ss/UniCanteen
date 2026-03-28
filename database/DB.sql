@@ -168,7 +168,8 @@ INSERT INTO Users (email, password, full_name, role, is_active, login_attempts, 
 ('agno@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Agno Eatery Owner', 'V', TRUE, 0, 'What was the name of your first school?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
 ('kitchensj@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Kitchen SJ Manager', 'V', TRUE, 0, 'What is the name of your childhood pet?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
 ('deli@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'St. La Salle Deli Owner', 'V', TRUE, 0, 'What was the name of your first school?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
-('admin@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'System Administrator', 'A', TRUE, 0, 'What is your favorite book?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.');
+('admin@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'System Administrator', 'A', TRUE, 0, 'What is your favorite book?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
+('walkinunicanteen@dlsu.edu.ph', '12345', 'Walk-in Users', 'U', TRUE, 0, NULL, NULL);
 
 -- Insert restaurants (each owned by its corresponding vendor user)
 -- Bloemen Hall -> bloemen@dlsu.edu.ph (ID=3)
