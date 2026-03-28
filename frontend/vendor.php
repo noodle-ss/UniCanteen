@@ -823,10 +823,14 @@ unset($order);
             <div class="vendor-section-header" style="margin-top:0;">
               <h2><i class="fas fa-clock"></i> Order Queue</h2>
               <div style="display:flex; gap:8px; align-items:center;">
-                <button class="btn-primary" style="font-size:0.78rem; padding:8px 16px; white-space: nowrap;" onclick="nextCustomer()">
+                  <!-- NEW: Walk-in Sale Button -->
+                <button class="btn-primary" style="background:#ff9800; padding:6px 8px; font-size:0.75rem; white-space:nowrap;" onclick="openWalkInModal()">
+                  <i class="fas fa-cash-register"></i> Walk-in Sale
+                </button>
+                <button class="btn-primary" style="font-size:0.75rem; padding:6px 8px; white-space:nowrap;" onclick="nextCustomer()">
                   <i class="fas fa-forward"></i> Next Customer
                 </button>
-                <button class="btn-secondary" style="font-size:0.78rem; padding:8px 16px;" onclick="resetCounter()">
+                <button class="btn-secondary" style="font-size:0.75rem; padding:6px 8px; white-space:nowrap;" onclick="resetCounter()">
                   <i class="fas fa-rotate-right"></i> Reset
                 </button>
               </div>
@@ -1230,6 +1234,29 @@ unset($order);
     </div>
   </div>
 
+  <!-- Walk-in Sale Modal -->
+  <div id="walkinModal" class="modal-overlay">
+    <div class="modal-card">
+      <h3><i class="fas fa-cash-register"></i> Walk-in Sale</h3>
+
+      <form method="POST" action="<?php echo url('frontend/create_walking_order.php'); ?>">
+        <input type="hidden" name="restaurant_id" value="<?= $restaurant_id ?>">
+
+        <?php foreach ($menu_items as $item): ?>
+          <div class="modal-field">
+            <label><?= $item['name'] ?> (₱<?= $item['price'] ?>)</label>
+            <input type="number" name="items[<?= $item['ID'] ?>]" min="0" value="0">
+          </div>
+        <?php endforeach; ?>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-modal-cancel" onclick="closeWalkInModal()">Cancel</button>
+          <button type="submit" class="btn-modal-submit">Complete Sale</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     // Filter orders by status
     function filterOrdersByStatus(status) {
@@ -1552,6 +1579,14 @@ unset($order);
     function closeEditModal() { document.getElementById('editItemModal').style.display = 'none'; }
     function openAllTransactionsModal() { document.getElementById('allTransactionsModal').style.display = 'flex'; }
     function closeAllTransactionsModal() { document.getElementById('allTransactionsModal').style.display = 'none'; }
+
+    function openWalkInModal() {
+      document.getElementById('walkinModal').style.display = 'flex';
+    }
+
+    function closeWalkInModal() {
+      document.getElementById('walkinModal').style.display = 'none';
+    }
 
     // Queue Management Functions
     function nextCustomer() {
