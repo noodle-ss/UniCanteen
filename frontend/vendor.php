@@ -1244,26 +1244,34 @@ unset($order);
   <div id="walkin-modal" class="modal-overlay">
     <div class="modal-card" style="width: 500px;">
       <h3><i class="fas fa-cash-register"></i> Walk-in Sale</h3>
+      
       <form id="walkin-form">
         <input type="hidden" name="restaurant_id" value="<?= $restaurant_id ?>">
-        <div style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
-          <?php foreach ($menu_items as $item): ?>
-            <?php if ($item['isAvailable']): ?>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
-                <span><?= htmlspecialchars($item['name']) ?> (₱<?= number_format($item['price'], 2) ?>)</span>
-                <input type="number" name="items[<?= $item['ID'] ?>]" value="0" min="0" style="width: 60px; padding: 4px;">
-              </div>
-            <?php endif; ?>
-          <?php endforeach; ?>
+        
+        <div class="modal-field">
+          <label>Select Items</label>
+          <div style="border: 1px solid #ccc; border-radius: 5px; padding: 10px;">
+              <?php foreach ($menu_items as $item): ?>
+                <?php if ($item['isAvailable']): ?>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+                    <span><?= htmlspecialchars($item['name']) ?> <small>(₱<?= number_format($item['price'], 2) ?>)</small></span>
+                    
+                    <input type="number" name="items[<?= $item['ID'] ?>]" value="0" min="0" style="width: 70px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center;">
+                  </div>
+                <?php endif; ?>
+              <?php endforeach; ?>
+          </div>
         </div>
-        <div style="margin-top: 15px; margin-bottom: 15px;">
-            <label for="payment_method" style="font-weight: bold;">Payment Method:</label>
-            <select name="payment_method" id="payment_method" required style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
+
+        <div class="modal-field">
+            <label>Payment Method</label>
+            <select name="payment_method" id="payment_method">
                 <option value="cash">Cash</option>
                 <option value="gcash">GCash</option>
                 <option value="card">Card</option>
             </select>
         </div>
+
         <div class="modal-actions">
           <button type="button" onclick="closeWalkInModal()" class="btn-modal-cancel">Cancel</button>
           <button type="submit" class="btn-modal-submit">Create Order</button>
