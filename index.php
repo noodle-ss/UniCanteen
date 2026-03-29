@@ -197,6 +197,35 @@ if (MAINTENANCE_MODE) {
     // Flush output buffer at the end
     ob_end_flush();
     ?>
+
+    <!-- Global Double-Submit Prevention -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('submit', function(e) {
+            if (e.target && e.target.tagName === 'FORM') {
+                const btn = e.submitter || e.target.querySelector('button[type="submit"], input[type="submit"]');
+                if (btn && !btn.disabled) {
+                    // Slight delay allows HTML5 validation to pass and normal submit to proceed
+                    setTimeout(() => {
+                        // If another script called e.preventDefault() (e.g. AJAX), don't auto-disable here
+                        if (e.defaultPrevented) return;
+                        
+                        btn.disabled = true;
+                        if (btn.tagName === 'BUTTON') {
+                            if (!btn.dataset.originalHtml) {
+                                btn.dataset.originalHtml = btn.innerHTML;
+                            }
+                            // Replace text while preserving size roughly, or just simple spinner
+                            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                        } else if (btn.tagName === 'INPUT') {
+                            btn.value = 'Processing...';
+                        }
+                    }, 10);
+                }
+            }
+        });
+    });
+    </script>
 </body>
 
 </html>

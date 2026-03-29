@@ -57,6 +57,16 @@ if ($price <= 0) {
     exit;
 }
 
+// Check for duplicate item name
+$checkStmt = $db->prepare("SELECT ID FROM Items WHERE restaurant_ID = ? AND name = ?");
+$checkStmt->bind_param("is", $restaurant_id, $name);
+$checkStmt->execute();
+if ($checkStmt->get_result()->num_rows > 0) {
+    echo json_encode(['success' => false, 'error' => 'An item with this name already exists.']);
+    exit;
+}
+$checkStmt->close();
+
 /* --------------------------------------------------
    3. Handle optional image upload
    -------------------------------------------------- */

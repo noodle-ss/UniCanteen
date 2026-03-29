@@ -1337,7 +1337,7 @@ $lineStmt->close();
         
         <div class="modal-field">
           <label>Select Items</label>
-          <div style="border: 1.5px solid #cae3d6; border-radius: 14px; padding: 16px; background: #f9fffc; max-height: 380px; overflow-y: auto;">
+          <div class="custom-scroll-area" style="border: 1.5px solid #cae3d6; border-radius: 14px; padding: 16px; background: #f9fffc; max-height: 380px; overflow-y: auto;">
               <?php foreach ($menu_items as $item): ?>
                 <?php if ($item['isAvailable']): ?>
                   <div class="walkin-item-row" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #e1e8e4;">
@@ -1843,6 +1843,12 @@ $lineStmt->close();
     // Add Item Form handling
     document.getElementById('addItemForm').addEventListener('submit', function (e) {
       e.preventDefault();
+      
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+
       fetch('<?php echo url('frontend/add_item.php'); ?>', { method: 'POST', body: new FormData(this) })
         .then(r => r.json())
         .then(d => {
@@ -1850,11 +1856,15 @@ $lineStmt->close();
             showStatusNotification("Item added successfully!", "success");
             setTimeout(() => location.reload(), 1000);
           } else {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
             showStatusNotification("Failed to add item." + (d.error ? ' ' + d.error : ''), "error");
           }
         })
         .catch(err => {
           console.error('Add item error:', err);
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
           showStatusNotification('Network or server error.', 'error');
         });
     });
