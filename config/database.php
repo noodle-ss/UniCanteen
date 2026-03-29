@@ -1,4 +1,11 @@
 <?php
+/**
+ * database.php — Database connection and session management.
+ *
+ * Implements a Singleton pattern for the MySQLi database connection to 
+ * ensure only one instance is active. Also handles session creation, 
+ * validation, and database transaction helpers.
+ */
 // config/database.php
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
@@ -12,7 +19,7 @@ class Database {
     
     private function __construct() {
         try {
-             $this->connection = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
+            $this->connection = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
             
             if ($this->connection->connect_error) {
                 throw new Exception("Connection failed: " . $this->connection->connect_error);
@@ -21,7 +28,7 @@ class Database {
             // Make sure charset is set correctly
             $this->connection->set_charset("utf8mb4");
         
-            // Also set the MySQL client to return integers as integers, not strings
+            // Set the MySQL client to return strict integers
             $this->connection->query("SET sql_mode = 'STRICT_ALL_TABLES'");
 
         } catch (Exception $e) {
@@ -90,31 +97,31 @@ class Database {
     }
     
     public function validateSession($token) {
-    $stmt = $this->connection->prepare(
-        "SELECT s.*, u.ID as user_id, u.role, u.full_name, u.email 
-         FROM Sessions s
-         JOIN Users u ON s.user_id = u.ID
-         WHERE s.session_token = ? AND s.expires_at > NOW() AND u.is_active = TRUE AND u.is_banned = FALSE"
-    );
-    $stmt->bind_param("s", $token);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        $session = $result->fetch_assoc();
-        
-        // Fix: Create variables for bind_param
-        $lifetime = SESSION_LIFETIME;
-        $updateStmt = $this->connection->prepare(
-            "UPDATE Sessions SET expires_at = DATE_ADD(NOW(), INTERVAL ? SECOND) WHERE session_token = ?"
+        $stmt = $this->connection->prepare(
+            "SELECT s.*, u.ID as user_id, u.role, u.full_name, u.email 
+             FROM Sessions s
+             JOIN Users u ON s.user_id = u.ID
+             WHERE s.session_token = ? AND s.expires_at > NOW() AND u.is_active = TRUE AND u.is_banned = FALSE"
         );
-        $updateStmt->bind_param("is", $lifetime, $token);
-        $updateStmt->execute();
+        $stmt->bind_param("s", $token);
+        $stmt->execute();
+        $result = $stmt->get_result();
         
-        return $session;
+        if ($result->num_rows > 0) {
+            $session = $result->fetch_assoc();
+            
+            // Refresh session expiration time
+            $lifetime = SESSION_LIFETIME;
+            $updateStmt = $this->connection->prepare(
+                "UPDATE Sessions SET expires_at = DATE_ADD(NOW(), INTERVAL ? SECOND) WHERE session_token = ?"
+            );
+            $updateStmt->bind_param("is", $lifetime, $token);
+            $updateStmt->execute();
+            
+            return $session;
+        }
+        
+        return null;
     }
-    
-    return null;
-}
 }
 ?>

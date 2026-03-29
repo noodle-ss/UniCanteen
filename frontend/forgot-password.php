@@ -1,4 +1,14 @@
 <?php
+/**
+ * forgot-password.php — Multi-step wizard for password recovery.
+ *
+ * Guides the user through a 3-step process:
+ * 1. Entering their registered email address.
+ * 2. Answering their security question (for verification).
+ * 3. Setting and confirming a new secure password.
+ *
+ * Expects POST/GET with 'step' to manage state transitions.
+ */
 require_once __DIR__ . '/../config/config.php';
 
 if (isLoggedIn()) {

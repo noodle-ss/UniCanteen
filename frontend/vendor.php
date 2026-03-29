@@ -1,125 +1,157 @@
 <?php
+/**
+ * vendor.php — Vendor dashboard page.
+ *
+ * Displays menu management, order queue, sales analytics, and
+ * recent transactions for the currently logged-in vendor.
+ */
+
 $dbConn = Database::getInstance()->getConnection();
-
-// =====================
-// AUTO-LOGIN DEFAULT VENDOR FOR TESTING Removed
-// =====================
-
-// session is already started and config loaded by index.php
-// vendor view is protected in the router (index.php)
-
 $user_id = $_SESSION['user_id'] ?? null;
 
-// Get vendor info (restaurant name, etc.)
-$query = "SELECT * FROM Restaurants WHERE owner_id = ?";
-$stmt = Database::getInstance()->getConnection()->prepare($query);
+/* --------------------------------------------------
+   1. Fetch restaurant and menu items for this vendor
+   -------------------------------------------------- */
+$stmt = $dbConn->prepare("SELECT * FROM Restaurants WHERE owner_id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $restaurant = $stmt->get_result()->fetch_assoc();
+$stmt->close();
 
-// if there is no restaurant, we can't build meaningful metrics
 $restaurant_id = $restaurant['ID'] ?? 0;
 
-$query = "SELECT * FROM Items WHERE restaurant_id = ?";
-$stmt = Database::getInstance()->getConnection()->prepare($query);
+$stmt = $dbConn->prepare("SELECT * FROM Items WHERE restaurant_id = ?");
 $stmt->bind_param("i", $restaurant_id);
 $stmt->execute();
 $menu_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 
-// === DASHBOARD METRICS ===
-$total_items = $restaurant_id
-  ? $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant_id}")->fetch_row()[0] ?? 0 : 0;
-$available_count = $restaurant_id
-  ? $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant_id} AND isAvailable=1")->fetch_row()[0] ?? 0 : 0;
-$sold_out_count = $restaurant_id
-  ? $dbConn->query("SELECT COUNT(*) FROM Items WHERE restaurant_ID={$restaurant_id} AND isAvailable=0")->fetch_row()[0] ?? 0 : 0;
-$preparing_orders = $restaurant_id
-  ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='PR'")->fetch_row()[0] ?? 0 : 0;
-$ready_orders = $restaurant_id
-  ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='R'")->fetch_row()[0] ?? 0 : 0;
-$fulfilled_orders_count = $restaurant_id
-  ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C'")->fetch_row()[0] ?? 0 : 0;
-$pending_orders = $restaurant_id
-  ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='P'")->fetch_row()[0] ?? 0 : 0;
-$avg_order_value = $restaurant_id
-  ? $dbConn->query("SELECT AVG(total_amount) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C'")->fetch_row()[0] ?? 0 : 0;
+/* --------------------------------------------------
+   2. Dashboard metrics (all parameterized queries)
+   -------------------------------------------------- */
+
+// Helper: run a single-value aggregate query with a bound restaurant ID
+function getMetric($db, $sql, $rid) {
+    $stmt = $db->prepare($sql);
+    $stmt->bind_param("i", $rid);
+    $stmt->execute();
+    $val = $stmt->get_result()->fetch_row()[0];
+    $stmt->close();
+    return $val ?? 0;
+}
+
+$total_items       = $restaurant_id ? getMetric($dbConn, "SELECT COUNT(*) FROM Items WHERE restaurant_ID = ?", $restaurant_id) : 0;
+$available_count   = $restaurant_id ? getMetric($dbConn, "SELECT COUNT(*) FROM Items WHERE restaurant_ID = ? AND isAvailable=1", $restaurant_id) : 0;
+$sold_out_count    = $restaurant_id ? getMetric($dbConn, "SELECT COUNT(*) FROM Items WHERE restaurant_ID = ? AND isAvailable=0", $restaurant_id) : 0;
+$preparing_orders  = $restaurant_id ? getMetric($dbConn, "SELECT COUNT(*) FROM Orders WHERE restaurant_ID = ? AND status='PR'", $restaurant_id) : 0;
+$ready_orders      = $restaurant_id ? getMetric($dbConn, "SELECT COUNT(*) FROM Orders WHERE restaurant_ID = ? AND status='R'", $restaurant_id) : 0;
+$fulfilled_orders_count = $restaurant_id ? getMetric($dbConn, "SELECT COUNT(*) FROM Orders WHERE restaurant_ID = ? AND status='C'", $restaurant_id) : 0;
+$pending_orders    = $restaurant_id ? getMetric($dbConn, "SELECT COUNT(*) FROM Orders WHERE restaurant_ID = ? AND status='P'", $restaurant_id) : 0;
+$avg_order_value   = $restaurant_id ? getMetric($dbConn, "SELECT AVG(total_amount) FROM Orders WHERE restaurant_ID = ? AND status='C'", $restaurant_id) : 0;
 $last_week_avg_order_value = $restaurant_id
-  ? $dbConn->query("SELECT AVG(total_amount) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C' AND order_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)")->fetch_row()[0] ?? 0 : 0;
-$total_revenue = $restaurant_id
-  ? $dbConn->query("SELECT SUM(total_amount) FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C'")->fetch_row()[0] ?? 0
-  : 0;
-$total_orders = $restaurant_id
-  ? $dbConn->query("SELECT COUNT(*) FROM Orders WHERE restaurant_ID={$restaurant_id}")->fetch_row()[0] ?? 0
-  : 0;
-$completed_orders = $fulfilled_orders_count;
+  ? getMetric($dbConn, "SELECT AVG(total_amount) FROM Orders WHERE restaurant_ID = ? AND status='C' AND order_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)", $restaurant_id) : 0;
+$total_revenue     = $restaurant_id ? getMetric($dbConn, "SELECT COALESCE(SUM(total_amount),0) FROM Orders WHERE restaurant_ID = ? AND status='C'", $restaurant_id) : 0;
+$total_orders      = $restaurant_id ? getMetric($dbConn, "SELECT COUNT(*) FROM Orders WHERE restaurant_ID = ?", $restaurant_id) : 0;
+$completed_orders  = $fulfilled_orders_count;
 
-// === TIME-FILTERED ANALYTICS (Today / This Week / This Month) ===
+/* --------------------------------------------------
+   3. Time-filtered analytics (Today / Week / Month / All)
+   -------------------------------------------------- */
 $analytics = [];
 $periods = [
-  'today' => "DATE(order_date) = CURDATE()",
-  'this_week' => "YEARWEEK(order_date, 1) = YEARWEEK(CURDATE(), 1)",
+  'today'      => "DATE(order_date) = CURDATE()",
+  'this_week'  => "YEARWEEK(order_date, 1) = YEARWEEK(CURDATE(), 1)",
   'this_month' => "YEAR(order_date) = YEAR(CURDATE()) AND MONTH(order_date) = MONTH(CURDATE())",
-  'all' => "1=1",
+  'all'        => "1=1",
 ];
 foreach ($periods as $key => $where) {
+  // These period clauses contain only SQL constants, no user input
   $base = "FROM Orders WHERE restaurant_ID={$restaurant_id} AND status='C' AND {$where}";
   $analytics[$key] = [
     'revenue' => $restaurant_id ? ($dbConn->query("SELECT COALESCE(SUM(total_amount),0) {$base}")->fetch_row()[0] ?? 0) : 0,
-    'orders' => $restaurant_id ? ($dbConn->query("SELECT COUNT(*) {$base}")->fetch_row()[0] ?? 0) : 0,
-    'avg' => $restaurant_id ? ($dbConn->query("SELECT COALESCE(AVG(total_amount),0) {$base}")->fetch_row()[0] ?? 0) : 0,
+    'orders'  => $restaurant_id ? ($dbConn->query("SELECT COUNT(*) {$base}")->fetch_row()[0] ?? 0) : 0,
+    'avg'     => $restaurant_id ? ($dbConn->query("SELECT COALESCE(AVG(total_amount),0) {$base}")->fetch_row()[0] ?? 0) : 0,
   ];
 }
 
-$best_selling_items = $restaurant_id
-  ? $dbConn->query("SELECT i.name AS item_name, SUM(oi.quantity) AS order_count FROM Order_ItemLine oi JOIN Items i ON oi.item_ID = i.ID JOIN Orders o ON oi.order_ID = o.ID WHERE o.restaurant_ID = {$restaurant_id} AND o.status='C' GROUP BY oi.item_ID ORDER BY order_count DESC LIMIT 6")->fetch_all(MYSQLI_ASSOC)
-  : [];
+// Best-selling items (top 6)
+$best_selling_items = [];
+if ($restaurant_id) {
+    $bsStmt = $dbConn->prepare(
+        "SELECT i.name AS item_name, SUM(oi.quantity) AS order_count
+         FROM Order_ItemLine oi
+         JOIN Items i ON oi.item_ID = i.ID
+         JOIN Orders o ON oi.order_ID = o.ID
+         WHERE o.restaurant_ID = ? AND o.status='C'
+         GROUP BY oi.item_ID
+         ORDER BY order_count DESC
+         LIMIT 6"
+    );
+    $bsStmt->bind_param("i", $restaurant_id);
+    $bsStmt->execute();
+    $best_selling_items = $bsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $bsStmt->close();
+}
+
+// Pad to 6 entries so the template never fails
 $default_item = ['item_name' => '—', 'order_count' => 0];
 while (count($best_selling_items) < 6) {
   $best_selling_items[] = $default_item;
 }
-// === END METRICS ===
 
-// === QUEUE: Find currently serving order (earliest P or PR order) ===
+/* --------------------------------------------------
+   4. Queue: currently-serving and next-up orders
+   -------------------------------------------------- */
 $currentServingOrder = null;
-$nextServingOrder = null;
+$nextServingOrder    = null;
 if ($restaurant_id) {
-    $queueQuery = "SELECT queue_number, status FROM Orders 
-                   WHERE restaurant_ID = {$restaurant_id} AND status IN ('P','PR','R') 
-                   ORDER BY order_date ASC";
-    $queueResult = $dbConn->query($queueQuery);
-    $queueOrders = $queueResult ? $queueResult->fetch_all(MYSQLI_ASSOC) : [];
+    $queueStmt = $dbConn->prepare(
+        "SELECT queue_number, status FROM Orders
+         WHERE restaurant_ID = ? AND status IN ('P','PR','R')
+         AND DATE(order_date) >= DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+         ORDER BY order_date ASC"
+    );
+    $queueStmt->bind_param("i", $restaurant_id);
+    $queueStmt->execute();
+    $queueOrders = $queueStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $queueStmt->close();
+
     if (!empty($queueOrders)) {
         $currentServingOrder = $queueOrders[0];
-        $nextServingOrder = isset($queueOrders[1]) ? $queueOrders[1] : null;
+        $nextServingOrder    = $queueOrders[1] ?? null;
     }
 }
 
-$orderQuery = "
-SELECT o.*, IFNULL(u.full_name, 'Walk-in Customer') AS display_name
-FROM Orders o
-LEFT JOIN Users u ON o.customer_ID = u.ID
-WHERE o.restaurant_ID = ?
-ORDER BY o.order_date DESC
-";
-
-$stmt = $dbConn->prepare($orderQuery);
-$stmt->bind_param("i", $restaurant['ID']);
+/* --------------------------------------------------
+   5. Fetch all orders with their line-items for the queue
+   -------------------------------------------------- */
+$stmt = $dbConn->prepare(
+    "SELECT o.*, IFNULL(u.full_name, IFNULL(NULLIF(o.walkin_name, ''), 'Walk-in Customer')) AS display_name
+     FROM Orders o
+     LEFT JOIN Users u ON o.customer_ID = u.ID
+     WHERE o.restaurant_ID = ?
+     ORDER BY o.order_date DESC"
+);
+$stmt->bind_param("i", $restaurant_id);
 $stmt->execute();
 $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 
+// Attach line-items to each order
+$lineStmt = $dbConn->prepare(
+    "SELECT i.name, oi.quantity
+     FROM Order_ItemLine oi
+     JOIN Items i ON oi.item_ID = i.ID
+     WHERE oi.order_ID = ?"
+);
 foreach ($orders as &$order) {
-  $orderItemsQuery = "
-        SELECT i.name, oi.quantity
-        FROM Order_ItemLine oi
-        JOIN Items i ON oi.item_ID = i.ID
-        WHERE oi.order_ID = ?
-    ";
-  $stmtItems = $dbConn->prepare($orderItemsQuery);
-  $stmtItems->bind_param("i", $order['ID']);
-  $stmtItems->execute();
-  $order['items'] = $stmtItems->get_result()->fetch_all(MYSQLI_ASSOC);
+    $lineStmt->bind_param("i", $order['ID']);
+    $lineStmt->execute();
+    $order['items'] = $lineStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
 unset($order);
+$lineStmt->close();
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -673,7 +705,7 @@ unset($order);
     }
 
     .custom-scroll-area::-webkit-scrollbar {
-        width: 6px; /* Sobrang nipis lang */
+        width: 6px; /* Thin scrollbar */
     }
     
     .custom-scroll-area::-webkit-scrollbar-track {
@@ -830,7 +862,7 @@ unset($order);
                 <div class="menu-edit-row" style="grid-template-columns: 1fr 90px 90px 80px 80px;">
                   <div class="item-info">
                     <?php if (!empty($item['image_url'])): ?>
-                      <img src="<?= htmlspecialchars($item['image_url']) ?>" alt="<?= htmlspecialchars($item['name']) ?>"
+                      <img src="<?= htmlspecialchars(url($item['image_url'])) ?>" alt="<?= htmlspecialchars($item['name']) ?>"
                         style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; margin-right: 12px;">
                     <?php else: ?>
                       <i class="fas fa-burger" style="margin-right: 12px;"></i>
@@ -1297,19 +1329,47 @@ unset($order);
       
       <form id="walkin-form">
         <input type="hidden" name="restaurant_id" value="<?= $restaurant_id ?>">
+
+        <div class="modal-field">
+            <label>Customer Name (Optional)</label>
+            <input type="text" name="walkin_name" placeholder="Leave blank for 'Walk-in Customer'" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: 'Inter', sans-serif;">
+        </div>
         
         <div class="modal-field">
           <label>Select Items</label>
-          <div class="custom-scroll-area" style="border: 1px solid #ccc; border-radius: 5px; padding: 10px; max-height: 300px; overflow-y: auto;">
+          <div style="border: 1px solid #ccc; border-radius: 5px; padding: 10px;">
               <?php foreach ($menu_items as $item): ?>
                 <?php if ($item['isAvailable']): ?>
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
-                    <span><?= htmlspecialchars($item['name']) ?> <small>(₱<?= number_format($item['price'], 2) ?>)</small></span>
+                  <div class="walkin-item-row" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #e1e8e4;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                      <?php if (!empty($item['image_url'])): ?>
+                        <img src="<?= htmlspecialchars(url($item['image_url'])) ?>" alt="<?= htmlspecialchars($item['name']) ?>" style="width: 48px; height: 48px; object-fit: cover; border-radius: 8px;">
+                      <?php else: ?>
+                        <div style="width: 48px; height: 48px; border-radius: 8px; background: #e3f4ea; display: flex; align-items: center; justify-content: center; color: var(--dlsu-green);">
+                          <i class="fas fa-utensils"></i>
+                        </div>
+                      <?php endif; ?>
+                      <div>
+                        <div style="font-weight: 600; color: #1a4d31;"><?= htmlspecialchars($item['name']) ?></div>
+                        <div style="font-size: 0.85rem; color: var(--dlsu-green); font-weight: 700;">₱<span class="walkin-item-price"><?= number_format($item['price'], 2, '.', '') ?></span></div>
+                      </div>
+                    </div>
                     
-                    <input type="number" name="items[<?= $item['ID'] ?>]" value="0" min="0" style="width: 70px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center;">
+                    <div style="display: flex; align-items: center; gap: 8px; background: white; border: 1.5px solid #cae3d6; border-radius: 30px; padding: 4px;">
+                      <button type="button" class="qty-btn minus" onclick="updateWalkInQty('<?= $item['ID'] ?>', -1)" style="width: 28px; height: 28px; border-radius: 50%; border: none; background: #f0f7f2; color: #2d6347; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;"><i class="fas fa-minus"></i></button>
+                      <input type="number" name="items[<?= $item['ID'] ?>]" id="walkin_qty_<?= $item['ID'] ?>" class="walkin-qty-input" value="0" min="0" style="width: 32px; border: none; text-align: center; font-weight: 700; color: #1a4d31; padding: 0; background: transparent;" readonly>
+                      <button type="button" class="qty-btn plus" onclick="updateWalkInQty('<?= $item['ID'] ?>', 1)" style="width: 28px; height: 28px; border-radius: 50%; border: none; background: #e3f4ea; color: var(--dlsu-green); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;"><i class="fas fa-plus"></i></button>
+                    </div>
                   </div>
                 <?php endif; ?>
               <?php endforeach; ?>
+              <?php if (!$available_count): ?>
+                <div style="text-align: center; color: #888; padding: 10px;">No available items.</div>
+              <?php endif; ?>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 2px dashed #cae3d6;">
+            <span style="font-weight: 600; color: #1a4d31; font-size: 1.1rem;">Total Amount:</span>
+            <span style="font-weight: 800; color: var(--dlsu-green); font-size: 1.3rem;">₱<span id="walkin-total">0.00</span></span>
           </div>
         </div>
 
@@ -1351,6 +1411,7 @@ unset($order);
       });
     }
 
+    // Handles AJAX request to update the status of an existing order
     function updateOrderStatus(orderId, status) {
       // Disable the select temporarily
       const selectElement = event.target;
@@ -1394,6 +1455,7 @@ unset($order);
         });
     }
 
+    // Updates the visual styling (colors) of the order status dropdown based on its value
     function updateStatusDisplay(selectElement, status) {
       // Update the styling of the select based on status
       const statusColors = {
@@ -1424,6 +1486,7 @@ unset($order);
       }
     }
 
+    // Displays a temporary floating notification on the screen (success/error)
     function showStatusNotification(message, type) {
       // Create a temporary notification element
       const notification = document.createElement('div');
@@ -1633,6 +1696,7 @@ unset($order);
     }
 
 
+    // Modal Management Functions - For Add Item, Edit Item, and Transactions modals
     function openAddModal() {
       document.getElementById('addItemModal').style.display = 'flex';
       removePreview('addFileInput', 'preview-img', 'image-preview', 'addDropZone');
@@ -1653,24 +1717,50 @@ unset($order);
     function openAllTransactionsModal() { document.getElementById('allTransactionsModal').style.display = 'flex'; }
     function closeAllTransactionsModal() { document.getElementById('allTransactionsModal').style.display = 'none'; }
 
+    // Walk-in order modal and cart logic
     function openWalkInModal() {
         document.getElementById('walkin-modal').style.display = 'flex';
+        // Reset quantities when opening
+        document.querySelectorAll('.walkin-qty-input').forEach(input => input.value = 0);
+        calculateWalkInTotal();
     }
 
     function closeWalkInModal() {
         document.getElementById('walkin-modal').style.display = 'none';
     }
 
+    function updateWalkInQty(id, change) {
+      const input = document.getElementById('walkin_qty_' + id);
+      let newQty = parseInt(input.value) + change;
+      if (newQty < 0) newQty = 0;
+      input.value = newQty;
+      calculateWalkInTotal();
+    }
+
+    function calculateWalkInTotal() {
+      let total = 0;
+      const rows = document.querySelectorAll('.walkin-item-row');
+      rows.forEach(row => {
+        const price = parseFloat(row.querySelector('.walkin-item-price').textContent);
+        const qty = parseInt(row.querySelector('.walkin-qty-input').value) || 0;
+        total += price * qty;
+      });
+      document.getElementById('walkin-total').textContent = total.toFixed(2);
+    }
+
     // Queue Management Functions
+    // Automatically marks the next 'Pending' or 'Preparing' order as 'Completed'
     function nextCustomer() {
       if (confirm("Mark current customer as completed and move to next customer?")) {
-        // Find the first pending or preparing order
+        // Find the oldest pending, preparing, or ready order
         const orderSelects = document.querySelectorAll('.order-status-select');
         let foundSelect = null;
         let currentOrderId = null;
 
-        for (let select of orderSelects) {
-          if (select.value === 'P' || select.value === 'PR') {
+        // Iterate backwards because the DOM list is ordered DESC (newest first)
+        for (let i = orderSelects.length - 1; i >= 0; i--) {
+          let select = orderSelects[i];
+          if (select.value === 'P' || select.value === 'PR' || select.value === 'R') {
             currentOrderId = select.dataset.orderId;
             foundSelect = select;
             break;
@@ -1707,6 +1797,7 @@ unset($order);
       }
     }
 
+    // Resets the order queue numbering back to 1 for a new business day
     function resetCounter() {
       if (confirm("Reset the queue counter? This will restart queue numbering from 1.")) {
         fetch('<?php echo url('frontend/reset_queue.php'); ?>', {
@@ -1731,12 +1822,14 @@ unset($order);
     }
 
     // Close modals on overlay click
+    // Close modals when clicking outside the modal content (on the overlay)
     ['addItemModal', 'editItemModal', 'allTransactionsModal'].forEach(id => {
       document.getElementById(id).addEventListener('click', function (e) {
         if (e.target === this) this.style.display = 'none';
       });
     });
 
+    // Handle Edit Item form submission via AJAX
     document.getElementById('editItemForm').addEventListener('submit', function (e) {
       e.preventDefault();
       fetch('<?php echo url('frontend/edit_item.php'); ?>', { method: 'POST', body: new FormData(this) })
@@ -1747,34 +1840,26 @@ unset($order);
         });
     });
 
+    // Add Item Form handling
     document.getElementById('addItemForm').addEventListener('submit', function (e) {
       e.preventDefault();
       fetch('<?php echo url('frontend/add_item.php'); ?>', { method: 'POST', body: new FormData(this) })
-        .then(r => {
-          console.log('add_item status', r.status, r.statusText);
-          return r.text();
-        })
-        .then(txt => {
-          try {
-            const d = JSON.parse(txt);
-            console.log('add_item response', d);
-            if (d.success) {
-              alert("Item added!");
-              location.reload();
-            } else {
-              alert("Failed to add item." + (d.error ? '\nError: ' + d.error : ''));
-            }
-          } catch (e) {
-            console.error('parse error, response text:', txt);
-            alert('Server returned invalid JSON, check console');
+        .then(r => r.json())
+        .then(d => {
+          if (d.success) {
+            showStatusNotification("Item added successfully!", "success");
+            setTimeout(() => location.reload(), 1000);
+          } else {
+            showStatusNotification("Failed to add item." + (d.error ? ' ' + d.error : ''), "error");
           }
         })
         .catch(err => {
-          console.error('fetch error adding item', err);
-          alert('Network or server error, see console');
+          console.error('Add item error:', err);
+          showStatusNotification('Network or server error.', 'error');
         });
     });
 
+    // Handle item deletion with confirmation
     document.querySelectorAll('.delete-btn').forEach(btn => {
       btn.addEventListener('click', function () {
         if (confirm("Delete this item?")) {
@@ -1808,38 +1893,36 @@ unset($order);
       document.getElementById('analytics-revenue-sub').innerHTML = '<i class="fas fa-calendar-day"></i> ' + periodLabels[period];
     }
 
+    // Walk-in Form handling
     document.getElementById('walkin-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
 
-        // If create_walkin_order.php is inside the "frontend" folder alongside vendor.php
-        const targetUrl = '<?php echo url("frontend/create_walkin_order.php"); ?>';
-        
-        // NOTE: If you placed it in the main root folder instead, change the above line to:
-        // const targetUrl = '<?php echo url("create_walkin_order.php"); ?>';
-
-      fetch('<?php echo url("frontend/create_walkin_order.php"); ?>', { 
-          method: 'POST',
-          body: formData
-      })
-      .then(response => {
-          // Check if PHP rejected the order and sent us to an error URL
-          if (response.redirected && response.url.includes('error=')) {
-              throw new Error("Please select at least one item with a quantity greater than 0.");
-          }
-          if (!response.ok) {
-              throw new Error('Server error.');
-          }
-          return response.text();
-      })
-      .then(data => {
-          alert("Order Created Successfully!" + data);
-          location.reload();
-      })
-      .catch(error => {
-          console.error('Error:', error);
-          alert(error.message); // This will now properly alert if no items were selected
-      });
+        fetch('<?php echo url("frontend/create_walkin_order.php"); ?>', { 
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.redirected && response.url.includes('error=')) {
+                throw new Error("Please select at least one item with a quantity greater than 0.");
+            }
+            if (!response.ok) {
+                throw new Error('Server error.');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+               showStatusNotification(`Order Created! Queue #${data.queue_number}`, 'success');
+               setTimeout(() => location.reload(), 1500);
+            } else {
+               showStatusNotification(data.error || 'Failed to create order', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Walk-in Error:', error);
+            showStatusNotification(error.message, 'error');
+        });
     });
   </script>
 </body>

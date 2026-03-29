@@ -1,4 +1,11 @@
 <?php
+/**
+ * cart.php — Customer cart interface & logic.
+ *
+ * This file handles displaying the user's cart containing items from a 
+ * single restaurant. It processes logic for adding items, updating quantities,
+ * clearing the cart, and handling the final checkout transaction.
+ */
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/auth_check.php';
 

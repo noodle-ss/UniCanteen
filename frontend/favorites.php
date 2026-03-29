@@ -1,4 +1,11 @@
 <?php
+/**
+ * favorites.php — Customer page displaying all favorited menu items.
+ *
+ * Shows a responsive grid of items the user has marked as favorites,
+ * with the ability to remove favorites and add items to cart.
+ */
+
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/auth_check.php';
 
@@ -7,7 +14,7 @@ requireLogin();
 $db = Database::getInstance()->getConnection();
 $user_id = $_SESSION['user_id'];
 
-// Get Cart Items Count
+// Compute the total number of items in the cart for the nav badge
 $cart_items_count = 0;
 if (isset($_SESSION['cart'])) {
     foreach ($_SESSION['cart'] as $item) {
@@ -15,7 +22,7 @@ if (isset($_SESSION['cart'])) {
     }
 }
 
-// Fetch Favorites with Item and Restaurant info
+// Fetch all favorited items with their restaurant info, newest first
 $favQuery = "SELECT 
     f.item_id,
     i.*,
@@ -34,7 +41,7 @@ $stmt->execute();
 $favoritesResult = $stmt->get_result();
 $favorites = $favoritesResult->fetch_all(MYSQLI_ASSOC);
 
-// Populate user favorites array for the JS check
+// Build an array of favorited item IDs for the JS heart-icon state
 $userFavorites = array_column($favorites, 'item_id');
 
 // Flash messages from add-to-cart redirect

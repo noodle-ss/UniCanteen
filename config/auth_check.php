@@ -1,4 +1,11 @@
 <?php
+/**
+ * auth_check.php — Authentication and Role Validation middleware.
+ *
+ * Provides functions to enforce access control based on user roles 
+ * (Customer, Vendor, Admin). Validates the active session against the 
+ * database on every page load to prevent unauthorized access.
+ */
 // Prevent multiple inclusions
 if (!function_exists('requireLogin')) {
     require_once __DIR__ . '/config.php';

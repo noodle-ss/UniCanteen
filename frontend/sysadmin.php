@@ -1,4 +1,14 @@
 <?php
+/**
+ * sysadmin.php — System Administrator Dashboard.
+ *
+ * Provides high-level administrative tools to oversee the entire platform.
+ * Features include: creating vendor accounts, managing user statuses 
+ * (ban/unban/blacklist), deleting inappropriate reviews, toggling maintenance
+ * mode, and viewing system-wide activity logs and analytics.
+ *
+ * Expects POST with 'admin_action' for various administrative operations.
+ */
 // include mo ung sa index.php — config + session already loaded
 
 $db = Database::getInstance()->getConnection();

@@ -1,4 +1,14 @@
 <?php
+/**
+ * register.php — New user account creation page.
+ *
+ * Handles the registration of new customer accounts, including
+ * input validation, enforcing password strength requirements,
+ * storing a security question for account recovery, and
+ * inserting the new record securely into the database.
+ *
+ * Expects POST with user details, security question info, and csrf_token.
+ */
 require_once __DIR__ . '/../config/config.php';
 
 if (isLoggedIn()) {
