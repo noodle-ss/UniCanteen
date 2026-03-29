@@ -888,6 +888,7 @@ unset($order);
               </div>
             </div>
 
+            <!-- Now Serving Bar -->
             <div style="display:flex; gap:14px; align-items:center; background: linear-gradient(135deg, #e3f4ea, #f0faf5); border: 1.5px solid #b8e0cc; border-radius: 16px; padding: 14px 20px; margin-bottom: 18px;">
               <div style="background: linear-gradient(135deg, #007a3e, #005c2e); color:white; width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:800; flex-shrink:0; box-shadow: 0 4px 12px rgba(0,122,62,0.25);">
                 <?php echo $currentServingOrder ? $currentServingOrder['queue_number'] : '—'; ?>
@@ -911,6 +912,7 @@ unset($order);
               </div>
             </div>
 
+            <!-- Status filter tabs -->
             <div class="status-filters">
               <span class="filter-tab active" onclick="filterOrdersByStatus('')">All
                 <strong><?php echo $total_orders; ?></strong></span>
@@ -928,6 +930,7 @@ unset($order);
                 <strong><?php echo $completed_orders; ?></strong></span>
             </div>
 
+            <!-- Queue header -->
             <div class="queue-item header" style="grid-template-columns: 50px 1.6fr 1fr 0.9fr 1fr 1.4fr;">
               <span>#</span>
               <span>Order Items</span>
@@ -937,6 +940,7 @@ unset($order);
               <span>Status</span>
             </div>
 
+            <!-- Orders -->
             <div class="custom-scroll-area" style="height: 300px;">
               <?php if (empty($orders)): ?>
                 <div style="text-align:center; padding:40px; color:#5f8b74;">
