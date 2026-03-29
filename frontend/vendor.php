@@ -914,8 +914,9 @@ unset($order);
                     </div>
                     <div style="font-size:0.8rem; color:#4a755e; margin-top:4px;">
                       <?php 
-                          $pay_method = $order['payment_method'] ?? 'gcash';
-                          if ($pay_method === 'cash' || (isset($order['customer_ID']) && $order['customer_ID'] == 8)): 
+                          $pay_method = strtolower($order['payment_method'] ?? 'cash'); 
+
+                          if ($pay_method === 'cash'): 
                       ?>
                           <i class="fas fa-money-bill-wave"></i> Cash
                       <?php elseif ($pay_method === 'card'): ?>
@@ -1254,6 +1255,14 @@ unset($order);
               </div>
             <?php endif; ?>
           <?php endforeach; ?>
+        </div>
+        <div style="margin-top: 15px; margin-bottom: 15px;">
+            <label for="payment_method" style="font-weight: bold;">Payment Method:</label>
+            <select name="payment_method" id="payment_method" required style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
+                <option value="cash">Cash</option>
+                <option value="gcash">GCash</option>
+                <option value="card">Card</option>
+            </select>
         </div>
         <div class="modal-actions">
           <button type="button" onclick="closeWalkInModal()" class="btn-modal-cancel">Cancel</button>

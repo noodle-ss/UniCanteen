@@ -65,12 +65,14 @@ if ($total <= 0 || empty($validItems)) {
 /* =========================
    INSERT ORDER (NO USER)
 ========================= */
-$stmt = $db->prepare("
-    INSERT INTO Orders (restaurant_ID, customer_ID, total_amount, status, order_date)
-    VALUES (?, 8, ?, 'P', NOW())
-");
+$payment = $_POST['payment_method'] ?? 'cash';
 
-$stmt->bind_param("id", $restaurant_id, $total);
+$stmt = $db->prepare("
+    INSERT INTO Orders (restaurant_ID, customer_ID, total_amount, status, payment_method, order_date)
+    VALUES (?, 8, ?, 'P', ?, NOW())
+");
+// "ids" = integer, double, string
+$stmt->bind_param("ids", $restaurant_id, $total, $payment);
 $stmt->execute();
 
 $order_id = $stmt->insert_id;

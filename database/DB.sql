@@ -104,7 +104,7 @@ CREATE TABLE Orders (
     total_amount DECIMAL(10, 2) NOT NULL,
     status ENUM('P', 'PR', 'R', 'C') DEFAULT 'P',
     queue_number INT,
-    payment_method ENUM('gcash', 'card') DEFAULT 'gcash',
+    payment_method ENUM('gcash', 'card', 'cash') DEFAULT 'gcash',
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     pickup_time TIME,
     FOREIGN KEY (customer_ID) REFERENCES Users(ID),
