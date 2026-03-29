@@ -1,5 +1,11 @@
 <?php
-// frontend/login.php
+/**
+ * login.php — User login page interface.
+ *
+ * Provides the aesthetic HTML shell for the authentication process.
+ * The actual form logic and markup is included via 'login-content.php'
+ * which is managed by the main 'index.php' router.
+ */
 require_once __DIR__ . '/../config/config.php';
 ?>
 <!DOCTYPE html>

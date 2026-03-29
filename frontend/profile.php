@@ -1,4 +1,13 @@
 <?php
+/**
+ * profile.php — User profile management page.
+ *
+ * Allows users to update their personal information (name, email)
+ * and securely change their password. Also provides an overview
+ * of their recent order history and submitted restaurant reviews.
+ *
+ * Expects POST with 'update_profile' or 'change_password' actions.
+ */
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/auth_check.php';
 

@@ -1,4 +1,11 @@
 <?php
+/**
+ * orders.php — Customer order history page.
+ *
+ * Displays a chronological list of all orders placed by the current customer.
+ * Shows order status and totals.
+ * Provides quick actions to reorder meals or leave reviews for completed orders.
+ */
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/auth_check.php';
 

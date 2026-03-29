@@ -1,4 +1,11 @@
 <?php
+/**
+ * customer.php — Customer Main Dashboard.
+ *
+ * The primary landing page for authenticated customers and guests.
+ * Displays aggregate statistics, search and filtering for active stalls,
+ * active order tracking, and a feed of recent reviews.
+ */
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/auth_check.php';
 $db = Database::getInstance()->getConnection();

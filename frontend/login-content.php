@@ -1,4 +1,16 @@
 <?php
+/**
+ * login-content.php — Handles HTML and logic for user authentication.
+ *
+ * Validates login credentials (email and password), applies lockout policy
+ * after too many failed attempts, and creates a secure session if successful.
+ * Validates CSRF token to prevent cross-site request forgery.
+ *
+ * Expects POST with:
+ *   - email
+ *   - password
+ *   - csrf_token
+ */
 // frontend/login-content.php
 require_once __DIR__ . '/../config/config.php';
 

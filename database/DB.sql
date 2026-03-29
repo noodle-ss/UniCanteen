@@ -100,6 +100,7 @@ CREATE TABLE Item_Categories (
 CREATE TABLE Orders (
     ID INT PRIMARY KEY AUTO_INCREMENT,
     customer_ID INT,
+    walkin_name VARCHAR(100) NULL,
     restaurant_ID INT,
     total_amount DECIMAL(10, 2) NOT NULL,
     status ENUM('P', 'PR', 'R', 'C') DEFAULT 'P',
@@ -140,6 +141,7 @@ CREATE TABLE Ratings (
     order_ID INT UNIQUE,
     rating DECIMAL(3, 2) CHECK (rating BETWEEN 1.0 AND 5.0),
     review TEXT,
+    is_anonymous BOOLEAN DEFAULT FALSE,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (restaurant_ID) REFERENCES Restaurants(ID) ON DELETE CASCADE,
     FOREIGN KEY (order_ID) REFERENCES Orders(ID) ON DELETE CASCADE

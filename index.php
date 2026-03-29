@@ -27,7 +27,17 @@ if (MAINTENANCE_MODE) {
     }
 }
 
-//this is a simple router/controller pattern where we include different frontend PHP files based on the 'page' query parameter. Each frontend file is responsible for rendering a specific view (customer, vendor, sysadmin) and handling its own logic. The left sidebar allows switching between these views, and the main content area displays the selected view's content.
+/**
+ * index.php — Main Application Router
+ *
+ * This file serves as the central entry point for the UniCanteen application.
+ * It implements a Front Controller pattern, routing traffic to the correct
+ * frontend controllers based on the '?page=' query parameter.
+ *
+ * It also manages global maintenance mode state and renders the
+ * persistent left-hand navigation sidebar (Sysadmin / Customer / Vendor).
+ */
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -161,7 +171,7 @@ if (MAINTENANCE_MODE) {
                 break;
             case 'logout':
                 include 'frontend/logout-handler.php';
-                break; // Add this line
+                break;
             case 'vendor':
                 if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'V') {
                     include 'frontend/vendor.php';

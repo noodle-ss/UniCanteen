@@ -1,4 +1,14 @@
 <?php
+/**
+ * restaurant.php — Customer-facing restaurant/stall menu page.
+ *
+ * Displays the public profile of a selected vendor stall, including
+ * their current availability (open/closed), average rating, and a
+ * full grid of available and sold-out menu items. Also provides access
+ * to recent customer reviews.
+ *
+ * Expects GET with 'id' parameter defining the restaurant ID.
+ */
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/auth_check.php';
 

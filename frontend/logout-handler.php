@@ -1,4 +1,13 @@
 <?php
+/**
+ * logout-handler.php — Handles user logout and session cleanup.
+ *
+ * Deletes the active session from the database (if it exists), 
+ * destroys the PHP session data, invalidates the session cookie, 
+ * and redirects the user back to the customer homepage.
+ *
+ * Returns: Redirects to index.php?page=customer&logout=success
+ */
 require_once __DIR__ . '/../config/config.php';
 
 if (isset($_SESSION['user_id']) && isset($_SESSION['session_token'])) {

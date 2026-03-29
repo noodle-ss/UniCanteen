@@ -33,7 +33,7 @@ if (!defined('SITE_URL')) {
     define('SITE_URL', $protocol . $_SERVER['HTTP_HOST'] . BASE_PATH);
 }
 if (!defined('UPLOAD_PATH')) {
-    define('UPLOAD_PATH', $_SERVER['DOCUMENT_ROOT'] . '/mp-itprog/UniCanteen/uploads/');
+    define('UPLOAD_PATH', dirname(__DIR__) . '/assets/uploads/');
 }
 if (!defined('UPLOAD_URL')) {
     define('UPLOAD_URL', SITE_URL . '/uploads/');

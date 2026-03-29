@@ -1,4 +1,13 @@
 <?php
+/**
+ * order-details.php — Customer order summary page.
+ *
+ * Displays the complete details for a specific order, including
+ * ordered items, quantities, total amount, order status, and payment method.
+ * Allows the customer to easily reorder the exact same meal.
+ *
+ * Expects GET with 'id' parameter defining the order ID.
+ */
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/auth_check.php';
 

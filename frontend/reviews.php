@@ -36,7 +36,7 @@ $restaurants = $db->query($restaurantsQuery);
 $reviewsQuery = "SELECT 
     rt.*,
     r.name as restaurant_name,
-    COALESCE(u.full_name, 'Anonymous') as reviewer_name,
+    COALESCE(CASE WHEN rt.is_anonymous = 1 THEN 'Anonymous' ELSE u.full_name END, 'Anonymous') as reviewer_name,
     u.email,
     o.queue_number as order_number
     FROM Ratings rt
@@ -112,8 +112,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
             $restResult = $restStmt->get_result();
             $restaurant_id = $restResult->fetch_assoc()['restaurant_ID'];
 
-            $insertStmt = $db->prepare("INSERT INTO Ratings (restaurant_ID, order_ID, rating, review) VALUES (?, ?, ?, ?)");
-            $insertStmt->bind_param("iids", $restaurant_id, $order_id, $rating, $review);
+            $is_anonymous = isset($_POST['is_anonymous']) ? 1 : 0;
+            $insertStmt = $db->prepare("INSERT INTO Ratings (restaurant_ID, order_ID, rating, review, is_anonymous) VALUES (?, ?, ?, ?, ?)");
+            $insertStmt->bind_param("iidsi", $restaurant_id, $order_id, $rating, $review, $is_anonymous);
             if ($insertStmt->execute()) {
                 header("Location: " . url('index.php?page=reviews&success=1') . ($restaurant_filter ? "&restaurant=$restaurant_filter" : ""));
                 exit();
@@ -466,6 +467,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review']) && is
                                     <textarea name="review" rows="3" required
                                         style="width: 100%; padding: 12px 15px; border: 2px solid #e0f0e8; border-radius: 16px; font-family: 'Inter', sans-serif; resize: vertical; box-sizing: border-box;"
                                         placeholder="Tell us about your experience..."></textarea>
+                                </div>
+
+                                <div style="margin-bottom: 20px;">
+                                    <label style="display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #3b7455; font-size: 0.95rem;">
+                                        <input type="checkbox" name="is_anonymous" value="1" style="width: 16px; height: 16px; accent-color: #007a3e;">
+                                        <i class="fas fa-user-secret" style="color: #007a3e;"></i> Post anonymously
+                                    </label>
                                 </div>
 
                                 <button type="submit" name="submit_review" class="btn-primary" style="padding: 10px 24px;">

@@ -1,3 +1,13 @@
+<?php
+/**
+ * maintenance.php — System maintenance splash page.
+ *
+ * Displayed when the site is placed into "maintenance mode" by an admin.
+ * Provides a clean UI explaining that the application is temporarily offline.
+ * 
+ * Returns: HTML markup for the maintenance screen.
+ */
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
