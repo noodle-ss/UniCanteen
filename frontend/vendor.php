@@ -637,6 +637,57 @@ unset($order);
       color: white;
       box-shadow: 0 2px 8px rgba(0, 122, 62, 0.25);
     }
+
+    .table-responsive {
+        max-height: 450px; 
+        overflow-y: auto; 
+    }
+    
+    .data-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background-color: #f4f7f6;
+        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .kanban-cards {
+        max-height: 500px; 
+        overflow-y: auto;  
+        padding-right: 5px;
+    }
+
+    .table-responsive::-webkit-scrollbar,
+    .kanban-cards::-webkit-scrollbar {
+        width: 6px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb,
+    .kanban-cards::-webkit-scrollbar-thumb {
+        background-color: #ccc;
+        border-radius: 4px;
+    }
+
+    .custom-scroll-area {
+        overflow-y: auto; 
+        padding-right: 8px;
+    }
+
+    .custom-scroll-area::-webkit-scrollbar {
+        width: 6px; /* Sobrang nipis lang */
+    }
+    
+    .custom-scroll-area::-webkit-scrollbar-track {
+        background: transparent; 
+    }
+    
+    .custom-scroll-area::-webkit-scrollbar-thumb {
+        background-color: #b8e0cc; 
+        border-radius: 10px; 
+    }
+    
+    .custom-scroll-area::-webkit-scrollbar-thumb:hover {
+        background-color: #007a3e;
+    }
   </style>
 </head>
 
@@ -768,9 +819,10 @@ unset($order);
             </div>
 
             <!-- Menu items list -->
-            <?php if (empty($menu_items)): ?>
-              <div style="text-align:center; padding:40px; color:#5f8b74;">
-                <i class="fas fa-utensils" style="font-size:2.5rem; opacity:0.3; display:block; margin-bottom:12px;"></i>
+            <div class="custom-scroll-area" style="height: 350px;">
+              <?php if (empty($menu_items)): ?>
+                <div style="text-align:center; padding:40px; color:#5f8b74;">
+                  <i class="fas fa-utensils" style="font-size:2.5rem; opacity:0.3; display:block; margin-bottom:12px;"></i>
                 <p>No menu items yet. Add your first item!</p>
               </div>
             <?php else: ?>
@@ -811,6 +863,7 @@ unset($order);
                 </div>
               <?php endforeach; ?>
             <?php endif; ?>
+          </div>
 
             <!-- Add item button -->
             <button onclick="openAddModal()" class="add-item-btn" style="margin-top:16px;">
@@ -823,7 +876,6 @@ unset($order);
             <div class="vendor-section-header" style="margin-top:0;">
               <h2><i class="fas fa-clock"></i> Order Queue</h2>
               <div style="display:flex; gap:8px; align-items:center;">
-                  <!-- NEW: Walk-in Sale Button -->
                 <button class="btn-primary" style="background:#ff9800; padding:6px 8px; font-size:0.75rem; white-space:nowrap;" onclick="openWalkInModal()">
                   <i class="fas fa-cash-register"></i> Walk-in Sale
                 </button>
@@ -836,7 +888,6 @@ unset($order);
               </div>
             </div>
 
-            <!-- Now Serving Bar -->
             <div style="display:flex; gap:14px; align-items:center; background: linear-gradient(135deg, #e3f4ea, #f0faf5); border: 1.5px solid #b8e0cc; border-radius: 16px; padding: 14px 20px; margin-bottom: 18px;">
               <div style="background: linear-gradient(135deg, #007a3e, #005c2e); color:white; width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:800; flex-shrink:0; box-shadow: 0 4px 12px rgba(0,122,62,0.25);">
                 <?php echo $currentServingOrder ? $currentServingOrder['queue_number'] : '—'; ?>
@@ -860,7 +911,6 @@ unset($order);
               </div>
             </div>
 
-            <!-- Status filter tabs -->
             <div class="status-filters">
               <span class="filter-tab active" onclick="filterOrdersByStatus('')">All
                 <strong><?php echo $total_orders; ?></strong></span>
@@ -878,7 +928,6 @@ unset($order);
                 <strong><?php echo $completed_orders; ?></strong></span>
             </div>
 
-            <!-- Queue header -->
             <div class="queue-item header" style="grid-template-columns: 50px 1.6fr 1fr 0.9fr 1fr 1.4fr;">
               <span>#</span>
               <span>Order Items</span>
@@ -888,65 +937,62 @@ unset($order);
               <span>Status</span>
             </div>
 
-            <!-- Orders -->
-            <?php if (empty($orders)): ?>
-              <div style="text-align:center; padding:40px; color:#5f8b74;">
-                <i class="fas fa-clipboard-list"
-                  style="font-size:2.5rem; opacity:0.3; display:block; margin-bottom:12px;"></i>
-                <p>No orders yet for your stall.</p>
-              </div>
-            <?php else: ?>
-              <?php foreach ($orders as $order): ?>
-                <div class="queue-item" style="grid-template-columns: 50px 1.6fr 1fr 0.9fr 1fr 1.4fr;">
-                  <div style="font-weight:800; color:#007a3e; font-size:1.05rem;"><?= $order['queue_number'] ?></div>
-                  <div>
-                    <?php foreach ($order['items'] as $oi): ?>
-                      <div style="font-size:0.85rem; color:#1a4d31;">
-                        <span style="font-weight:700;"><?= $oi['quantity'] ?>×</span>
-                        <?= htmlspecialchars($oi['name']) ?>
-                      </div>
-                    <?php endforeach; ?>
-                  </div>
-                  <div style="font-size:0.9rem;"><?= htmlspecialchars($order['display_name']) ?></div>
-                  <div style="font-size:0.85rem; color:#5f8b74;"><?= date('g:i A', strtotime($order['order_date'])) ?></div>
-                  <div>
-                    <div style="font-weight:600; color:var(--dlsu-green);">₱<?= number_format($order['total_amount'], 2) ?>
-                    </div>
-                    <div style="font-size:0.8rem; color:#4a755e; margin-top:4px;">
-                      <?php 
-                          $pay_method = strtolower($order['payment_method'] ?? 'cash'); 
-
-                          if ($pay_method === 'cash'): 
-                      ?>
-                          <i class="fas fa-money-bill-wave"></i> Cash
-                      <?php elseif ($pay_method === 'card'): ?>
-                          <i class="fas fa-credit-card"></i> Card
-                      <?php else: ?>
-                          <i class="fas fa-mobile-screen-button"></i> GCash
-                      <?php endif; ?>
-                    </div>
-                  </div>
-                  <div>
-                    <select class="order-status-select" data-order-id="<?= $order['ID'] ?>" onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)" style="<?php
-                      $status_styles = [
-                        'P' => 'background: #fee9e9; color: #b13e3e; border-color: #f5c6cb;',
-                        'PR' => 'background: #fff1cf; color: #9e6d0b; border-color: #ffeeba;',
-                        'R' => 'background: #c9f0d7; color: #0c6e3a; border-color: #a3dfc9;',
-                        'C' => 'background: #d0e3ff; color: #1f5090; border-color: #a8d4f0;'
-                      ];
-                      echo $status_styles[$order['status']] ?? '';
-                      ?>">
-                      <option value="P" <?= $order['status'] == 'P' ? 'selected' : '' ?>>Pending</option>
-                      <option value="PR" <?= $order['status'] == 'PR' ? 'selected' : '' ?>>Preparing</option>
-                      <option value="R" <?= $order['status'] == 'R' ? 'selected' : '' ?>>Ready</option>
-                      <option value="C" <?= $order['status'] == 'C' ? 'selected' : '' ?>>Completed</option>
-                    </select>
-                  </div>
+            <div class="custom-scroll-area" style="height: 300px;">
+              <?php if (empty($orders)): ?>
+                <div style="text-align:center; padding:40px; color:#5f8b74;">
+                  <i class="fas fa-clipboard-list" style="font-size:2.5rem; opacity:0.3; display:block; margin-bottom:12px;"></i>
+                  <p>No orders yet for your stall.</p>
                 </div>
-              <?php endforeach; ?>
-            <?php endif; ?>
-          </div>
-
+              <?php else: ?>
+                <?php foreach ($orders as $order): ?>
+                  <div class="queue-item" style="grid-template-columns: 50px 1.6fr 1fr 0.9fr 1fr 1.4fr;">
+                    <div style="font-weight:800; color:#007a3e; font-size:1.05rem;"><?= $order['queue_number'] ?></div>
+                    <div>
+                      <?php foreach ($order['items'] as $oi): ?>
+                        <div style="font-size:0.85rem; color:#1a4d31;">
+                          <span style="font-weight:700;"><?= $oi['quantity'] ?>×</span>
+                          <?= htmlspecialchars($oi['name']) ?>
+                        </div>
+                      <?php endforeach; ?>
+                    </div>
+                    <div style="font-size:0.9rem;"><?= htmlspecialchars($order['display_name']) ?></div>
+                    <div style="font-size:0.85rem; color:#5f8b74;"><?= date('g:i A', strtotime($order['order_date'])) ?></div>
+                    <div>
+                      <div style="font-weight:600; color:var(--dlsu-green);">₱<?= number_format($order['total_amount'], 2) ?></div>
+                      <div style="font-size:0.8rem; color:#4a755e; margin-top:4px;">
+                        <?php 
+                            $pay_method = strtolower($order['payment_method'] ?? 'cash'); 
+                            if ($pay_method === 'cash'): 
+                        ?>
+                            <i class="fas fa-money-bill-wave"></i> Cash
+                        <?php elseif ($pay_method === 'card'): ?>
+                            <i class="fas fa-credit-card"></i> Card
+                        <?php else: ?>
+                            <i class="fas fa-mobile-screen-button"></i> GCash
+                        <?php endif; ?>
+                      </div>
+                    </div>
+                    <div>
+                      <select class="order-status-select" data-order-id="<?= $order['ID'] ?>" onchange="updateOrderStatus(<?= $order['ID'] ?>, this.value)" style="<?php
+                        $status_styles = [
+                          'P' => 'background: #fee9e9; color: #b13e3e; border-color: #f5c6cb;',
+                          'PR' => 'background: #fff1cf; color: #9e6d0b; border-color: #ffeeba;',
+                          'R' => 'background: #c9f0d7; color: #0c6e3a; border-color: #a3dfc9;',
+                          'C' => 'background: #d0e3ff; color: #1f5090; border-color: #a8d4f0;'
+                        ];
+                        echo $status_styles[$order['status']] ?? '';
+                        ?>">
+                        <option value="P" <?= $order['status'] == 'P' ? 'selected' : '' ?>>Pending</option>
+                        <option value="PR" <?= $order['status'] == 'PR' ? 'selected' : '' ?>>Preparing</option>
+                        <option value="R" <?= $order['status'] == 'R' ? 'selected' : '' ?>>Ready</option>
+                        <option value="C" <?= $order['status'] == 'C' ? 'selected' : '' ?>>Completed</option>
+                      </select>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </div>
+          </div>               
         </div><!-- /admin-grid -->
 
         <!-- ── Sales Monitoring ── -->
