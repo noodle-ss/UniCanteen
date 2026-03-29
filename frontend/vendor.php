@@ -1300,7 +1300,7 @@ unset($order);
         
         <div class="modal-field">
           <label>Select Items</label>
-          <div style="border: 1px solid #ccc; border-radius: 5px; padding: 10px;">
+          <div class="custom-scroll-area" style="border: 1px solid #ccc; border-radius: 5px; padding: 10px; max-height: 300px; overflow-y: auto;">
               <?php foreach ($menu_items as $item): ?>
                 <?php if ($item['isAvailable']): ?>
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
