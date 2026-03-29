@@ -887,12 +887,12 @@ $grand_total = $subtotal + $service_fee;
                         <!-- Payment Methods -->
                         <div class="payment-methods">
                             <label class="payment-option active" onclick="selectPayment('gcash', this)">
-                                <div class="payment-logo gcash-logo" style="background: #007a3e; color: #fff;"><i class="fas fa-mobile-screen-button"></i></div>
+                                <div class="payment-logo gcash-logo"><i class="fas fa-mobile-screen-button"></i></div>
                                 <div>
                                     <div class="payment-title">GCash</div>
                                     <div class="payment-sub">Cashless · Secure · Instant</div>
                                 </div>
-                                <div class="payment-check" style="color: #007a3e;"><i class="fas fa-circle-check"></i></div>
+                                <div class="payment-check"><i class="fas fa-circle-check"></i></div>
                             </label>
                             <label class="payment-option" onclick="selectPayment('card', this)">
                                 <div class="payment-logo card-logo"><i class="fas fa-credit-card"></i></div>

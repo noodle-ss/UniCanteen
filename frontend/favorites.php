@@ -122,10 +122,10 @@ $flash_error = isset($_GET['error']) ? urldecode($_GET['error']) : '';
             max-width: 600px;
             margin: 40px auto;
         }
-        .empty-favorites i { font-size: 4rem; color: #cae3d6; margin-bottom: 24px; display: block; }
+        .empty-favorites > i { font-size: 4rem; color: #cae3d6; margin-bottom: 24px; display: block; }
         .empty-favorites h3 { font-size: 1.6rem; color: #0f3d24; margin: 0 0 12px; }
         .empty-favorites p { color: #5f8b74; font-size: 1.05rem; margin: 0 0 32px; line-height: 1.6; }
-        .btn-browse { display: inline-flex; align-items: center; gap: 10px; background: #007a3e; color: white; padding: 14px 28px; border-radius: 40px; font-weight: 600; text-decoration: none; font-size: 1rem; transition: all 0.2s; }
+        .btn-browse { display: inline-flex; align-items: center; gap: 6px; background: #007a3e; color: white; padding: 9px 18px; border-radius: 40px; font-weight: 600; text-decoration: none; font-size: 0.85rem; transition: all 0.2s; }
         .btn-browse:hover { background: #005a2c; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,122,62,0.25); }
 
     </style>
