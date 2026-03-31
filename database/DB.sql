@@ -238,14 +238,14 @@ INSERT INTO Order_ItemLine (order_ID, item_ID, quantity, price_at_time) VALUES
 
 -- Insert sample ratings
 INSERT INTO Ratings (restaurant_ID, order_ID, rating, review, timestamp) VALUES
-(2, 2, 4.5, 'grabe super sarap nung tapa, tapos dambuhala pa ung serving. busog na busog me haha sulit.', NOW() - INTERVAL 2 HOUR),
+(2, 2, 4.0, 'grabe super sarap nung tapa, tapos dambuhala pa ung serving. busog na busog me haha sulit.', NOW() - INTERVAL 2 HOUR),
 (3, 3, 5.0, 'literal na pumuputok ung lasa ng garlic bread nila hahah fav ko to!', NOW() - INTERVAL 3 HOUR),
 (4, NULL, 5.0, 'uyy legit ang laki nung club sandwich nila, di ko naubos. mabait din si kuya sa counter', NOW() - INTERVAL 5 HOUR),
 (1, NULL, 4.0, 'okay sana iced latte kaso mejo matapang, pero saktong pampa-gising sa hapon. mabilis din nakuha', NOW() - INTERVAL 1 DAY),
 (2, NULL, 5.0, 'agghhh the best ung bangus sisig nila! always bumabalik para dito', NOW() - INTERVAL 2 DAY),
-(3, NULL, 3.5, 'mediocre lang yung pesto for me ewan ko bat hype hahah pero oki naman din', NOW() - INTERVAL 2 DAY),
+(3, NULL, 3.0, 'mediocre lang yung pesto for me ewan ko bat hype hahah pero oki naman din', NOW() - INTERVAL 2 DAY),
 (1, NULL, 5.0, 'super comforting nung sinigang as in, lalo na pag umuulan!! bibilis pa nung staff', NOW() - INTERVAL 3 DAY),
-(4, NULL, 4.5, 'fruit shake saves lives ahaha ang init nung hapon grabe. saraaappp!', NOW() - INTERVAL 4 DAY);
+(4, NULL, 4.0, 'fruit shake saves lives ahaha ang init nung hapon grabe. saraaappp!', NOW() - INTERVAL 4 DAY);
 
 -- Insert item categories
 INSERT INTO Item_Categories (item_ID, category_ID) VALUES
