@@ -190,8 +190,8 @@ INSERT INTO Items (name, description, price, image_url, isAvailable, restaurant_
 ('Iced Latte', 'Espresso with milk and ice', 110.00, 'assets/uploads/food_69ac41acf056a8.54984326.jpg', TRUE, 1),
 ('Garlic Fries', 'French fries with garlic and parsley', 75.00, 'assets/uploads/item_69b755384262a5.24136950.jpg', TRUE, 1),
 ('Breakfast Meal', 'Eggs, rice, and choice of meat', 155.00, 'assets/uploads/item_69b755571acd83.60899894.jpg', TRUE, 1),
-('Pork Sinigang', 'Pork in sour tamarind soup', 160.00, '', TRUE, 1),
-('Leche Flan', 'Rich caramel custard dessert', 65.00, '', TRUE, 1);
+('Pork Sinigang', 'Pork in sour tamarind soup', 160.00, 'assets/uploads/item_69cbba319d4029.47399691.jpg', TRUE, 1),
+('Leche Flan', 'Rich caramel custard dessert', 65.00, 'assets/uploads/item_69cbba44ef4644.76509255.jpg', TRUE, 1);
 
 -- Insert items for Agno Eatery (restaurant_ID = 2)
 INSERT INTO Items (name, description, price, image_url, isAvailable, restaurant_ID) VALUES
@@ -199,8 +199,8 @@ INSERT INTO Items (name, description, price, image_url, isAvailable, restaurant_
 ('Garlic Rice', 'Fried rice with garlic', 35.00, 'assets/uploads/item_69b755b9816061.03910626.jpeg', TRUE, 2),
 ('Lumpiang Shanghai', 'Fried spring rolls with pork', 80.00, 'assets/uploads/item_69b755cef16094.37442931.webp', FALSE, 2),
 ('Bangus Sisig', 'Milkfish sisig', 140.00, 'assets/uploads/item_69b755f9b4cf68.59500060.jpg', TRUE, 2),
-('Pork BBQ', 'Sweet and savory grilled pork skewer', 45.00, '', TRUE, 2),
-('Tocilog', 'Sweet cured pork with garlic rice and egg', 120.00, '', TRUE, 2);
+('Pork BBQ', 'Sweet and savory grilled pork skewer', 45.00, 'assets/uploads/item_69cbba0f5e6a13.20416261.jpg', TRUE, 2),
+('Tocilog', 'Sweet cured pork with garlic rice and egg', 120.00, 'assets/uploads/item_69cbb9ee9892a7.15398632.jpg', TRUE, 2);
 
 -- Insert items for Kitchen SJ (restaurant_ID = 3)
 INSERT INTO Items (name, description, price, image_url, isAvailable, restaurant_ID) VALUES
@@ -208,8 +208,8 @@ INSERT INTO Items (name, description, price, image_url, isAvailable, restaurant_
 ('Garlic Bread', 'Toasted bread with garlic butter', 45.00, 'assets/uploads/item_69b7569ba351c4.28979106.jpg', TRUE, 3),
 ('Pesto Pasta', 'Pasta with basil pesto sauce', 150.00, 'assets/uploads/item_69b756b1861385.35205079.jpg', FALSE, 3),
 ('Tiramisu', 'Italian coffee dessert', 120.00, 'assets/uploads/item_69b756c15ec1f2.07308014.webp', TRUE, 3),
-('Carbonara', 'Creamy white sauce with bacon bits', 160.00, '', TRUE, 3),
-('Mango Graham', 'Chilled layered graham crackers and mango', 95.00, '', TRUE, 3);
+('Carbonara', 'Creamy white sauce with bacon bits', 160.00, 'assets/uploads/item_69cbbabc34dde6.11233421.jpg', TRUE, 3),
+('Mango Graham', 'Chilled layered graham crackers and mango', 95.00, 'assets/uploads/item_69cbbacf72fbc5.13840823.jpg', TRUE, 3);
 
 -- Insert items for St. La Salle Deli (restaurant_ID = 4)
 INSERT INTO Items (name, description, price, image_url, isAvailable, restaurant_ID) VALUES
@@ -217,8 +217,8 @@ INSERT INTO Items (name, description, price, image_url, isAvailable, restaurant_
 ('Fruit Shake', 'Fresh fruit shake', 95.00, 'assets/uploads/item_69b756417383b9.38783976.jpg', TRUE, 4),
 ('Caesar Salad', 'Romaine lettuce with Caesar dressing', 140.00, 'assets/uploads/item_69b7565059dc18.61200073.jpg', FALSE, 4),
 ('Iced Tea', 'Fresh brewed iced tea', 55.00, 'assets/uploads/item_69b75665d5aeb3.74195366.jpeg', TRUE, 4),
-('Tuna Sandwich', 'Toasted bread with creamy tuna spread', 95.00, '', TRUE, 4),
-('Lemonade', 'Freshly squeezed lemons', 65.00, '', TRUE, 4);
+('Tuna Sandwich', 'Toasted bread with creamy tuna spread', 95.00, 'assets/uploads/item_69cbba883b1228.33295549.webp', TRUE, 4),
+('Lemonade', 'Freshly squeezed lemons', 65.00, 'assets/uploads/item_69cbba9c15c775.51834007.jpg', TRUE, 4);
 
 -- Insert sample orders
 INSERT INTO Orders (customer_ID, restaurant_ID, total_amount, status, queue_number, payment_method, order_date) VALUES
