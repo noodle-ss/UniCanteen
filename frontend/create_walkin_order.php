@@ -53,7 +53,7 @@ if (!$ownerResult) {
 /* --------------------------------------------------
    3. Build a validated list of items and compute total
    -------------------------------------------------- */
-$priceStmt  = $db->prepare("SELECT price FROM Items WHERE ID = ? AND restaurant_ID = ?");
+$priceStmt  = $db->prepare("SELECT price FROM Items WHERE ID = ? AND restaurant_ID = ? AND isAvailable = 1");
 $validItems = [];
 $total      = 0.0;
 

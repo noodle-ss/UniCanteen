@@ -74,30 +74,45 @@ foreach ($periods as $key => $where) {
   ];
 }
 
-// Best-selling items (top 6)
-$best_selling_items = [];
+// Best-selling items per period (top 6 each)
+$bestSellersByPeriod = [];
+$default_item = ['item_name' => '—', 'order_count' => 0];
+
 if ($restaurant_id) {
-    $bsStmt = $dbConn->prepare(
-        "SELECT i.name AS item_name, SUM(oi.quantity) AS order_count
-         FROM Order_ItemLine oi
-         JOIN Items i ON oi.item_ID = i.ID
-         JOIN Orders o ON oi.order_ID = o.ID
-         WHERE o.restaurant_ID = ? AND o.status='C'
-         GROUP BY oi.item_ID
-         ORDER BY order_count DESC
-         LIMIT 6"
-    );
-    $bsStmt->bind_param("i", $restaurant_id);
-    $bsStmt->execute();
-    $best_selling_items = $bsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $bsStmt->close();
+    $bsPeriods = [
+        'today'      => "AND DATE(o.order_date) = CURDATE()",
+        'this_week'  => "AND YEARWEEK(o.order_date, 1) = YEARWEEK(CURDATE(), 1)",
+        'this_month' => "AND YEAR(o.order_date) = YEAR(CURDATE()) AND MONTH(o.order_date) = MONTH(CURDATE())",
+        'all'        => "",
+    ];
+    foreach ($bsPeriods as $bsKey => $bsWhere) {
+        $bsQuery = "SELECT i.name AS item_name, SUM(oi.quantity) AS order_count
+                    FROM Order_ItemLine oi
+                    JOIN Items i ON oi.item_ID = i.ID
+                    JOIN Orders o ON oi.order_ID = o.ID
+                    WHERE o.restaurant_ID = ? AND o.status='C' {$bsWhere}
+                    GROUP BY oi.item_ID
+                    ORDER BY order_count DESC
+                    LIMIT 6";
+        $bsStmt = $dbConn->prepare($bsQuery);
+        $bsStmt->bind_param("i", $restaurant_id);
+        $bsStmt->execute();
+        $bsItems = $bsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $bsStmt->close();
+        // Pad to 6 entries so the template never fails
+        while (count($bsItems) < 6) {
+            $bsItems[] = $default_item;
+        }
+        $bestSellersByPeriod[$bsKey] = $bsItems;
+    }
+} else {
+    foreach (['today', 'this_week', 'this_month', 'all'] as $bsKey) {
+        $bestSellersByPeriod[$bsKey] = array_fill(0, 6, $default_item);
+    }
 }
 
-// Pad to 6 entries so the template never fails
-$default_item = ['item_name' => '—', 'order_count' => 0];
-while (count($best_selling_items) < 6) {
-  $best_selling_items[] = $default_item;
-}
+// Default view is "today"
+$best_selling_items = $bestSellersByPeriod['today'];
 
 /* --------------------------------------------------
    4. Queue: currently-serving and next-up orders
@@ -1048,6 +1063,9 @@ $lineStmt->close();
           <script id="analytics-data" type="application/json">
             <?php echo json_encode($analytics); ?>
           </script>
+          <script id="bestsellers-data" type="application/json">
+            <?php echo json_encode($bestSellersByPeriod); ?>
+          </script>
 
           <!-- Sales cards -->
           <div class="sales-grid">
@@ -1089,31 +1107,31 @@ $lineStmt->close();
               <div class="item-rank">
                 <div class="rank-number rank-1">1</div>
                 <div class="item-details">
-                  <div style="font-weight:600;"><?php echo $best_selling_items[0]['item_name']; ?></div>
-                  <div class="item-count"><?php echo $best_selling_items[0]['order_count']; ?> orders</div>
+                  <div style="font-weight:600;" id="bs-name-0"><?php echo htmlspecialchars($best_selling_items[0]['item_name']); ?></div>
+                  <div class="item-count" id="bs-count-0"><?php echo $best_selling_items[0]['order_count']; ?> orders</div>
                 </div>
               </div>
               <div class="item-rank">
                 <div class="rank-number rank-2">2</div>
                 <div class="item-details">
-                  <div style="font-weight:600;"><?php echo $best_selling_items[1]['item_name']; ?></div>
-                  <div class="item-count"><?php echo $best_selling_items[1]['order_count']; ?> orders</div>
+                  <div style="font-weight:600;" id="bs-name-1"><?php echo htmlspecialchars($best_selling_items[1]['item_name']); ?></div>
+                  <div class="item-count" id="bs-count-1"><?php echo $best_selling_items[1]['order_count']; ?> orders</div>
                 </div>
               </div>
               <div class="item-rank">
                 <div class="rank-number rank-3">3</div>
                 <div class="item-details">
-                  <div style="font-weight:600;"><?php echo $best_selling_items[2]['item_name']; ?></div>
-                  <div class="item-count"><?php echo $best_selling_items[2]['order_count']; ?> orders</div>
+                  <div style="font-weight:600;" id="bs-name-2"><?php echo htmlspecialchars($best_selling_items[2]['item_name']); ?></div>
+                  <div class="item-count" id="bs-count-2"><?php echo $best_selling_items[2]['order_count']; ?> orders</div>
                 </div>
               </div>
             </div>
             <div class="other-items">
               <?php for ($r = 3; $r < 6; $r++): ?>
-                <div>
+                <div id="bs-other-<?php echo $r; ?>">
                   <i class="fas fa-fire" style="color:#ff7b7b;"></i>
-                  <?php echo $best_selling_items[$r]['item_name']; ?>
-                  (<?php echo $best_selling_items[$r]['order_count']; ?>)
+                  <span id="bs-other-name-<?php echo $r; ?>"><?php echo htmlspecialchars($best_selling_items[$r]['item_name']); ?></span>
+                  (<span id="bs-other-count-<?php echo $r; ?>"><?php echo $best_selling_items[$r]['order_count']; ?></span>)
                 </div>
               <?php endfor; ?>
             </div>
@@ -1889,6 +1907,7 @@ $lineStmt->close();
 
     // ── Analytics Period Filter ──
     const analyticsData = JSON.parse(document.getElementById('analytics-data').textContent);
+    const bestsellersData = JSON.parse(document.getElementById('bestsellers-data').textContent);
     const periodLabels = { today: 'Today', this_week: 'This Week', this_month: 'This Month', all: 'All Time' };
 
     function setAnalyticsPeriod(period, btn) {
@@ -1901,6 +1920,23 @@ $lineStmt->close();
       document.getElementById('analytics-orders').textContent = d.orders;
       document.getElementById('analytics-avg').textContent = '₱' + parseFloat(d.avg).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       document.getElementById('analytics-revenue-sub').innerHTML = '<i class="fas fa-calendar-day"></i> ' + periodLabels[period];
+
+      // Update best-sellers for the selected period
+      const bs = bestsellersData[period];
+      if (bs) {
+        for (let i = 0; i < 3; i++) {
+          const nameEl = document.getElementById('bs-name-' + i);
+          const countEl = document.getElementById('bs-count-' + i);
+          if (nameEl) nameEl.textContent = bs[i].item_name;
+          if (countEl) countEl.textContent = bs[i].order_count + ' orders';
+        }
+        for (let i = 3; i < 6; i++) {
+          const nameEl = document.getElementById('bs-other-name-' + i);
+          const countEl = document.getElementById('bs-other-count-' + i);
+          if (nameEl) nameEl.textContent = bs[i].item_name;
+          if (countEl) countEl.textContent = bs[i].order_count;
+        }
+      }
     }
 
     // Walk-in Form handling

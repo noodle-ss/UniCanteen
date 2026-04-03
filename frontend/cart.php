@@ -126,51 +126,78 @@ if (isset($_POST['checkout'])) {
             $checkoutError = "Sorry, this store has closed. Your order cannot be placed at this time.";
         } else {
             $subtotal      = 0;
-        $restaurant_id = null;
-        foreach ($_SESSION['cart'] as $item) {
-            $subtotal += $item['price'] * $item['quantity'];
-            $restaurant_id = $item['restaurant_id'];
-        }
-        $service_fee_checkout = 15;
-        $total = $subtotal + $service_fee_checkout;
+            $restaurant_id = null;
+            $cartValid     = true;
 
-        $queueQuery = "SELECT COALESCE(MAX(queue_number), 0) + 1 as next_queue
-                       FROM Orders WHERE restaurant_ID = ? AND DATE(order_date) = CURDATE()";
-        $stmt = $db->prepare($queueQuery);
-        $stmt->bind_param("i", $restaurant_id);
-        $stmt->execute();
-        $queueData = $stmt->get_result()->fetch_assoc();
-        $queue_number = $queueData['next_queue'];
-        $stmt->close();
+            // Re-validate each item's price and availability from the database
+            foreach ($_SESSION['cart'] as $cartKey => &$cartItem) {
+                $restaurant_id = $cartItem['restaurant_id'];
+                $priceCheck = $db->prepare(
+                    "SELECT price, isAvailable FROM Items WHERE ID = ? AND restaurant_ID = ?"
+                );
+                $priceCheck->bind_param("ii", $cartItem['id'], $cartItem['restaurant_id']);
+                $priceCheck->execute();
+                $currentItem = $priceCheck->get_result()->fetch_assoc();
+                $priceCheck->close();
 
-        $payment_method = isset($_POST['payment_method']) && in_array($_POST['payment_method'], ['gcash', 'card']) 
-            ? $_POST['payment_method'] : 'gcash';
+                if (!$currentItem || !$currentItem['isAvailable']) {
+                    $cartValid = false;
+                    $checkoutError = "Some items in your cart are no longer available. Please review your cart.";
+                    break;
+                }
 
-        $db->begin_transaction();
-        try {
-            $orderQuery = "INSERT INTO Orders (customer_ID, restaurant_ID, total_amount, status, queue_number, payment_method)
-                           VALUES (?, ?, ?, 'P', ?, ?)";
-            $stmt = $db->prepare($orderQuery);
-            $stmt->bind_param("iidis", $_SESSION['user_id'], $restaurant_id, $total, $queue_number, $payment_method);
-            $stmt->execute();
-            $order_id = $db->insert_id;
-
-            foreach ($_SESSION['cart'] as $item) {
-                $itemQuery = "INSERT INTO Order_ItemLine (order_ID, item_ID, quantity, price_at_time) VALUES (?, ?, ?, ?)";
-                $stmt = $db->prepare($itemQuery);
-                $stmt->bind_param("iiid", $order_id, $item['id'], $item['quantity'], $item['price']);
-                $stmt->execute();
+                // Update session price to current DB price
+                $cartItem['price'] = floatval($currentItem['price']);
+                $subtotal += $cartItem['price'] * $cartItem['quantity'];
             }
+            unset($cartItem);
 
-            $db->commit();
-            $_SESSION['cart'] = [];
-            header("Location: " . url("index.php?page=orders&order_id=$order_id&success=placed"));
-            exit();
-        } catch (Exception $e) {
-            $db->rollback();
-            $checkoutError = "Checkout failed. Please try again.";
+            if (!$cartValid) {
+                // Error already set above
+            } else {
+                $service_fee_checkout = 15;
+                $total = $subtotal + $service_fee_checkout;
+
+                $payment_method = isset($_POST['payment_method']) && in_array($_POST['payment_method'], ['gcash', 'card'])
+                    ? $_POST['payment_method'] : 'gcash';
+
+                $db->begin_transaction();
+                try {
+                    // Calculate queue number INSIDE the transaction to prevent race conditions
+                    $queueQuery = "SELECT COALESCE(MAX(queue_number), 0) + 1 as next_queue
+                                   FROM Orders WHERE restaurant_ID = ? AND DATE(order_date) = CURDATE()";
+                    $stmt = $db->prepare($queueQuery);
+                    $stmt->bind_param("i", $restaurant_id);
+                    $stmt->execute();
+                    $queueData = $stmt->get_result()->fetch_assoc();
+                    $queue_number = $queueData['next_queue'];
+                    $stmt->close();
+
+                    $orderQuery = "INSERT INTO Orders (customer_ID, restaurant_ID, total_amount, status, queue_number, payment_method)
+                                   VALUES (?, ?, ?, 'P', ?, ?)";
+                    $stmt = $db->prepare($orderQuery);
+                    $stmt->bind_param("iidis", $_SESSION['user_id'], $restaurant_id, $total, $queue_number, $payment_method);
+                    $stmt->execute();
+                    $order_id = $db->insert_id;
+
+                    foreach ($_SESSION['cart'] as $item) {
+                        $itemQuery = "INSERT INTO Order_ItemLine (order_ID, item_ID, quantity, price_at_time) VALUES (?, ?, ?, ?)";
+                        $stmt = $db->prepare($itemQuery);
+                        $stmt->bind_param("iiid", $order_id, $item['id'], $item['quantity'], $item['price']);
+                        $stmt->execute();
+                    }
+
+                    $db->commit();
+                    $_SESSION['cart'] = [];
+                    header("Location: " . url("index.php?page=orders&order_id=$order_id&success=placed"));
+                    exit();
+                } catch (Exception $e) {
+                    $db->rollback();
+                    $checkoutError = "Checkout failed. Please try again.";
+                }
+            }
         }
-    }
+
     }
 }
 

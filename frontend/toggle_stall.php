@@ -33,7 +33,12 @@ $db = Database::getInstance()->getConnection();
 $stmt = $db->prepare("UPDATE Restaurants SET is_open = NOT is_open WHERE ID = ? AND owner_ID = ?");
 $stmt->bind_param("ii", $restaurant_id, $user_id);
 $stmt->execute();
+$affected = $stmt->affected_rows;
 $stmt->close();
+
+if ($affected === 0) {
+    redirect('index.php?page=vendor&error=unauthorized');
+}
 
 // Redirect back to the vendor dashboard
 redirect('index.php?page=vendor');

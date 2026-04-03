@@ -42,7 +42,7 @@ $user_id = $_SESSION['user_id'];
 $db      = Database::getInstance()->getConnection();
 
 $stmt = $db->prepare(
-    "SELECT r.ID AS rid
+    "SELECT r.ID AS rid, i.image_url AS old_image_url
      FROM Items i
      JOIN Restaurants r ON i.restaurant_ID = r.ID
      WHERE i.ID = ? AND r.owner_ID = ?"
@@ -96,6 +96,14 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     if (move_uploaded_file($fileTmp, $uploadPath)) {
         $image_url    = 'assets/uploads/' . $uniqueName;
         $update_image = true;
+
+        // Clean up the old image file if it exists
+        if (!empty($res['old_image_url'])) {
+            $oldImagePath = __DIR__ . '/../' . $res['old_image_url'];
+            if (file_exists($oldImagePath)) {
+                unlink($oldImagePath);
+            }
+        }
     } else {
         echo json_encode(['success' => false, 'error' => 'Failed to upload image.']);
         exit;

@@ -45,11 +45,25 @@ if (!$res) {
 }
 
 /* --------------------------------------------------
-   2. Delete the item
+   2. Fetch image path before deletion, then delete the item
    -------------------------------------------------- */
+$imgStmt = $db->prepare("SELECT image_url FROM Items WHERE ID = ? AND restaurant_ID = ?");
+$imgStmt->bind_param("ii", $item_id, $res['ID']);
+$imgStmt->execute();
+$imgRow = $imgStmt->get_result()->fetch_assoc();
+$imgStmt->close();
+
 $stmt = $db->prepare("DELETE FROM Items WHERE ID = ? AND restaurant_ID = ?");
 $stmt->bind_param("ii", $item_id, $res['ID']);
 $success = $stmt->execute();
 $stmt->close();
+
+// Clean up the uploaded image file if it exists
+if ($success && $imgRow && !empty($imgRow['image_url'])) {
+    $imagePath = __DIR__ . '/../' . $imgRow['image_url'];
+    if (file_exists($imagePath)) {
+        unlink($imagePath);
+    }
+}
 
 echo json_encode(['success' => $success]);

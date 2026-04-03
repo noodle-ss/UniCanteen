@@ -1,8 +1,6 @@
 CREATE DATABASE IF NOT EXISTS unicanteen;
 USE unicanteen;
 
-DROP TABLE IF EXISTS Item_Categories;
-DROP TABLE IF EXISTS Categories;
 DROP TABLE IF EXISTS Order_ItemLine;
 DROP TABLE IF EXISTS Ratings;
 DROP TABLE IF EXISTS Favorites;
@@ -80,21 +78,6 @@ CREATE TABLE Items (
     FOREIGN KEY (restaurant_ID) REFERENCES Restaurants(ID) ON DELETE CASCADE
 );
 
--- ==================== CATEGORIES TABLE ====================
-CREATE TABLE Categories (
-    ID INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(50) NOT NULL,
-    description TEXT
-);
-
--- ==================== ITEM_CATEGORIES TABLE ====================
-CREATE TABLE Item_Categories (
-    item_ID INT,
-    category_ID INT,
-    PRIMARY KEY (item_ID, category_ID),
-    FOREIGN KEY (item_ID) REFERENCES Items(ID) ON DELETE CASCADE,
-    FOREIGN KEY (category_ID) REFERENCES Categories(ID) ON DELETE CASCADE
-);
 
 -- ==================== ORDERS TABLE ====================
 CREATE TABLE Orders (
@@ -107,7 +90,6 @@ CREATE TABLE Orders (
     queue_number INT,
     payment_method ENUM('gcash', 'card', 'cash') DEFAULT 'gcash',
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    pickup_time TIME,
     FOREIGN KEY (customer_ID) REFERENCES Users(ID),
     FOREIGN KEY (restaurant_ID) REFERENCES Restaurants(ID)
 );
@@ -149,12 +131,6 @@ CREATE TABLE Ratings (
 
 -- ==================== INSERT SAMPLE DATA ====================
 
--- Insert categories
-INSERT INTO Categories (name, description) VALUES
-('Meals', 'Main course meals'),
-('Beverages', 'Drinks and refreshments'),
-('Snacks', 'Light snacks and sides'),
-('Desserts', 'Sweet treats');
 
 -- Insert sample users (password for all accounts: 'password123')
 -- Security answer for all sample accounts: 'answer123'
@@ -165,7 +141,7 @@ INSERT INTO Categories (name, description) VALUES
 -- Admin: admin@dlsu.edu.ph
 INSERT INTO Users (email, password, full_name, role, is_active, login_attempts, security_question, security_answer) VALUES
 ('customer1@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Juan Dela Cruz', 'U', TRUE, 0, 'What is the name of your childhood pet?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
-('customer2@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Maria Santos', 'U', TRUE, 0, 'What city were you born in?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
+('customer2@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Jeremy Santos', 'U', TRUE, 0, 'What city were you born in?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
 ('bloemen@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Bloemen Hall Manager', 'V', TRUE, 0, 'What is your mother\'s maiden name?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
 ('agno@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Agno Eatery Owner', 'V', TRUE, 0, 'What was the name of your first school?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
 ('kitchensj@dlsu.edu.ph', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.', 'Kitchen SJ Manager', 'V', TRUE, 0, 'What is the name of your childhood pet?', '$2y$10$qXcpNByl5VFDP3z9KAeXk.aBp0FopJsck70GKeoWxwPXnkFMuY44.'),
@@ -247,14 +223,6 @@ INSERT INTO Ratings (restaurant_ID, order_ID, rating, review, timestamp) VALUES
 (1, NULL, 5.0, 'super comforting nung sinigang as in, lalo na pag umuulan!! bibilis pa nung staff', NOW() - INTERVAL 3 DAY),
 (4, NULL, 4.0, 'fruit shake saves lives ahaha ang init nung hapon grabe. saraaappp!', NOW() - INTERVAL 4 DAY);
 
--- Insert item categories
-INSERT INTO Item_Categories (item_ID, category_ID) VALUES
-(1, 1), (2, 2), (3, 3), (4, 1),
-(5, 1), (6, 3), (7, 3), (8, 1),
-(9, 1), (10, 3), (11, 1), (12, 4),
-(13, 1), (14, 2), (15, 1), (16, 2),
-(17, 1), (18, 4), (19, 3), (20, 1),
-(21, 1), (22, 4), (23, 3), (24, 2);
 
 -- Create indexes for better performance
 CREATE INDEX idx_users_email ON Users(email);
