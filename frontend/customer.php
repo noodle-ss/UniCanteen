@@ -448,7 +448,7 @@ if (isLoggedIn()) {
                             </div>
                         </div>
                         <div class="hero-image">
-                            <img src="<?php echo url('assets/images/hero-placeholder.jpg'); ?>"
+                            <img src="<?php echo url('assets/images/blank.jpg'); ?>"
                                 style="border-radius: 38px; border: 2px solid #b8e0cc; width: 280px; height: 140px; object-fit: cover; box-shadow: 0 10px 25px rgba(0,80,20,0.1);"
                                 alt="UniCanteen"
                                 onerror="this.src='https://placehold.co/280x140/ebf9f1/007a3e?text=UniCanteen+App'">

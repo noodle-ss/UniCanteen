@@ -81,8 +81,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                             secureSessionRegenerate();
 
-                            $redirect = isset($_SESSION['redirect_after_login']) ? $_SESSION['redirect_after_login'] : 'index.php?page=customer';
-                            unset($_SESSION['redirect_after_login']);
+                            if (isset($_SESSION['redirect_after_login'])) {
+                                $redirect = $_SESSION['redirect_after_login'];
+                                unset($_SESSION['redirect_after_login']);
+                            } else {
+                                // Role-based default redirect
+                                switch ($user['role']) {
+                                    case 'V':
+                                        $redirect = 'index.php?page=vendor';
+                                        break;
+                                    case 'A':
+                                        $redirect = 'index.php?page=sysadmin';
+                                        break;
+                                    default:
+                                        $redirect = 'index.php?page=customer';
+                                        break;
+                                }
+                            }
                             redirect($redirect);
                         } else {
                             $attempts = $user['login_attempts'] + 1;
