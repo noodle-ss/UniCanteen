@@ -897,14 +897,28 @@ if (isLoggedIn()) {
             } else if (noRes) {
                 noRes.style.display = 'none';
             }
+
+            // Sort stalls by rating when "Top Rated" is active, restore original order otherwise
+            if (activeFilter === 'rated') {
+                sortByRating();
+            } else {
+                restoreOriginalOrder();
+            }
         }
 
-        // Sort "Top Rated" — re-order DOM nodes
+        // Sort "Top Rated" — re-order DOM nodes by rating descending
         function sortByRating() {
             const grid = document.getElementById('stallGrid');
             const cards = [...grid.querySelectorAll('.stall-card')];
             cards.sort((a, b) => parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating));
             cards.forEach(c => grid.appendChild(c));
+        }
+
+        // Restore original DOM order (open first, then alphabetical — as rendered by PHP)
+        const originalCardOrder = [...document.querySelectorAll('#stallGrid .stall-card')];
+        function restoreOriginalOrder() {
+            const grid = document.getElementById('stallGrid');
+            originalCardOrder.forEach(c => grid.appendChild(c));
         }
 
         // On page load — hide clear btn
