@@ -879,9 +879,6 @@ $grand_total = $subtotal + $service_fee;
                         <?php endforeach; ?>
 
                         <div class="cart-actions">
-                            <button type="submit" name="update_cart" class="btn-sm update">
-                                <i class="fas fa-rotate-right"></i> Update
-                            </button>
                             <a href="<?php echo url('index.php?page=cart&clear=1'); ?>"
                                class="btn-sm clear"
                                onclick="return confirm('Clear your entire cart?')">
@@ -1014,24 +1011,104 @@ $grand_total = $subtotal + $service_fee;
 </div>
 
 <script>
-// +/- quantity buttons
+const SERVICE_FEE = <?php echo $service_fee; ?>;
+
+// Format a number as Philippine Peso
+function formatPHP(amount, decimals = 0) {
+    return '\u20b1' + amount.toLocaleString('en-PH', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    });
+}
+
+// Recalculate and refresh all totals in the sidebar and Place Order button
+function recalcTotals() {
+    let subtotal = 0;
+    let itemCount = 0;
+
+    document.querySelectorAll('.cart-row').forEach(row => {
+        const priceText = row.querySelector('.item-price').textContent.replace(/[\u20b1,]/g, '');
+        const price = parseFloat(priceText) || 0;
+        const qtyInput = row.querySelector('.qty-control input[type="number"]');
+        const qty = parseInt(qtyInput ? qtyInput.value : 0) || 0;
+
+        // Update row subtotal
+        const sub = row.querySelector('.item-subtotal');
+        if (sub) sub.textContent = formatPHP(price * qty);
+
+        subtotal += price * qty;
+        itemCount += qty;
+    });
+
+    const grandTotal = subtotal + SERVICE_FEE;
+
+    // Update sidebar summary rows
+    const sumRows = document.querySelectorAll('.sum-row');
+    sumRows.forEach(row => {
+        const label = row.querySelector('.sum-label');
+        const val   = row.querySelector('.sum-val');
+        if (!label || !val) return;
+        if (label.textContent.includes('Subtotal')) {
+            label.textContent = 'Subtotal (' + itemCount + ' item' + (itemCount !== 1 ? 's' : '') + ')';
+            val.textContent = formatPHP(subtotal, 2);
+        } else if (label.textContent.includes('Service Fee')) {
+            val.textContent = formatPHP(SERVICE_FEE, 2);
+        }
+    });
+    // Total row
+    const totalRow = document.querySelector('.sum-row.total-row');
+    if (totalRow) {
+        const totalVal = totalRow.querySelectorAll('span')[1];
+        if (totalVal) totalVal.textContent = formatPHP(grandTotal, 2);
+    }
+
+    // Update Place Order button label
+    const orderBtn = document.getElementById('placeOrderBtn');
+    if (orderBtn) {
+        orderBtn.innerHTML = '<i class="fas fa-check-circle"></i> Place Order \u00b7 ' + formatPHP(grandTotal, 2);
+    }
+}
+
+// Submit form to persist qty changes on server
+let submitTimer = null;
+function autoUpdateCart(form) {
+    // Ensure hidden update_cart field exists (the visible button is display:none so we use hidden input)
+    let hidden = form.querySelector('input[type="hidden"][name="update_cart"]');
+    if (!hidden) {
+        hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'update_cart';
+        hidden.value = '1';
+        form.appendChild(hidden);
+    }
+    form.submit();
+}
+
+// +/- quantity buttons — update UI instantly, then auto-submit
 function changeQty(btn, delta) {
     const input = btn.closest('.qty-control').querySelector('input[type="number"]');
     const newVal = Math.max(0, Math.min(20, parseInt(input.value || 0) + delta));
+    if (input.value == newVal) return; // no change
     input.value = newVal;
-    input.dispatchEvent(new Event('input'));
+    recalcTotals();
+
+    // Debounce form submit so rapid clicks batch into one request
+    clearTimeout(submitTimer);
+    submitTimer = setTimeout(() => {
+        autoUpdateCart(btn.closest('form'));
+    }, 400);
 }
 
-// Live subtotal update
+// Manual typing in the qty input
 document.querySelectorAll('.qty-control input').forEach(input => {
     input.addEventListener('input', function() {
-        const row = this.closest('.cart-row');
-        if (!row) return;
-        const priceText = row.querySelector('.item-price').textContent.replace(/[\u20b1,]/g,'');
-        const price = parseFloat(priceText);
-        const qty   = parseInt(this.value) || 0;
-        const sub   = row.querySelector('.item-subtotal');
-        if (sub) sub.textContent = '\u20b1' + (price * qty).toLocaleString('en-PH', {minimumFractionDigits:0});
+        recalcTotals();
+    });
+    input.addEventListener('change', function() {
+        clearTimeout(submitTimer);
+        submitTimer = setTimeout(() => {
+            autoUpdateCart(this.closest('form'));
+        }, 400);
     });
 });
 
