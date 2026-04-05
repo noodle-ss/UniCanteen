@@ -1144,13 +1144,19 @@ i {
 .transaction-items { color: #1e3a2f; }
 .transaction-amount { font-weight: 600; color: var(--dlsu-green); }
 .transaction-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
   font-size: 0.8rem;
   font-weight: 600;
   padding: 4px 12px;
   border-radius: 30px;
 }
-.status-completed { background: #d0e3ff; color: #1f5090; }
-.status-pending { background: #f5e6e6; color: #b13e3e; }
+.status-completed { background: #d0e3ff !important; color: #1f5090 !important; }
+.status-pending { background: #f5e6e6 !important; color: #b13e3e !important; }
+.status-preparing { background: #fff1cf !important; color: #9e6d0b !important; }
+.status-ready { background: #c9f0d7 !important; color: #0c6e3a !important; }
 
 /* System Admin Extras */
 .sys-grid {

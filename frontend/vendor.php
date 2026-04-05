@@ -167,6 +167,16 @@ foreach ($orders as &$order) {
 unset($order);
 $lineStmt->close();
 
+function getTransactionStatusStyle($status) {
+    $styles = [
+        'P'  => 'background: #f5e6e6; color: #b13e3e;',
+        'PR' => 'background: #fff1cf; color: #9e6d0b;',
+        'R'  => 'background: #c9f0d7; color: #0c6e3a;',
+        'C'  => 'background: #d0e3ff; color: #1f5090;',
+    ];
+    return $styles[$status] ?? '';
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -1145,7 +1155,7 @@ $lineStmt->close();
             <div class="transactions-list">
               <?php if (!empty($orders)): ?>
                 <?php foreach (array_slice($orders, 0, 4) as $txn):
-                  $sc = ['C' => 'status-completed', 'PR' => 'status-pending', 'P' => 'status-pending', 'R' => 'status-completed'];
+                  $sc = ['C' => 'status-completed', 'PR' => 'status-preparing', 'P' => 'status-pending', 'R' => 'status-ready'];
                   $st = ['C' => 'Completed', 'PR' => 'Preparing', 'P' => 'Pending', 'R' => 'Ready'];
                   $itemNames = array_map(fn($i) => $i['name'], $txn['items']);
                   ?>
@@ -1157,7 +1167,7 @@ $lineStmt->close();
                       </span>
                     </div>
                     <span class="transaction-amount"><?php echo formatPrice($txn['total_amount']); ?></span>
-                    <span class="transaction-status <?php echo $sc[$txn['status']] ?? ''; ?>">
+                    <span class="transaction-status <?php echo $sc[$txn['status']] ?? ''; ?>" style="<?php echo getTransactionStatusStyle($txn['status']); ?>">
                       <?php echo $st[$txn['status']] ?? $txn['status']; ?>
                     </span>
                   </div>
@@ -1298,7 +1308,7 @@ $lineStmt->close();
       <div class="all-transactions-list" style="border: 1px solid #e0e0e0; border-radius: 8px;">
         <?php if (!empty($orders)): ?>
           <?php
-          $statusClasses = ['C' => 'status-completed', 'PR' => 'status-pending', 'P' => 'status-pending', 'R' => 'status-completed'];
+          $statusClasses = ['C' => 'status-completed', 'PR' => 'status-preparing', 'P' => 'status-pending', 'R' => 'status-ready'];
           $statusNames = ['C' => 'Completed', 'PR' => 'Preparing', 'P' => 'Pending', 'R' => 'Ready'];
           ?>
           <?php foreach ($orders as $txn):
@@ -1320,8 +1330,8 @@ $lineStmt->close();
                 <?php echo formatPrice($txn['total_amount']); ?>
               </div>
               <div style="text-align: right;">
-                <span style="padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;"
-                  class="<?php echo $statusClasses[$txn['status']] ?? ''; ?>">
+                <span class="transaction-status <?php echo $statusClasses[$txn['status']] ?? ''; ?>"
+                  style="padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 500; <?php echo getTransactionStatusStyle($txn['status']); ?>">
                   <?php echo $statusNames[$txn['status']] ?? $txn['status']; ?>
                 </span>
               </div>
