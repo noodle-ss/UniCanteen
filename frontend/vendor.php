@@ -495,17 +495,14 @@ $lineStmt->close();
     .order-status-select {
       background: #f5f9f6;
       border: 2px solid #cae3d6;
-      padding: 8px 14px;
+      padding: 6px 14px;
       border-radius: 30px;
-      font-weight: 700;
+      font-weight: 600;
       font-size: 0.8rem;
       cursor: pointer;
       outline: none;
-      width: 100%;
-      min-width: 110px;
+      width: fit-content;
       transition: all 0.25s ease;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
 
     .order-status-select:hover {
