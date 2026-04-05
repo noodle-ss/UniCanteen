@@ -2,7 +2,7 @@
 /**
  * reset_queue.php — Vendor endpoint to re-number the active order queue.
  *
- * Re-sequences queue numbers (1, 2, 3, …) for all non-completed orders
+ * Re-sequences queue numbers (1, 2, 3, …) for today's non-completed orders
  * belonging to the current vendor's restaurant, ordered by original date.
  *
  * Expects a POST with:
@@ -47,7 +47,7 @@ try {
        -------------------------------------------------- */
     $fetchStmt = $db->prepare(
         "SELECT ID FROM Orders
-         WHERE restaurant_ID = ? AND status IN ('P', 'PR', 'R')
+         WHERE restaurant_ID = ? AND status IN ('P', 'PR', 'R') AND DATE(order_date) = CURDATE()
          ORDER BY order_date ASC"
     );
     $fetchStmt->bind_param("i", $restaurant_id);
